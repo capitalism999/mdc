@@ -1,0 +1,5 @@
+-- Server-side stub. No NUI callback currently sends data to the server, but
+-- once modules (mail, reports, warrants, etc.) start writing data, every
+-- mutation coming from the NUI must be validated here before being trusted
+-- — never take client-reported data (ids, permissions, amounts) at face
+-- value.

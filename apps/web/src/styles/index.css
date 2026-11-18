@@ -1,0 +1,126 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+/*
+ * Theme tokens — dark (default) and light.
+ *
+ * `--color-ink` is the single "foreground on chrome" token: nearly every
+ * `text-white/NN`, `bg-white/NN`, `border-white/NN`, `divide-white/NN`
+ * opacity-modified utility in the app has been renamed to the `ink` color
+ * (e.g. `text-white/70` -> `text-ink/70`) so it reads correctly as white-on-
+ * dark or near-black-on-light depending on the active theme, without
+ * touching every call site's opacity value.
+ *
+ * `--color-bg-app` / `--color-bg-chrome` / `--color-bg-chrome-2` are the
+ * literal (non-opacity) dark surfaces used by the OS shell and module
+ * panels (`#000`, `#111`, `#1c1c1c`) — these need a real value swap rather
+ * than an opacity override, so they're registered as their own tokens.
+ *
+ * Brand/status colors (accent blue, danger/success/warning) are left as
+ * literal hex values in both themes — they're used as saturated solid
+ * fills or tints with black/colored text that already reads fine on both
+ * a black and a white canvas.
+ */
+@theme {
+  --color-ink: #ffffff;
+  --color-bg-app: #000000;
+  --color-bg-chrome: #111111;
+  --color-bg-chrome-2: #1c1c1c;
+}
+
+[data-theme="light"] {
+  --color-ink: #15181c;
+  --color-bg-app: #eef1f4;
+  --color-bg-chrome: #ffffff;
+  --color-bg-chrome-2: #f3f5f7;
+}
+
+@font-face {
+  /* Windows 11 system icon font, used for OS-chrome glyphs (window caption
+     buttons, WiFi/volume tray icons). Not bundled — FiveM only runs on
+     Windows, so it resolves to the real system font there; falls back to the
+     Windows 10 equivalent, then to a generic sans-serif glyph elsewhere. */
+  font-family: "Segoe Fluent Icons Fallback";
+  src: local("Segoe Fluent Icons"), local("Segoe MDL2 Assets");
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    "Segoe UI Variable Text",
+    "Segoe UI",
+    "Inter",
+    system-ui,
+    sans-serif;
+  background: var(--color-bg-app);
+  color: var(--color-ink);
+}
+
+.icon-font {
+  font-family: "Segoe Fluent Icons Fallback", sans-serif;
+}
+
+/* Basic rich-text formatting used by the Mail module's compose editor
+   (document.execCommand output) and rendered messages — Tailwind's preflight
+   strips default list styling, so restore just enough to make
+   bold/italic/underline/lists readable. */
+.mail-rich-text b,
+.mail-rich-text strong {
+  font-weight: 700;
+}
+.mail-rich-text i,
+.mail-rich-text em {
+  font-style: italic;
+}
+.mail-rich-text u {
+  text-decoration: underline;
+}
+.mail-rich-text ul,
+.mail-rich-text ol {
+  margin: 0.4em 0;
+  padding-left: 1.4em;
+}
+.mail-rich-text ul {
+  list-style: disc;
+}
+.mail-rich-text ol {
+  list-style: decimal;
+}
+.mail-rich-text p {
+  margin: 0 0 0.4em;
+}
+
+.mail-editor:empty:before {
+  content: attr(data-placeholder);
+  color: color-mix(in srgb, var(--color-ink) 30%, transparent);
+  pointer-events: none;
+}
+
+/* Themed scrollbar — overrides the default OS scrollbar everywhere in the
+   app (window content panes, dropdowns, etc), following the active theme. */
+* {
+  scrollbar-color: color-mix(in srgb, var(--color-ink) 18%, transparent) transparent;
+  scrollbar-width: thin;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-ink) 32%, transparent);
+}

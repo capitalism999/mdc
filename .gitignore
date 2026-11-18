@@ -1,0 +1,8 @@
+node_modules/
+dist/
+resource/html/*
+!resource/html/.gitkeep
+*.log
+.DS_Store
+.env.local
+.claude/settings.local.json

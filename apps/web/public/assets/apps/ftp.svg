@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="ftpGrad" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5cc8ff"/>
+      <stop offset="1" stop-color="#1f6fd4"/>
+    </linearGradient>
+  </defs>
+  <path d="M28 76c0-11 9-20 20-20h48l20 20h92c11 0 20 9 20 20v88c0 11-9 20-20 20H48c-11 0-20-9-20-20Z" fill="url(#ftpGrad)"/>
+  <rect x="28" y="96" width="200" height="88" rx="16" fill="rgba(255,255,255,0.14)"/>
+  <path d="M128 112l24 24h-16v32h-16v-32h-16Z" fill="#ffffff"/>
+  <path d="M128 192l-24-24h16v-32h16v32h16Z" fill="#ffffff" opacity="0.55"/>
+</svg>
