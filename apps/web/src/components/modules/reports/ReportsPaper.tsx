@@ -1,13 +1,14 @@
 /* Generated 1:1 from the design reference (project/Reports.dc.html) — markup, styles and copy are a literal port. */
 import { Fragment } from 'react'
 import { __a, __h, __s, type ReportsVals } from './reportsRuntime'
+import { ReportsZoomBar } from './ReportsZoom'
 
 export function ReportsPaper({ $v }: { $v: ReportsVals }) {
   if (!$v.isPaper) return null
   return (
     <>
       <div style={{ flex: "1", minHeight: "0", display: "flex", marginTop: "-40px" }}>
-        <div className="scroll" style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", padding: "24px 0", background: "#1E1E1E" }}>
+        <div className="scroll" data-paper-scroll="1" style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", padding: "24px 0", background: "#1E1E1E" }}>
           {$v.isReview ? (
             <div style={{ flexShrink: "0", marginTop: "30px", display: "flex", gap: "4px", padding: "3px", borderRadius: "8px", background: $v.c?.btn }}>
               <button className="btn hv" onClick={$v.tabPaper} style={{ height: "28px", padding: "0 14px", borderRadius: "6px", background: $v.tbP, fontSize: "12.5px", fontWeight: "600" }}>
@@ -19,7 +20,7 @@ export function ReportsPaper({ $v }: { $v: ReportsVals }) {
             </div>
           ) : null}
           {$v.paperOn ? (
-            <div style={{ position: "relative", width: "560px", flexShrink: "0", boxSizing: "border-box", display: "flex", flexDirection: "column", minHeight: "792px", background: "#FFFFFF", color: "#111111", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", fontFamily: "Tahoma, Arial, 'Segoe UI', sans-serif", padding: "16px 22px 14px 22px" }}>
+            <div style={{ alignSelf: "stretch", flexShrink: "0", padding: "0 24px" }}><div style={{ zoom: $v.__zoom, margin: "0 auto", position: "relative", width: "560px", flexShrink: "0", boxSizing: "border-box", display: "flex", flexDirection: "column", minHeight: "792px", background: "#FFFFFF", color: "#111111", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", fontFamily: "Tahoma, Arial, 'Segoe UI', sans-serif", padding: "16px 22px 14px 22px" }}>
               {$v.pp?.lp ? (
                 <div style={{ display: "flex", alignItems: "stretch", border: "1.5px solid #111111", marginBottom: "2px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 8px", flex: "1", minWidth: "0" }}>
@@ -242,8 +243,9 @@ export function ReportsPaper({ $v }: { $v: ReportsVals }) {
                   </span>
                 </div>
               </div>
-            </div>
+            </div></div>
           ) : null}
+          {$v.paperOn ? <ReportsZoomBar $v={$v} /> : null}
           {$v.dvOn ? (
             <div style={{ width: "560px", flexShrink: "0", display: "flex", flexDirection: "column", gap: "12px" }}>
               <span style={{ fontSize: "12px", lineHeight: "17px", color: $v.c?.text2 }}>

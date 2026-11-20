@@ -1,4 +1,4 @@
-import { useReducer, useRef, type ChangeEvent, type MouseEvent } from 'react'
+import { useEffect, useReducer, useRef, useState, type ChangeEvent, type MouseEvent } from 'react'
 import { apps } from '../../../data/apps'
 import { useWindowManager } from '../../../windows/WindowManagerContext'
 import { getCases, requestOpenCase } from '../cases/casesStore'
@@ -34,6 +34,9 @@ const BOARD_APP: Record<string, string> = {
 
 const PLATE = /\b\d{1,2}[A-Z]{3}\d{3}\b/
 
+/** Blank zoom steps, 50%…300%. */
+const ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3]
+
 /**
  * Отчёты — a literal port of the reference component: `reportsLogic.ts`
  * holds its data and render logic verbatim, the generated `Reports*.tsx`
@@ -53,7 +56,41 @@ export function ReportsApp(_props: ModuleContentProps) {
   }
   const logic = logicRef.current
 
+  // Blank zoom (MDT addition): bar under the sheet + Ctrl + mouse wheel.
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [zoom, setZoom] = useState(1)
+  const stepZoom = (dir: 1 | -1) =>
+    setZoom((z) => {
+      if (dir > 0) return ZOOMS.find((s) => s > z + 0.001) ?? z
+      return [...ZOOMS].reverse().find((s) => s < z - 0.001) ?? z
+    })
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const onWheel = (event: WheelEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return
+      if (!(event.target as Element | null)?.closest?.('[data-paper-scroll]')) return
+      event.preventDefault()
+      stepZoom(event.deltaY < 0 ? 1 : -1)
+    }
+    root.addEventListener('wheel', onWheel, { passive: false })
+    return () => root.removeEventListener('wheel', onWheel)
+  }, [])
+
   const v = logic.renderVals()
+  v.__zoom = zoom
+  v.__canIn = zoom < ZOOMS[ZOOMS.length - 1] - 0.001
+  v.__canOut = zoom > ZOOMS[0] + 0.001
+  v.__zoomIn = () => stepZoom(1)
+  v.__zoomOut = () => stepZoom(-1)
+  v.__zoomReset = () => setZoom(1)
+  v.__zoomFit = () => {
+    const col = rootRef.current?.querySelector<HTMLElement>('[data-paper-scroll]')
+    if (!col) return
+    // sheet is 560px wide; leave the wrapper's 24px gutters on each side
+    const z = (col.clientWidth - 48) / 560
+    setZoom(Math.min(ZOOMS[ZOOMS.length - 1], Math.max(ZOOMS[0], Math.round(z * 100) / 100)))
+  }
   // The reviewer's comment: the reference leaves the field unbound, while its
   // logic already shows `retNote` as the «Возвращён» note — bind the two.
   v.__retNote = logic.state.retNote ?? ''
@@ -91,6 +128,7 @@ export function ReportsApp(_props: ModuleContentProps) {
 
   return (
     <div
+      ref={rootRef}
       className="reports-root"
       style={{
         position: 'relative',

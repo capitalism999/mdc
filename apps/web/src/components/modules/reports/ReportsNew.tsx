@@ -1,6 +1,7 @@
 /* Generated 1:1 from the design reference (project/Reports.dc.html) — markup, styles and copy are a literal port. */
 import { Fragment } from 'react'
 import { __a, __h, __s, type ReportsVals } from './reportsRuntime'
+import { ReportsZoomBar } from './ReportsZoom'
 
 export function ReportsNew({ $v }: { $v: ReportsVals }) {
   if (!$v.isNew) return null
@@ -262,11 +263,11 @@ export function ReportsNew({ $v }: { $v: ReportsVals }) {
             </div>
           </div>
         </div>
-        <div className="scroll" style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", alignItems: "center", padding: "50px 0 24px 0", gap: "10px", background: $v.c?.rail }}>
+        <div className="scroll" data-paper-scroll="1" style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", alignItems: "center", padding: "50px 0 24px 0", gap: "10px", background: $v.c?.rail }}>
           <span style={{ alignSelf: "flex-start", marginLeft: "40px", fontSize: "12px", color: $v.c?.text2 }}>
             {"Так бланк выглядит на бумаге. Заполняется по мере ввода."}
           </span>
-          <div style={{ position: "relative", width: "560px", flexShrink: "0", boxSizing: "border-box", display: "flex", flexDirection: "column", minHeight: "792px", background: "#FFFFFF", color: "#111111", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", fontFamily: "Tahoma, Arial, 'Segoe UI', sans-serif", padding: "16px 22px 14px 22px" }}>
+          <div style={{ alignSelf: "stretch", flexShrink: "0", padding: "0 24px" }}><div style={{ zoom: $v.__zoom, margin: "0 auto", position: "relative", width: "560px", flexShrink: "0", boxSizing: "border-box", display: "flex", flexDirection: "column", minHeight: "792px", background: "#FFFFFF", color: "#111111", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", fontFamily: "Tahoma, Arial, 'Segoe UI', sans-serif", padding: "16px 22px 14px 22px" }}>
             {$v.pNew?.lp ? (
               <div style={{ display: "flex", alignItems: "stretch", border: "1.5px solid #111111", marginBottom: "2px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 8px", flex: "1", minWidth: "0" }}>
@@ -489,7 +490,8 @@ export function ReportsNew({ $v }: { $v: ReportsVals }) {
                 </span>
               </div>
             </div>
-          </div>
+          </div></div>
+          <ReportsZoomBar $v={$v} />
         </div>
       </div>
     </>
