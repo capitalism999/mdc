@@ -13,7 +13,7 @@ export const mockFtpFiles: FtpFile[] = [
   { id: 'f5', parentId: null, kind: 'file', name: 'Устав_департамента_2026.pdf', size: '1.2 MB', updatedAt: '2026-01-04', updatedBy: 'Admin' },
 
   { id: 'f1-1', parentId: 'f1', kind: 'file', name: 'BOLO_Sultan_RS_угон.pdf', size: '340 KB', updatedAt: 'Сегодня, 09:12', updatedBy: 'Thorne Watts' },
-  { id: 'f1-2', parentId: 'f1', kind: 'file', name: 'Розыск_Lamar_Davis.pdf', size: '280 KB', updatedAt: 'Вчера, 14:05', updatedBy: 'K. Reyes' },
+  { id: 'f1-2', parentId: 'f1', kind: 'file', name: 'Розыск_Lamar_Davis.pdf', size: '280 KB', updatedAt: 'Вчера, 14:05', updatedBy: 'Kate Reyes' },
 
   { id: 'f2-1', parentId: 'f2', kind: 'file', name: 'Бланк_рапорта.docx', size: '48 KB', updatedAt: '2025-11-02', updatedBy: 'Admin' },
   { id: 'f2-2', parentId: 'f2', kind: 'file', name: 'Форма_ареста.docx', size: '52 KB', updatedAt: '2025-11-02', updatedBy: 'Admin' },

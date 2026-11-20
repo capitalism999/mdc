@@ -56,6 +56,10 @@ const WindowManagerContext = createContext<WindowManagerContextValue | null>(nul
  * size, cascading, maximize, and drag/resize clamping all work correctly at
  * any viewport size or aspect ratio.
  */
+function clamp(v: number, min: number, max: number) {
+  return Math.max(min, Math.min(Math.max(min, max), v))
+}
+
 export function WindowManagerProvider({ children }: { children: ReactNode }) {
   const [windows, setWindows] = useState<WindowInstance[]>([])
   const [desktopSize, setDesktopSize] = useState<DesktopSize>(FALLBACK_DESKTOP_SIZE)
@@ -76,6 +80,25 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
+
+  // When the desktop gets smaller (F11 off, browser resized), shrink and move
+  // open windows so each one stays fully on screen — otherwise their bottom
+  // (and any dialog centred in them) ends up unreachable.
+  useEffect(() => {
+    setWindows((prev) => {
+      let changed = false
+      const next = prev.map((w) => {
+        const width = Math.min(w.width, desktopSize.width)
+        const height = Math.min(w.height, desktopSize.height)
+        const x = clamp(w.x, 0, desktopSize.width - width)
+        const y = clamp(w.y, 0, desktopSize.height - height)
+        if (width === w.width && height === w.height && x === w.x && y === w.y) return w
+        changed = true
+        return { ...w, width, height, x, y }
+      })
+      return changed ? next : prev
+    })
+  }, [desktopSize])
 
   const openWindow = useCallback(
     (app: AppTile, opts?: { instanceKey?: string; initialParams?: Record<string, unknown> }) => {
@@ -103,8 +126,10 @@ export function WindowManagerProvider({ children }: { children: ReactNode }) {
           icon: app.icon,
           breadcrumb: [app.label],
           initialParams: opts?.initialParams,
-          x: (desktopSize.width - width) / 2 + offset,
-          y: (desktopSize.height - height) / 2 + offset,
+          // Cascade, but never past the desktop edge (a full-height window
+          // shifted by the cascade step would hang off the bottom).
+          x: clamp((desktopSize.width - width) / 2 + offset, 0, desktopSize.width - width),
+          y: clamp((desktopSize.height - height) / 2 + offset, 0, desktopSize.height - height),
           width,
           height,
           zIndex: zCounter.current,

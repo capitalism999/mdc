@@ -127,8 +127,8 @@ export interface Incident {
 }
 
 /**
- * A civilian/officer record in the "Люди" module. Search is multi-field
- * (see `SEARCH_CATEGORIES` in `people/SearchHome.tsx`) — officers rarely
+ * A civilian/officer record looked up via the "Поиск" module. Search is
+ * multi-field (see `search` in `search/searchData.ts`) — officers rarely
  * know a name up front, so phone/document/weapon/vehicle/business/
  * biometric lookups all resolve back to a `Person`.
  */
@@ -241,19 +241,118 @@ export interface WarrantFile {
   relatedArrestId?: string
 }
 
-/** BOLO ("Be On the Look Out") alert (`mockData/bolos.ts`). */
+export type BoloAgency = 'lspd' | 'lssd' | 'sahp' | 'fib'
+export type BoloKind = 'person' | 'veh' | 'missing' | 'unknown'
+export type BoloPriority = 'high' | 'mid' | 'low'
+export type BoloStatus = 'open' | 'closed' | 'expired'
+/** `wanted`/`special` are danger-flagged ("red"); `poi`/`alert` are
+ * caution-flagged ("amber"); `missing` is informational ("blue"). */
+export type BoloVid = 'wanted' | 'special' | 'poi' | 'missing' | 'alert'
+export type BoloPhotoIcon = 'mug' | 'cam' | 'car' | 'tattoo' | 'obj'
+/** Only `bolo`/`person`/`vehicle`/`case` kinds carry a real cross-link id
+ * (see `useEntityNavigation`) — the rest (`home`/`org`/`doc`/`call`) have no
+ * module to open yet and render as plain labelled text, matching the
+ * reference's own `go()` no-op for those kinds. */
+export type BoloLinkKind = 'person' | 'home' | 'car' | 'bolo' | 'doc' | 'case' | 'org' | 'call'
+
+export interface BoloFact {
+  label: string
+  value: string
+  /** Present only when this fact is itself a cross-link (e.g. "Транспорт" →
+   * the linked vehicle's own BOLO id). */
+  linkBoloId?: string
+}
+
+export interface BoloPhoto {
+  caption: string
+  icon: BoloPhotoIcon
+}
+
+export interface BoloLink {
+  label: string
+  value: string
+  kind: BoloLinkKind
+  /** Real cross-link target id — set for `bolo`/`person`/`car`/`case` kinds
+   * that resolve to an actual record elsewhere in the mock data. */
+  id?: string
+}
+
+export interface BoloSighting {
+  place: string
+  when: string
+  text: string
+  who: string
+  /** Map position, percent of the terrain SVG's viewBox. */
+  x: number
+  y: number
+}
+
+export interface BoloHistoryEntry {
+  when: string
+  who: string
+  what: string
+}
+
+/** Poster-specific overrides for a BOLO's printable listovka, when the
+ * defaults derived from the BOLO record itself aren't quite right. */
+export interface BoloPosterOverrides {
+  unit?: string
+  caseNo?: string
+  wantedFor?: string
+  mainCap?: string
+  facts?: [string, string][]
+  incident?: [string, string][]
+  narr?: string
+  contact?: string
+  name?: string
+}
+
+/** BOLO ("Be On the Look Out") alert (`mockData/bolos.ts`) — the single
+ * record backing every view of the BOLO module (feed card, detail, map pin,
+ * poster). */
 export interface Bolo {
   id: string
+  no: string
+  src: BoloAgency
+  kind: BoloKind
+  vid: BoloVid
+  prio: BoloPriority
+  status: BoloStatus
+  armed: boolean
   title: string
-  boloType: string
-  status: 'Активен' | 'Закрыт'
-  priority: 'Низкий' | 'Средний' | 'Высокий'
-  personId?: string
-  vehicleId?: string
+  sub: string
+  plate?: string
+  carColor?: string
   reason: string
-  dangerLevel: 'Низкий' | 'Средний' | 'Высокий' | 'Критический'
-  lastKnownLocation: string
-  caseId?: string
+  penalCodes: string[]
+  contact: { name: string; role: string; phone: string }
+  facts: BoloFact[]
+  description: string
+  tags: string[]
+  instruction: string
+  photos: BoloPhoto[]
+  links: BoloLink[]
+  sightings: BoloSighting[]
+  acknowledgedOf: number
+  acknowledgedTotal: number
+  author: string
+  created: string
+  ago: string
+  unread?: boolean
+  /** Set once closed/expired. */
+  closedHow?: string
+  closedBy?: string
+  closedAt?: string
+  /** `[when-text, relative-text]` — present only while the BOLO is close
+   * enough to expiry to show the inline extend banner. */
+  expiresSoon?: [string, string]
+  /** `[iso-ish-date, summary]` — present only when there's an unseen
+   * "what changed" update banner to show. */
+  pendingUpdate?: [string, string]
+  /** Draft text offered when opening the Update dialog. */
+  updateDraft?: string
+  history?: BoloHistoryEntry[]
+  poster?: BoloPosterOverrides
 }
 
 export interface ArrestCharge {
@@ -369,6 +468,179 @@ export interface CaseFile {
   gangIds: string[]
 }
 
+/** A tone drives both a status chip's color and its matching dot/accent —
+ * shared across the case-file tree, the home list, and the access dialog's
+ * classification badges. */
+export type CaseTone = 'red' | 'amber' | 'green' | 'grey' | 'blue'
+
+export type CasePlaceType = 'crime' | 'home' | 'find' | 'seen' | 'witness' | 'other'
+
+/** One record inside a case-file folder — a person (with initials/avatar
+ * color) or any other entity kind (evidence/media/exam/doc/event/vehicle/
+ * place/surv), each with its own icon and inspector layout. `chain` backs
+ * the physical-evidence chain-of-custody timeline; `px`/`py` (percent
+ * coordinates on the Места map) only apply to `kind: 'place'`. */
+/** A place ↔ record link: `id` of a person or evidence item of the case and
+ * the person's role there (живёт / замечен / свидетель / работает / другое;
+ * evidence: «найдено здесь»). */
+export interface CasePlaceLink {
+  id: string
+  role: string
+}
+
+export interface CasePlaceArea {
+  shape: 'circle' | 'square'
+  r: number
+}
+
+export interface CasePhoto {
+  src: string
+  name: string
+  when: string
+  who: string
+}
+
+export interface CaseTreeItem {
+  id: string
+  kind: 'person' | 'vehicle' | 'place' | 'evidence' | 'media' | 'exam' | 'doc' | 'event' | 'surv' | 'note'
+  /** kind 'note': the officer note (Заметки) attached here as a file */
+  noteId?: string
+  title: string
+  sub: string
+  status: string
+  tone: CaseTone
+  date: string
+  info: [string, string][]
+  note: string
+  chain?: [string, string][]
+  initials?: string
+  color?: string
+  placeType?: CasePlaceType
+  /** Explicit links picked for a field: field key → ids of case records it refers to. */
+  refs?: Record<string, string[]>
+  /** Photos attached to the record (e.g. a map place), newest last. */
+  photos?: CasePhoto[]
+  /** Places: when it happened, «DD.MM.YYYY, HH:MM» (falls back to `date`). */
+  when?: string
+  /** Places: how exact the pin is — 0 точно, 1 ~200 м, 2 район. */
+  accuracy?: 0 | 1 | 2
+  /** Uncertainty zone around the pin: circle or square, radius (half side) in % of the map image height. */
+  area?: CasePlaceArea
+  /** Places: people / evidence of the case tied to this place. */
+  placeLinks?: CasePlaceLink[]
+  px?: number
+  py?: number
+}
+
+/** One node of a case's folder tree (`root` → Участники/Транспорт/Места/
+ * Улики/Наблюдение/Экспертизы/Документы/Хронология/Журнал). `view: 'map'`
+ * renders Места as the map instead of a plain item list; `view: 'log'`
+ * renders Журнал from `log` instead of `items`. */
+export interface CaseTreeNode {
+  id: string
+  name: string
+  color?: string
+  desc?: string
+  view?: 'map' | 'log'
+  children?: CaseTreeNode[]
+  items?: CaseTreeItem[]
+  log?: CaseLogRow[]
+}
+
+export interface CaseLogRow {
+  when: string
+  who: string
+  action: 'Добавление' | 'Изменение' | 'Перемещение' | 'Удаление'
+  where: string
+  detail: string
+}
+
+export interface CaseNote {
+  who: string
+  when: string
+  text: string
+  replies?: CaseNote[]
+}
+
+/** 'manager' — like the lead for access: grants and changes other people's rights. */
+export type CaseAccessRole = 'lead' | 'manager' | 'member' | 'observer' | 'viewer'
+export type CaseSectionLevel = 'all' | 'members' | 'managers' | 'lead'
+
+export interface CaseAccessMember {
+  name: string
+  role: CaseAccessRole
+  sub: string
+}
+
+export interface CaseAccessState {
+  grif: 'normal' | 'conf' | 'secret'
+  members: CaseAccessMember[]
+  /** Per-top-level-folder-id access override ('all' = no restriction). */
+  sections: Record<string, CaseSectionLevel>
+}
+
+/**
+ * Full "кейс-файл" detail for one case — the rich, nested-folder browser
+ * view opened from `CasesHome`. Separate from `CaseFile` (the flat attach-
+ * by-id record other modules, e.g. Заметки's case-link picker, point to):
+ * not every case in `CasesHome`'s list has one of these yet, matching the
+ * reference (only 2 of its 8 home-list rows have a real file behind them).
+ */
+export interface CasePinned {
+  title: string
+  /** optional details under the title */
+  text: string
+  /** key into CASE_PEOPLE */
+  who: string
+  when: string
+  tone: 'red' | 'amber' | 'blue'
+}
+
+export interface CaseFileDetail {
+  id: string
+  no: string
+  short: string
+  title: string
+  status: string
+  tone: CaseTone
+  /** last change: full date and time */
+  updated: string
+  /** who made the last change (English full name) */
+  updatedBy: string
+  related?: string
+  meta: [string, string][]
+  /** Lead investigator: in-game (English) full name + rank shown under it. */
+  lead: { name: string; rank: string }
+  /** Charges: penal code + what the crime actually is. */
+  charges: [string, string][]
+  /** Pinned announcement anyone on the case can write («СЕГОДНЯ ОБЫСК!»);
+   * `null` = none yet (the overview then offers to add one). */
+  pinned: CasePinned | null
+  recent: { when: string; what: string; where: string; who: string }[]
+  tree: CaseTreeNode
+  access: CaseAccessState
+  notes: Record<string, CaseNote[]>
+}
+
+/** One row of the "Дела" home list (`CasesHome`) — every case in the
+ * department shows up here even if it has no `CaseFileDetail` yet. */
+export interface CaseListRow {
+  id: string
+  grif?: 'conf' | 'secret'
+  no: string
+  title: string
+  status: string
+  group: 'work' | 'search' | 'court' | 'closed'
+  tone: CaseTone
+  lead: string
+  updated: string
+  ppl: number
+  evd: number
+  exp: number
+  mine: boolean
+  recent: boolean
+}
+
 export interface GangMember {
   personId: string
   role: string
@@ -440,23 +712,50 @@ export interface ForensicAnalysis {
   resultSummary: string
 }
 
+/** The four fixed "Заметки" folders — not user-creatable, matching the
+ * reference design's closed set (no free-text category). */
+export type NoteFolder = 'cases' | 'plates' | 'shifts' | 'personal'
+
+/** One typed block of a note's body — paragraph/heading/bullet render as
+ * plain typography, `checklist` carries a real toggleable `done` state,
+ * `quote` is the monospace scratch-block style (used for things like a
+ * plate-number list). */
+export interface NoteBlock {
+  id: string
+  type: 'paragraph' | 'heading' | 'bullet' | 'checklist' | 'quote' | 'image'
+  text: string
+  done?: boolean
+  /** type 'image': the picture (data URL) and its file name */
+  src?: string
+  name?: string
+}
+
 /**
  * "Заметки" standalone officer notepad entry (`mockData/standaloneNotes.ts`).
  * Distinct from `PersonNote` (which lives inside a person's profile) — this
  * is a personal scratchpad not tied to any one profile, with an optional
- * single link out to a person/vehicle/case.
+ * single link out to a case.
  */
 export interface OfficerNote {
   id: string
   title: string
-  content: string
-  category: string
+  folder: NoteFolder
+  blocks: NoteBlock[]
   isPinned: boolean
   author: string
+  /** Short form grouped by date prefix ("Сегодня, 10:12" / "Вчера, ..."),
+   * same convention as `MailMessage.time`. */
   time: string
-  linkedPersonId?: string
-  linkedVehicleId?: string
+  /** Full form shown centered above the title in the reader ("15 ноября
+   * 2026 г. в 15:20"). */
+  dateFull: string
+  /** Cosmetic case-number label shown next to the title in list rows
+   * ("SW-2611") — purely a display string, independent of `linkedCaseId`
+   * (the real cross-link, set only via the case picker). */
+  caseNo?: string
   linkedCaseId?: string
+  /** «Сделать себе копию»: whose note this was copied from (author · title) */
+  copiedFrom?: string
 }
 
 /** Personnel roster entry (`mockData/officers.ts`). Deliberately shallow —

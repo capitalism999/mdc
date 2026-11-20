@@ -4,17 +4,16 @@ import type { AppTile } from '../types'
  * Source of truth for the module tiles on the desktop grid — each opens
  * its own OS-style window (see `windows/WindowManagerContext`). Positions in
  * the Figma design follow a two-column layout (x=12 and x=132), which
- * `AppIconGrid` reproduces by laying these out in order.
+ * `AppIconGrid` reproduces by laying these out in order. Ready modules come
+ * first; stubs (still in development) after them.
  */
 export const apps: AppTile[] = [
+  { id: 'search', label: 'Поиск', icon: '/assets/apps/search.svg', chrome: 'bare', defaultSize: { width: 1440, height: 900 } },
   { id: 'mail', label: 'Почта', icon: '/assets/apps/mail.png', chrome: 'bare', defaultSize: { width: 1440, height: 900 } },
-  { id: 'people', label: 'Люди', icon: '/assets/apps/people.png', stub: true },
-  { id: 'dmv', label: 'DMV', icon: '/assets/apps/dmv.png', stub: true },
-  { id: 'weapons', label: 'Оружие', icon: '/assets/apps/weapons.png', stub: true },
-  { id: 'bolo', label: 'BOLO', icon: '/assets/apps/bolo.png', stub: true },
+  { id: 'bolo', label: 'BOLO', icon: '/assets/apps/bolo.png', chrome: 'bare', defaultSize: { width: 1440, height: 900 } },
+  { id: 'notes', label: 'Заметки', icon: '/assets/apps/notes.png', chrome: 'bare', defaultSize: { width: 1440, height: 900 } },
+  { id: 'cases', label: 'Дела', icon: '/assets/apps/cases.png', chrome: 'bare', defaultSize: { width: 1440, height: 900 } },
   { id: 'calls', label: 'Вызовы', icon: '/assets/apps/calls.png', stub: true },
-  { id: 'notes', label: 'Заметки', icon: '/assets/apps/notes.png', stub: true },
-  { id: 'cases', label: 'Дела', icon: '/assets/apps/cases.png', stub: true },
   { id: 'reports', label: 'Рапорты', icon: '/assets/apps/reports.png', stub: true },
   { id: 'arrests', label: 'Аресты', icon: '/assets/apps/arrests.png', stub: true },
   { id: 'forensics', label: 'Экспертизы', icon: '/assets/apps/forensics.png', stub: true },

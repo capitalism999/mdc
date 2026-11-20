@@ -2,7 +2,7 @@ const PALETTE = ['#48adec', '#9b6bea', '#e8637a', '#3fb97f', '#e0a63f', '#5c7cfa
 
 /**
  * Derives 1-2 letter initials for an avatar bubble from a free-form name
- * like "12D3 Thorne Watts", "Deputy K. Alvarez" or "Система SALETS MDT".
+ * like "12D3 Thorne Watts", "Kevin Alvarez" or "Система SALETS MDT".
  * Strips a leading badge-number token (contains a digit) if present, then
  * takes the first letter of the first and last remaining words.
  */

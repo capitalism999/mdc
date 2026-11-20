@@ -23,9 +23,9 @@ export type EntityType =
   | 'dispatchCall'
 
 const ENTITY_TO_APP: Record<EntityType, string> = {
-  person: 'people',
-  vehicle: 'dmv',
-  weapon: 'weapons',
+  person: 'search',
+  vehicle: 'search',
+  weapon: 'search',
   case: 'cases',
   report: 'reports',
   warrant: 'warrants',

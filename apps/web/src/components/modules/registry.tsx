@@ -4,19 +4,17 @@ import { ArrestsApp } from './arrests/ArrestsApp'
 import { BoloApp } from './bolo/BoloApp'
 import { CallsApp } from './calls/CallsApp'
 import { CasesApp } from './cases/CasesApp'
-import { DmvApp } from './dmv/DmvApp'
 import { ForensicsApp } from './forensics/ForensicsApp'
 import { FtpApp } from './ftp/FtpApp'
 import { LawsApp } from './laws/LawsApp'
 import { MailApp } from './mail/MailApp'
 import { MailComposeWindow } from './mail/MailComposeWindow'
 import { NotesApp } from './notes/NotesApp'
-import { PeopleApp } from './people/PeopleApp'
 import { PersonalizationApp } from './personalization/PersonalizationApp'
 import { ReportsApp } from './reports/ReportsApp'
 import { SangGangApp } from './sanggang/SangGangApp'
+import { SearchApp } from './search/SearchApp'
 import { WarrantsApp } from './warrants/WarrantsApp'
-import { WeaponsApp } from './weapons/WeaponsApp'
 
 /**
  * Maps an app tile's id (see `data/apps.ts`) to the component rendered
@@ -29,11 +27,9 @@ export interface ModuleContentProps {
 }
 
 export const moduleContent: Record<string, ComponentType<ModuleContentProps>> = {
+  search: SearchApp,
   mail: MailApp,
   'mail-compose': MailComposeWindow,
-  people: PeopleApp,
-  dmv: DmvApp,
-  weapons: WeaponsApp,
   ftp: FtpApp,
   laws: LawsApp,
   warrants: WarrantsApp,

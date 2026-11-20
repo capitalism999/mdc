@@ -1,0 +1,65 @@
+/* The reference's <helmet> stylesheet, scoped to the Поиск window. */
+@font-face {
+  font-family: 'Dealerplate California';
+  src: url('/assets/search/fdd301fdb07803c32ff198bc4941a9ae.otf') format('opentype');
+  font-display: swap;
+}
+
+/* The reference renders without Tailwind's preflight; undo the preflight
+ * rules that would otherwise change its layout (box model, borders, inline
+ * SVG/IMG, headings, link decoration, textarea resize). */
+.search-root,
+.search-root *,
+.search-root *::before,
+.search-root *::after {
+  box-sizing: revert;
+  border: revert;
+}
+.search-root svg,
+.search-root img {
+  display: revert;
+  vertical-align: revert;
+  max-width: revert;
+}
+.search-root h1,
+.search-root h2,
+.search-root h3,
+.search-root h4,
+.search-root h5,
+.search-root h6 {
+  font-size: revert;
+  font-weight: revert;
+  margin: revert;
+}
+.search-root a {
+  text-decoration: revert;
+}
+.search-root textarea {
+  resize: revert;
+}
+
+.search-root a { color: inherit }
+.search-root .btn { border: 0; margin: 0; padding: 0; background: transparent; font: inherit; color: inherit; cursor: pointer; text-align: left }
+.search-root .btn:focus-visible,
+.search-root a:focus-visible { outline: 2px solid currentColor; outline-offset: -2px }
+.search-root .hv:hover { background: rgba(128, 128, 128, .12) !important }
+.search-root .pb:hover { filter: brightness(1.14) }
+.search-root .pb:active { filter: brightness(0.94) }
+.search-root .wclose:hover { background: #C42B1C !important; color: #FFFFFF !important }
+.search-root .acc:hover { filter: brightness(1.08) }
+.search-root .lnk:hover { text-decoration: underline; text-underline-offset: 3px }
+.search-root input { font: inherit; color: inherit }
+.search-root input::placeholder { color: inherit; opacity: .7 }
+.search-root input:focus { outline: none }
+.search-root .scroll { scrollbar-width: thin; scrollbar-color: #4A4A4A transparent; overflow-y: auto }
+.search-root .scroll::-webkit-scrollbar { width: 10px; height: 10px }
+.search-root .scroll::-webkit-scrollbar-track { background: transparent }
+.search-root .scroll::-webkit-scrollbar-thumb { background: #4A4A4A; border-radius: 5px; border: 2px solid transparent; background-clip: content-box }
+.search-root .scroll::-webkit-scrollbar-thumb:hover { background: #6A6A6A; background-clip: content-box }
+.search-root .ell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.search-root .lp { position: relative; display: block; width: 120px; height: 60px; flex-shrink: 0; align-self: flex-start; background: url('/assets/search/aeec39e3277b294b2374a61e4c82c77e.png') center/100% 100% no-repeat; border-radius: 6px; box-shadow: 0 1px 4px rgba(0, 0, 0, .45) }
+.search-root .lp > span { position: absolute; left: 4%; right: 4%; top: 36%; height: 56%; display: flex; align-items: center; justify-content: center; font-family: 'Dealerplate California', 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 400; font-size: 32px; line-height: 1; color: #2C307E; letter-spacing: .03em; white-space: nowrap }
+.search-root .lpm { position: relative; display: block; width: 78px; height: 39px; flex-shrink: 0; background: url('/assets/search/aeec39e3277b294b2374a61e4c82c77e.png') center/100% 100% no-repeat; border-radius: 4px; box-shadow: 0 1px 3px rgba(0, 0, 0, .45) }
+.search-root .lpm > span { position: absolute; left: 4%; right: 4%; top: 36%; height: 56%; display: flex; align-items: center; justify-content: center; font-family: 'Dealerplate California', 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size: 20px; line-height: 1; color: #2C307E; letter-spacing: .03em; white-space: nowrap }
+.search-root .lps { font-family: 'Dealerplate California', 'Barlow Condensed', 'Arial Narrow', sans-serif !important; color: #2C307E !important; background: #FFFFFF !important; font-size: 16px !important; font-weight: 400 !important; letter-spacing: .04em !important }
+.search-root .lpi { display: inline-block; padding: 0 .32em; margin: 0 .05em; border-radius: 3px; background: #FFFFFF; color: #2C307E; box-shadow: inset 0 0 0 1px #B8BEC8; font-family: 'Dealerplate California', 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 400; font-size: 1.12em; line-height: 1.3; letter-spacing: .04em; white-space: nowrap; vertical-align: baseline; text-decoration: none }

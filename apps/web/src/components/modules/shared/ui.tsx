@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
 
 /**
- * Shared building blocks for every module's detail/card screens — originally
- * grown inside `people/PersonProfile.tsx`, promoted here once a second
- * module needed the exact same look. Keep these generic (no module-specific
- * domain knowledge) so all 15 modules can compose with them.
+ * Shared building blocks for every module's detail/card screens. Keep these
+ * generic (no module-specific domain knowledge) so any module can compose
+ * with them.
  */
 export function SectionCard({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (

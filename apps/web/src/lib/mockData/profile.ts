@@ -14,6 +14,6 @@ export const mockOtherAccounts: OfficerProfile[] = [
     id: 'acc2',
     badgeNumber: '9F2A',
     rank: 'Deputy Sheriff',
-    name: 'J. Harlow',
+    name: 'Jack Harlow',
   },
 ]

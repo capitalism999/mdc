@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { MailAttachment } from '../../../types'
-import { getAvatarColor, getInitials } from './avatar'
+import { MailRecipients } from './MailRecipients'
+import { resolveRecipient } from './mailDirectory'
 import { AttachIcon, CloseIcon, ImportantIcon, SentIcon } from './icons'
 
 interface MailComposeProps {
@@ -119,7 +120,8 @@ function closestList(tag: 'UL') {
 }
 
 export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: MailComposeProps) {
-  const [toList, setToList] = useState<string[]>(() => (initialTo.trim() ? [initialTo.trim()] : []))
+  // a reply / forward starts with the canonical name («12D3 Thorne Watts» → «Thorne Watts»)
+  const [toList, setToList] = useState<string[]>(() => (initialTo.trim() ? [resolveRecipient(initialTo)?.name ?? initialTo.trim()] : []))
   const [toInput, setToInput] = useState('')
   const [subject, setSubject] = useState(initialSubject)
   const [attachments, setAttachments] = useState<MailAttachment[]>([])
@@ -131,18 +133,11 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
 
-  const canSend = toList.length > 0 && subject.trim().length > 0 && hasBody
-
-  function addRecipient(name: string) {
-    const trimmed = name.trim()
-    if (!trimmed) return
-    setToList((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]))
-    setToInput('')
-  }
-
-  function removeRecipient(name: string) {
-    setToList((prev) => prev.filter((n) => n !== name))
-  }
+  const badTo = toList.filter((n) => !resolveRecipient(n))
+  const pendingTo = toInput.trim().length > 0
+  const canSend = toList.length > 0 && badTo.length === 0 && !pendingTo && subject.trim().length > 0 && hasBody
+  /** why «Отправить» is off — shown next to it */
+  const sendHint = toList.length === 0 && !pendingTo ? 'Укажите получателя' : pendingTo ? 'Выберите получателя из списка' : badTo.length ? 'Уберите неизвестных получателей' : !subject.trim() ? 'Укажите тему' : !hasBody ? 'Напишите текст письма' : ''
 
   useEffect(() => {
     if (!openEmoji) return
@@ -209,48 +204,11 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
   return (
     <div className="flex h-full flex-col bg-[#1D2027] text-white">
       <div className="m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[8px] border border-[#3A3A3A] bg-[#272727]">
-        <div className="flex min-h-[48px] items-center gap-3 border-b border-[#383838] px-5 text-[14px]">
-          <label htmlFor="mail-to" className="w-14 shrink-0 text-[#C8C8C8]">
+        <div className="flex min-h-[48px] items-start gap-3 border-b border-[#383838] px-5 text-[14px]">
+          <label htmlFor="mail-to" className="w-14 shrink-0 pt-[9px] text-[#C8C8C8]">
             Кому
           </label>
-          <div className="flex flex-1 flex-wrap items-center gap-1.5 py-1.5">
-            {toList.map((name) => (
-              <span key={name} className="flex h-[26px] items-center gap-1.5 rounded-full border border-[#454545] bg-[#333333] py-0 pl-[3px] pr-1 text-[13px]">
-                <span
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-                  style={{ backgroundColor: getAvatarColor(name) }}
-                >
-                  {getInitials(name)}
-                </span>
-                <span>{name}</span>
-                <button
-                  type="button"
-                  onClick={() => removeRecipient(name)}
-                  aria-label={`Убрать получателя ${name}`}
-                  className="flex h-[18px] w-[18px] items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white"
-                >
-                  <CloseIcon className="h-2.5 w-2.5" />
-                </button>
-              </span>
-            ))}
-            <input
-              id="mail-to"
-              autoFocus={toList.length === 0}
-              value={toInput}
-              onChange={(event) => setToInput(event.target.value)}
-              onBlur={() => addRecipient(toInput)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ',') {
-                  event.preventDefault()
-                  addRecipient(toInput)
-                } else if (event.key === 'Backspace' && !toInput && toList.length > 0) {
-                  removeRecipient(toList[toList.length - 1])
-                }
-              }}
-              placeholder={toList.length === 0 ? 'Имя, жетон или отдел' : ''}
-              className="min-w-[160px] flex-1 bg-transparent text-[14px] text-white outline-none placeholder:text-[#C8C8C8]"
-            />
-          </div>
+          <MailRecipients value={toList} onChange={setToList} input={toInput} onInputChange={setToInput} />
         </div>
 
         <label htmlFor="mail-subject" className="flex h-12 items-center gap-3 border-b border-[#383838] px-5 text-[14px]">
@@ -340,6 +298,28 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
           ref={editorRef}
           contentEditable
           onInput={() => setHasBody(hasVisibleText(editorRef.current))}
+          onPaste={(event) => {
+            // a pasted picture goes in as an attachment, not into the text
+            const images = Array.from(event.clipboardData.items)
+              .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
+              .map((it) => it.getAsFile())
+              .filter((f): f is File => !!f)
+            if (!images.length) return
+            event.preventDefault()
+            const now = new Date()
+            const p2 = (n: number) => String(n).padStart(2, '0')
+            const stampName = `Снимок ${p2(now.getDate())}.${p2(now.getMonth() + 1)} ${p2(now.getHours())}-${p2(now.getMinutes())}-${p2(now.getSeconds())}`
+            setAttachments((prev) => [
+              ...prev,
+              ...images.map((file, i) => ({
+                // clipboard images come as «image.png» — give them a readable name
+                name: file.name && file.name !== 'image.png' ? file.name : `${stampName}${images.length > 1 ? ` (${i + 1})` : ''}.png`,
+                size: file.size,
+                type: file.type,
+                url: URL.createObjectURL(file),
+              })),
+            ])
+          }}
           onKeyUp={updateActiveFormats}
           onMouseUp={updateActiveFormats}
           onFocus={updateActiveFormats}
@@ -389,6 +369,7 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
             <AttachIcon />
             Вложить
           </button>
+          {!canSend && sendHint && <span className="text-[12px] text-[#C8C8C8]">{sendHint}</span>}
           <button
             type="button"
             disabled={!canSend}

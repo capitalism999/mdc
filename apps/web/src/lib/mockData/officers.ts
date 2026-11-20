@@ -16,7 +16,7 @@ export const mockOfficers: Officer[] = [
   },
   {
     id: 'off2',
-    name: 'J. Harlow',
+    name: 'Jack Harlow',
     badgeNumber: '9F2A',
     callsign: '1-ADAM-14',
     department: 'Patrol Division',
@@ -25,7 +25,7 @@ export const mockOfficers: Officer[] = [
   },
   {
     id: 'off3',
-    name: 'M. Reyes',
+    name: 'Maria Reyes',
     badgeNumber: '4C7B',
     callsign: '2-DAVID-03',
     department: 'Detective Bureau',
@@ -34,7 +34,7 @@ export const mockOfficers: Officer[] = [
   },
   {
     id: 'off4',
-    name: 'K. Novak',
+    name: 'Karl Novak',
     badgeNumber: '6E1D',
     callsign: 'FORENSICS-1',
     department: 'Forensics Unit',

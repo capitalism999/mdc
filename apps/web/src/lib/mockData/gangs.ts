@@ -14,7 +14,7 @@ export const mockGangs: Gang[] = [
       { personId: 'p2', role: 'Бывший участник', moniker: 'Franklin' },
     ],
     rivalries: [{ gangId: 'gang2', relationship: 'Война за территорию' }],
-    intelEntries: [{ date: '10.11.2026', author: '9F1 R. Haines', note: 'Замечена повышенная активность в Davis, связана с текущим BOLO.' }],
+    intelEntries: [{ date: '10.11.2026', author: '9F1 Robert Haines', note: 'Замечена повышенная активность в Davis, связана с текущим BOLO.' }],
   },
   {
     id: 'gang2',

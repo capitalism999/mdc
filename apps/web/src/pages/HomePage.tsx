@@ -24,7 +24,7 @@ export function HomePage() {
   return (
     <ThemeProvider>
       <WindowManagerProvider>
-        <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-bg-app">
+        <div className="relative flex h-screen w-screen flex-col overflow-clip bg-bg-app">
           <WindowBar />
           <div className="relative flex h-[66px] w-full items-center justify-between bg-bg-chrome px-3">
             <HeaderNav />
@@ -33,7 +33,7 @@ export function HomePage() {
               <UserProfile />
             </div>
           </div>
-          <div className="relative flex-1 overflow-hidden bg-bg-app">
+          <div className="relative min-h-0 flex-1 overflow-clip bg-bg-app">
             <DesktopSurface />
           </div>
           <TaskBar />

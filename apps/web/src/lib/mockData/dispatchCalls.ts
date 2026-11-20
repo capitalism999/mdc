@@ -20,7 +20,7 @@ export const mockDispatchCalls: DispatchCall[] = [
     natureCode: '415 — Нарушение порядка',
     priority: 'Средний',
     status: 'В ожидании',
-    callerName: 'J. Walsh',
+    callerName: 'James Walsh',
     locationStreet: 'Davis, Vespucci Ave.',
     relatedPersonId: 'p3',
   },

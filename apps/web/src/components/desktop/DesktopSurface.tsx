@@ -12,7 +12,7 @@ export function DesktopSurface() {
   const { windows, desktopRef } = useWindowManager()
 
   return (
-    <div ref={desktopRef} className="relative h-full w-full overflow-hidden bg-bg-app">
+    <div ref={desktopRef} className="relative h-full w-full overflow-clip bg-bg-app">
       <DesktopBackground />
       <AppIconGrid />
       <PersonalizationTile />

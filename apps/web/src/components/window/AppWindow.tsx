@@ -163,7 +163,7 @@ export function AppWindow({ win }: { win: WindowInstance }) {
 
   return (
     <div
-      className={`absolute flex flex-col overflow-hidden ${
+      className={`absolute flex flex-col overflow-clip ${
         isBare
           ? 'border border-[#3B3B3B] bg-[#272727] shadow-[0_24px_60px_rgba(0,0,0,0.55),0_0_0_1px_rgba(0,0,0,0.35)]'
           : 'bg-bg-chrome shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
@@ -262,7 +262,7 @@ export function AppWindow({ win }: { win: WindowInstance }) {
         </>
       )}
 
-      <div className={`flex-1 ${ModuleContent ? 'overflow-hidden' : 'overflow-auto'} ${isBare ? '' : 'bg-bg-app'}`}>
+      <div className={`min-h-0 flex-1 ${ModuleContent ? 'overflow-clip' : 'overflow-auto'} ${isBare ? '' : 'bg-bg-app'}`}>
         {ModuleContent && <ModuleContent windowId={win.id} initialParams={win.initialParams} />}
       </div>
 
