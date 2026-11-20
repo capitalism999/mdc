@@ -75,11 +75,15 @@ interface Props {
   accent: string
   onAdd: (folderId: string, item: CaseTreeItem) => void
   onClose: () => void
+  /** SEARCH_DB id to start with already picked (Поиск → «Добавить в дело») */
+  initialPickId?: string | null
 }
 
-export function CaseAddEntityDialog({ kind, tree, section, startFolderId, accent, onAdd, onClose }: Props) {
-  const [q, setQ] = useState('')
-  const [picked, setPicked] = useState<DbRec | null>(null)
+export function CaseAddEntityDialog({ kind, tree, section, startFolderId, accent, onAdd, onClose, initialPickId }: Props) {
+  // a pre-picked record also fills the search, so it is the row shown (and highlighted) in the results
+  const [initialPick] = useState<DbRec | null>(() => (initialPickId ? ((SEARCH_DB as unknown as DbRec[]).find((r) => r.id === initialPickId && r.type === kind) ?? null) : null))
+  const [q, setQ] = useState(initialPick ? (initialPick.plate ?? initialPick.title) : '')
+  const [picked, setPicked] = useState<DbRec | null>(initialPick)
   const [manual, setManual] = useState(false)
   const [mName, setMName] = useState('')
   const [mExtra, setMExtra] = useState('')

@@ -174,6 +174,8 @@ interface CaseFileViewProps {
   onNewCase: () => void
   onPersist: (part: Pick<CaseFileDetail, 'tree' | 'access' | 'pinned'>) => void
   onUpdateCase: (patch: Partial<Pick<CaseFileDetail, 'title' | 'lead' | 'charges' | 'related'>> & { grif?: 'conf' | 'secret' }) => void
+  /** «Добавить в дело» from Поиск: open «Добавить участника / транспорт» with this MDC record picked */
+  pendingAdd?: { recId: string; kind: 'person' | 'vehicle'; n: number } | null
 }
 
 /**
@@ -184,7 +186,7 @@ interface CaseFileViewProps {
  * to that case's overview — a deliberate simplification of the reference's
  * per-tab-persistent state, not an oversight.
  */
-export function CaseFileView({ detail, openCases, onSwitchCase, onBackToHome, onChangeStatus, onUpdateCase, onPersist, onNewCase }: CaseFileViewProps) {
+export function CaseFileView({ detail, openCases, onSwitchCase, onBackToHome, onChangeStatus, onUpdateCase, onPersist, onNewCase, pendingAdd }: CaseFileViewProps) {
   const { openWindow } = useWindowManager()
   // Pinned announcement per case: undefined = untouched (use the case's own).
   const [pinnedById, setPinnedById] = useState<Record<string, CasePinned | null>>({})
@@ -247,6 +249,17 @@ export function CaseFileView({ detail, openCases, onSwitchCase, onBackToHome, on
   const [creatingIn, setCreatingIn] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<{ id: string; parentId: string } | null>(null)
   const [addKind, setAddKind] = useState<'person' | 'vehicle' | null>(null)
+  /** MDC record to pre-pick in the add dialog (Поиск → «Добавить в дело») */
+  const [addPick, setAddPick] = useState<string | null>(null)
+  const seenAdd = useRef(0)
+  useEffect(() => {
+    if (!pendingAdd || pendingAdd.n <= seenAdd.current) return
+    seenAdd.current = pendingAdd.n
+    go(pendingAdd.kind === 'person' ? 'ppl' : 'veh')
+    setAddPick(pendingAdd.recId)
+    setAddKind(pendingAdd.kind)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAdd])
   /** «Хронология»: 'new' or the id of the event being edited */
   const [eventDialog, setEventDialog] = useState<string | null>(null)
 
@@ -1330,7 +1343,23 @@ export function CaseFileView({ detail, openCases, onSwitchCase, onBackToHome, on
       )}
 
       {addKind && sectionNode && (
-        <CaseAddEntityDialog kind={addKind} tree={tree} section={sectionNode} startFolderId={node.id} accent={ACCENT} onAdd={addEntityAction} onClose={() => setAddKind(null)} />
+        <CaseAddEntityDialog
+          key={`${addKind}-${addPick ?? ''}`}
+          kind={addKind}
+          tree={tree}
+          section={sectionNode}
+          startFolderId={node.id}
+          accent={ACCENT}
+          initialPickId={addPick}
+          onAdd={(f, it) => {
+            setAddPick(null)
+            addEntityAction(f, it)
+          }}
+          onClose={() => {
+            setAddPick(null)
+            setAddKind(null)
+          }}
+        />
       )}
 
       {removingItemId && (

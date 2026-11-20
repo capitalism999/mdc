@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { MailMessage } from '../../../types'
 import { getAvatarColor, getInitials } from './avatar'
+import { MailTextSizeControl, mailTextStyle, useMailTextSize } from './mailTextSize'
 import { CloseIcon, ForwardIcon, ImportantIcon, MailOpenIcon, MailUnreadIcon, MoreIcon, PanelSplitIcon, PinIcon, ReplyIcon, SentIcon, TrashIcon } from './icons'
 
 interface MailReaderProps {
@@ -63,6 +64,7 @@ export function MailReader({
   onClose,
   onQuickReply,
 }: MailReaderProps) {
+  const textSize = useMailTextSize()
   const [quickReply, setQuickReply] = useState('')
   const [moreOpen, setMoreOpen] = useState(false)
   const moreRef = useRef<HTMLDivElement>(null)
@@ -96,6 +98,8 @@ export function MailReader({
         >
           <PanelSplitIcon />
         </button>
+        <span className="mx-1.5 h-5 w-px bg-[#3A3A3A]" />
+        <MailTextSizeControl />
         <span className="mx-1.5 h-5 w-px bg-[#3A3A3A]" />
         <ToolbarButton icon={<ReplyIcon />} label="Ответить" onClick={onReply} />
         <ToolbarButton icon={<ForwardIcon />} label="Переслать" onClick={onForward} />
@@ -186,7 +190,8 @@ export function MailReader({
         )}
 
         <div
-          className="mail-rich-text mt-5 max-w-[720px] whitespace-pre-line text-[14px] leading-[22px]"
+          className="mail-rich-text mt-5 max-w-[720px] whitespace-pre-line"
+          style={mailTextStyle(textSize)}
           dangerouslySetInnerHTML={{ __html: message.body }}
         />
 

@@ -3,6 +3,7 @@ import type { Bolo } from '../../../types'
 import { ACCENT, C, ON_ACCENT, TONE, type BoloUIState } from './BoloApp'
 import { nearestPlace } from './BoloMap'
 import { CloseIcon, PathIcon, PlusIcon } from './icons'
+import { ownPhoto } from '../shared/personPhotos'
 
 interface NewProps {
   state: BoloUIState
@@ -54,6 +55,14 @@ function Toggle({ on, tone = ACCENT }: { on: boolean; tone?: string }) {
 
 export function BoloNew({ state, patch, onPublish }: NewProps) {
   const [nPlaceInstr, setNPlaceInstr] = useState(state.nInstruction)
+  // Who the BOLO is about: the person sent from Поиск, or the form's own example.
+  const subj = state.nSubject
+  const sName = subj ? subj.name : 'Daniel Reyes'
+  const sCode = subj ? subj.code : 'CIT-60214'
+  const sPhoto = subj ? ownPhoto(subj.recId, subj.name) : null
+  /** «Мужчина · 12.03.1997 · 29 лет» → «Мужчина, 29 лет» */
+  const sSexAge = subj ? subj.sub.split(' · ').filter((_x, i, a) => i === 0 || i === a.length - 1).join(', ') : 'Мужчина, 31 год'
+  const [signs, setSigns] = useState(subj ? `${sSexAge}.${subj.reason ? ' ' + subj.reason : ''}` : 'Мужчина, 31 год, 175 см, плотный. Татуировка на левом предплечье, чёрная кепка, светлая толстовка. На записи камеры парковки садится в Zentorno.')
   const zonesOn = ZONES.filter((_, i) => state.nZone[i])
   const prioT = ['Низкий', 'Средний', 'Высокий'][state.nPrio]
   const pcSel = Object.keys(state.nPc).filter((k) => state.nPc[k])
@@ -69,18 +78,18 @@ export function BoloNew({ state, patch, onPublish }: NewProps) {
     const b: Bolo = {
       id: 'b421', no: 'B-0421', src: 'lspd', kind: state.nType === 0 ? 'person' : isVeh ? 'veh' : state.nType === 2 ? 'missing' : 'unknown',
       vid: VIDS[state.nVid][0], prio: (['low', 'mid', 'high'] as const)[state.nPrio], status: 'open', armed: state.armed,
-      title: 'Daniel Reyes', sub: 'CIT-60214 · подозреваемый в угоне', reason: 'УГОН PEGASSI ZENTORNO',
+      title: sName, sub: subj ? `${sCode} · ${subj.vid === 2 ? 'нужен для опроса' : 'разыскивается'}` : 'CIT-60214 · подозреваемый в угоне', reason: subj ? (subj.reason || VIDS[state.nVid][1]).toUpperCase() : 'УГОН PEGASSI ZENTORNO',
       penalCodes: pcSel, contact: { name: contact[0], role: contact[1], phone: contact[2] },
       facts: [
-        { label: 'Пол, возраст', value: 'Мужчина, 31 год' }, { label: 'Рост', value: '175 см' }, { label: 'Одежда', value: 'Чёрная кепка, светлая толстовка' },
+        ...(subj ? [{ label: 'Пол, возраст', value: sSexAge }] : [{ label: 'Пол, возраст', value: 'Мужчина, 31 год' }, { label: 'Рост', value: '175 см' }, { label: 'Одежда', value: 'Чёрная кепка, светлая толстовка' }]),
         { label: 'Зона', value: zonesOn.join(', ') || 'Весь округ' }, { label: 'Действует до', value: TERMS[state.nTerm] },
-        { label: 'Связано', value: 'B-0419 · Zentorno', linkBoloId: 'b419' },
+        ...(subj ? [] : [{ label: 'Связано', value: 'B-0419 · Zentorno', linkBoloId: 'b419' }]),
       ],
-      description: 'Плотного телосложения, татуировка на левом предплечье. На записи камеры парковки в Rockford Hills садится в угнанный Zentorno.',
-      tags: ['Татуировка на предплечье', 'Чёрная кепка'],
+      description: subj ? signs : 'Плотного телосложения, татуировка на левом предплечье. На записи камеры парковки в Rockford Hills садится в угнанный Zentorno.',
+      tags: subj ? [] : ['Татуировка на предплечье', 'Чёрная кепка'],
       instruction: nPlaceInstr,
-      photos: [{ caption: 'Из личного дела', icon: 'mug' }, { caption: 'Камера парковки', icon: 'cam' }],
-      links: [{ label: 'Личное дело', value: 'Daniel Reyes · CIT-60214', kind: 'person' }, { label: 'Транспорт', value: 'Zentorno 5ZEN771 · BOLO B-0419', kind: 'bolo', id: 'b419' }],
+      photos: subj ? [{ caption: 'Из личного дела', icon: 'mug' }] : [{ caption: 'Из личного дела', icon: 'mug' }, { caption: 'Камера парковки', icon: 'cam' }],
+      links: subj ? [{ label: 'Личное дело', value: `${sName} · ${sCode}`, kind: 'person' }] : [{ label: 'Личное дело', value: 'Daniel Reyes · CIT-60214', kind: 'person' }, { label: 'Транспорт', value: 'Zentorno 5ZEN771 · BOLO B-0419', kind: 'bolo', id: 'b419' }],
       sightings: [{ place: 'Rockford Hills', when: '17.11, 02:15', text: 'Камера парковки.', who: 'Видеозапись', x: state.nPlace?.x ?? 30, y: state.nPlace?.y ?? 61.5 }],
       acknowledgedOf: 0, acknowledgedTotal: 52, author: '12D3 Thorne Watts', created: '17.11, 16:20', ago: 'сейчас', unread: false,
     }
@@ -132,6 +141,7 @@ export function BoloNew({ state, patch, onPublish }: NewProps) {
             {!state.nDup ? (
               <div className="flex items-center gap-2.5 rounded-[8px] p-2" style={{ background: C.card }}>
                 <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-[6px]" style={{ background: C.mug }}>
+                  {sPhoto && <img src={sPhoto} alt="" className="absolute inset-0 z-10 h-full w-full object-cover" />}
                   <svg width="32" height="36" viewBox="0 0 96 112" className="absolute bottom-0 left-0.5" aria-hidden="true">
                     <circle cx="48" cy="38" r="22" fill="rgba(255,255,255,0.16)" />
                     <path d="M8 112c0-26 18-42 40-42s40 16 40 42z" fill="rgba(255,255,255,0.16)" />
@@ -139,10 +149,10 @@ export function BoloNew({ state, patch, onPublish }: NewProps) {
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col leading-[17px]">
                   <span className="font-semibold" style={{ color: C.link }}>
-                    Daniel Reyes · CIT-60214
+                    {sName} · {sCode}
                   </span>
                   <span className="text-[12px]" style={{ color: C.text2 }}>
-                    Фото, рост, приметы и транспорт подставлены из личного дела
+                    {subj ? `Из Поиска: ${subj.sub}` : 'Фото, рост, приметы и транспорт подставлены из личного дела'}
                   </span>
                 </span>
                 <button type="button" onClick={() => patch({ nDup: true, nType: 1 })} className="h-7 rounded-[6px] px-2.5 text-[13px] hover:brightness-110" style={{ background: C.btn }}>
@@ -328,7 +338,8 @@ export function BoloNew({ state, patch, onPublish }: NewProps) {
             <span className="text-[13px] font-semibold">Приметы</span>
             <textarea
               rows={3}
-              defaultValue="Мужчина, 31 год, 175 см, плотный. Татуировка на левом предплечье, чёрная кепка, светлая толстовка. На записи камеры парковки садится в Zentorno."
+              value={signs}
+              onChange={(e) => setSigns(e.target.value)}
               className="resize-none rounded-[6px] px-2.5 py-2 text-[14px] leading-5"
               style={{ background: C.field, borderBottom: `1px solid ${C.stroke2}`, color: C.text }}
             />
@@ -445,13 +456,14 @@ export function BoloNew({ state, patch, onPublish }: NewProps) {
           </span>
           <div className="flex gap-3 rounded-[10px] p-3" style={{ background: C.card }}>
             <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[8px]" style={{ background: C.mug }}>
+              {sPhoto && <img src={sPhoto} alt="" className="absolute inset-0 z-10 h-full w-full object-cover" />}
               <svg width="48" height="54" viewBox="0 0 96 112" className="absolute bottom-0 left-1" aria-hidden="true">
                 <circle cx="48" cy="38" r="22" fill="rgba(255,255,255,0.16)" />
                 <path d="M8 112c0-26 18-42 40-42s40 16 40 42z" fill="rgba(255,255,255,0.16)" />
               </svg>
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="font-semibold">Daniel Reyes</span>
+              <span className="font-semibold">{sName}</span>
               <span className="text-[12px]" style={{ color: C.text2 }}>
                 {VIDS[state.nVid][1]} · {zonesOn.join(', ') || 'зона не выбрана'} · {TERMS[state.nTerm].toLowerCase()}
               </span>
@@ -472,7 +484,9 @@ export function BoloNew({ state, patch, onPublish }: NewProps) {
               Текст для рации
             </span>
             <span className="leading-[19px]">
-              Всем экипажам, ориентировка, {prioT.toLowerCase()} приоритет: Daniel Reyes, мужчина, 31 год, 175 см, татуировка на левом предплечье, чёрная кепка. Подозревается в угоне жёлтого Zentorno, последний раз Rockford Hills.
+              {subj
+                ? `Всем экипажам, ориентировка, ${prioT.toLowerCase()} приоритет: ${sName}, ${sSexAge.toLowerCase()}. ${VIDS[state.nVid][1]}${subj.reason ? ': ' + subj.reason : ''}.`
+                : `Всем экипажам, ориентировка, ${prioT.toLowerCase()} приоритет: Daniel Reyes, мужчина, 31 год, 175 см, татуировка на левом предплечье, чёрная кепка. Подозревается в угоне жёлтого Zentorno, последний раз Rockford Hills.`}
               {state.armed ? ' Вооружён, соблюдать осторожность.' : ''}
             </span>
           </div>

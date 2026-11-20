@@ -4,6 +4,7 @@ import { mailComposeApp } from '../../../data/apps'
 import { mockProfile } from '../../../lib/mockData/profile'
 import type { MailAttachment, MailMessage } from '../../../types'
 import { useWindowManager } from '../../../windows/WindowManagerContext'
+import { setAppBadge } from '../../../windows/appBadges'
 import { MailList } from './MailList'
 import { MailReader } from './MailReader'
 import { escapeHtml } from './text'
@@ -44,6 +45,11 @@ export function MailApp() {
       setSelectedId(data.find((m) => m.folder === 'inbox')?.id ?? null)
     })
   }, [])
+
+  // desktop tile counter: unread mail in «Входящие»
+  useEffect(() => {
+    if (messages.length) setAppBadge('mail', messages.filter((m) => m.folder === 'inbox' && !m.read).length)
+  }, [messages])
 
   const selected = messages.find((m) => m.id === selectedId) ?? null
 

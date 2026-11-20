@@ -244,14 +244,14 @@ export function PlainRecord({ $v }: { $v: SearchVals }) {
             ) : null}
             <div style={{ flex: "1" }}></div>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              <a href="#" onClick={$v.__go("Cases")} className="hv" style={{ height: "32px", padding: "0 12px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", textDecoration: "none", background: $v.c?.btn }}>
+              <a href="#" onClick={$v.__toCase} className="hv" style={{ height: "32px", padding: "0 12px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", textDecoration: "none", background: $v.c?.btn }}>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
                   <rect x="2.5" y="6" width="15" height="10.5" rx="2"></rect>
                   <path d="M7 6V4h6v2M2.5 10.5h15"></path>
                 </svg>
                 {"Добавить в дело"}
               </a>
-              <a href="#" onClick={$v.__go("BOLONew")} className="hv" style={{ height: "32px", padding: "0 12px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", background: $v.c?.btn, textDecoration: "none", color: "inherit" }}>
+              <a href="#" onClick={$v.__wanted} className="hv" style={{ height: "32px", padding: "0 12px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", background: $v.c?.btn, textDecoration: "none", color: "inherit" }}>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
                   <path d="M10 3l8 14H2z"></path>
                   <path d="M10 8.5v3.5M10 14.5v.2"></path>

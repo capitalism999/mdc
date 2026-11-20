@@ -14,9 +14,20 @@ interface CasesState {
   files: Record<string, CaseFileDetail>
   /** last «open case» request; `n` bumps so the same id can be asked again */
   open: { id: string; n: number } | null
+  /** last «add this MDC record to a case» request (Поиск → «Добавить в дело»):
+   * `caseId` null means «create a new case first» */
+  add: CaseAddRequest | null
 }
 
-let state: CasesState = { list: mockCaseList, files: mockCaseFiles, open: null }
+export interface CaseAddRequest {
+  caseId: string | null
+  /** SEARCH_DB record id (person / vehicle) */
+  recId: string
+  kind: 'person' | 'vehicle'
+  n: number
+}
+
+let state: CasesState = { list: mockCaseList, files: mockCaseFiles, open: null, add: null }
 const subs = new Set<() => void>()
 const emit = () => subs.forEach((f) => f())
 
@@ -37,6 +48,24 @@ export function setCaseFiles(fn: (prev: Record<string, CaseFileDetail>) => Recor
 export function requestOpenCase(id: string) {
   state = { ...state, open: { id, n: (state.open?.n ?? 0) + 1 } }
   emit()
+}
+
+/** Asks «Дела» to add an MDC person / vehicle to a case (or to a new one):
+ * the case opens with «Добавить участника / транспорт» and the record picked. */
+export function requestAddToCase(caseId: string | null, recId: string, kind: 'person' | 'vehicle'): CaseAddRequest {
+  const add = { caseId, recId, kind, n: (state.add?.n ?? 0) + 1 }
+  state = { ...state, add }
+  emit()
+  return add
+}
+
+/** Cases the current user can add records to: ведущий, администратор, участник
+ * (наблюдатель only writes notes, «только просмотр» changes nothing). */
+export function myWritableCases(): CaseFileDetail[] {
+  return Object.values(state.files).filter((f) => {
+    const r = myCaseRole(f)
+    return r === 'lead' || r === 'manager' || r === 'member'
+  })
 }
 
 function subscribe(f: () => void) {

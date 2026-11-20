@@ -57,7 +57,7 @@ export function OrgRecord({ $v }: { $v: SearchVals }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <a href="#" onClick={$v.__go("Cases")} className="hv" style={{ height: "34px", padding: "0 14px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", textDecoration: "none", background: $v.c?.btn, color: $v.c?.text }}>
+          <a href="#" onClick={$v.__toCase} className="hv" style={{ height: "34px", padding: "0 14px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", textDecoration: "none", background: $v.c?.btn, color: $v.c?.text }}>
             <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
               <rect x="2.5" y="6" width="15" height="10.5" rx="2"></rect>
               <path d="M7 6V4.5h6V6"></path>

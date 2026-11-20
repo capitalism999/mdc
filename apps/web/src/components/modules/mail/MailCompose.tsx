@@ -3,6 +3,12 @@ import type { MailAttachment } from '../../../types'
 import { MailRecipients } from './MailRecipients'
 import { resolveRecipient } from './mailDirectory'
 import { AttachIcon, CloseIcon, ImportantIcon, SentIcon } from './icons'
+import { FontSizeDropdown, mailTextStyle } from './mailTextSize'
+
+/** Font sizes offered in the compose bar (Outlook's list). */
+const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36]
+/** the editor's base size */
+const BASE_SIZE = 14
 
 interface MailComposeProps {
   initialTo: string
@@ -130,6 +136,9 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
   const [active, setActive] = useState<ActiveFormats>(EMPTY_FORMATS)
   const [openEmoji, setOpenEmoji] = useState(false)
   const editorRef = useRef<HTMLDivElement>(null)
+  /** font size at the caret / of the selection (null = mixed); picked size waits here for text typed at a bare caret */
+  const [curSize, setCurSize] = useState<number | null>(BASE_SIZE)
+  const pendingSize = useRef(BASE_SIZE)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
 
@@ -161,6 +170,47 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
       justifyFull: document.queryCommandState('justifyFull'),
       list: !!closestList('UL'),
     })
+    setCurSize(sizeAtSelection())
+  }
+
+  /** px size of the selected text (null when it mixes sizes), or at the caret. */
+  function sizeAtSelection(): number | null {
+    const ed = editorRef.current
+    const sel = window.getSelection()
+    if (!ed || !sel || !sel.rangeCount || !ed.contains(sel.anchorNode)) return BASE_SIZE
+    const px = (n: Node | null) => {
+      const el = n && n.nodeType === Node.TEXT_NODE ? n.parentElement : (n as Element | null)
+      return el ? Math.round(parseFloat(getComputedStyle(el).fontSize)) : BASE_SIZE
+    }
+    const range = sel.getRangeAt(0)
+    if (range.collapsed) return px(sel.anchorNode)
+    const sizes = new Set<number>()
+    const walker = document.createTreeWalker(range.commonAncestorContainer, NodeFilter.SHOW_TEXT)
+    for (let n = walker.currentNode; n; n = walker.nextNode() as Node) {
+      if (n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim() && range.intersectsNode(n)) sizes.add(px(n))
+    }
+    if (!sizes.size) return px(sel.anchorNode)
+    return sizes.size === 1 ? [...sizes][0] : null
+  }
+
+  /** execCommand('fontSize') only knows sizes 1–7: it marks the text with <font size="7">, which gets a px size here. */
+  function normalizeFonts() {
+    // restyled in place (not re-wrapped), so the caret / selection inside it stays put
+    editorRef.current?.querySelectorAll<HTMLElement>('font[size="7"]').forEach((font) => {
+      font.removeAttribute('size')
+      font.style.fontSize = `${pendingSize.current}px`
+    })
+  }
+
+  /** Font size for the selection — or, at a bare caret, for what is typed next. */
+  function applyFontSize(px: number) {
+    editorRef.current?.focus()
+    pendingSize.current = px
+    document.execCommand('styleWithCSS', false, 'false')
+    document.execCommand('fontSize', false, '7')
+    normalizeFonts()
+    setCurSize(px)
+    setHasBody(hasVisibleText(editorRef.current))
   }
 
   /** Buttons that keep the editor's live selection (no blur) via preventDefault. */
@@ -223,6 +273,8 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
         </label>
 
         <div ref={toolbarRef} className="flex items-center gap-0.5 border-b border-[#383838] px-4 py-2">
+          <FontSizeDropdown value={curSize} sizes={FONT_SIZES} onPick={applyFontSize} label="Размер шрифта" />
+          <span className="mx-1.5 h-[18px] w-px bg-[#3A3A3A]" />
           <button type="button" title="Жирный" onMouseDown={noBlur} onClick={() => applyCommand('bold')} className={`${toolBtnCls(active.bold)} font-bold`}>
             Ж
           </button>
@@ -297,7 +349,10 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
         <div
           ref={editorRef}
           contentEditable
-          onInput={() => setHasBody(hasVisibleText(editorRef.current))}
+          onInput={() => {
+            normalizeFonts()
+            setHasBody(hasVisibleText(editorRef.current))
+          }}
           onPaste={(event) => {
             // a pasted picture goes in as an attachment, not into the text
             const images = Array.from(event.clipboardData.items)
@@ -324,7 +379,8 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
           onMouseUp={updateActiveFormats}
           onFocus={updateActiveFormats}
           data-placeholder="Текст сообщения..."
-          className="mail-rich-text mail-editor flex-1 overflow-y-auto bg-transparent px-7 pb-4 pt-[18px] text-[14px] leading-[22px] text-white outline-none"
+          className="mail-rich-text mail-editor flex-1 overflow-y-auto bg-transparent px-7 pb-4 pt-[18px] text-white outline-none"
+          style={mailTextStyle(BASE_SIZE)}
           suppressContentEditableWarning
           dangerouslySetInnerHTML={initialBody ? { __html: initialBody } : undefined}
         />

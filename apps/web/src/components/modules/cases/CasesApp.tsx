@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ModuleContentProps } from '../registry'
-import { setCaseFiles, setCaseList, useCases } from './casesStore'
+import { setCaseFiles, setCaseList, useCases, type CaseAddRequest } from './casesStore'
 import type { CaseAccessMember, CaseFileDetail, CaseListRow, CaseTreeNode } from '../../../types'
 import { CaseFileView } from './CaseFileView'
 import { CasesHome } from './CasesHome'
@@ -27,9 +27,29 @@ function emptyTree(from: CaseTreeNode | undefined, no: string, log: CaseTreeNode
  */
 export function CasesApp({ initialParams }: ModuleContentProps) {
   // shared with other windows / modules (Заметки)
-  const { list: caseList, files: caseFiles, open } = useCases()
-  const [activeId, setActiveId] = useState<string | null>(() => (initialParams?.entityType === 'case' ? (initialParams.entityId as string) : null))
-  const [creating, setCreating] = useState(false)
+  const { list: caseList, files: caseFiles, open, add } = useCases()
+  const firstAdd = initialParams?.addRequest as CaseAddRequest | undefined
+  const [activeId, setActiveId] = useState<string | null>(() => (initialParams?.entityType === 'case' ? (initialParams.entityId as string) : (firstAdd?.caseId ?? null)))
+  const [creating, setCreating] = useState(() => !!firstAdd && !firstAdd.caseId)
+  /** Поиск → «Добавить в дело»: the record to pre-pick once the case is open */
+  const [pendingAdd, setPendingAdd] = useState<CaseAddRequest | null>(() => (firstAdd?.caseId ? firstAdd : null))
+  /** …or once the new case («Новое дело») is created */
+  const [addAfterCreate, setAddAfterCreate] = useState<CaseAddRequest | null>(() => (firstAdd && !firstAdd.caseId ? firstAdd : null))
+
+  // an add request while this window is already open (a new window got it as initialParams)
+  const seenAdd = useRef(Math.max(add?.n ?? 0, firstAdd?.n ?? 0))
+  useEffect(() => {
+    if (!add || add.n <= seenAdd.current) return
+    seenAdd.current = add.n
+    if (add.caseId) {
+      setCreating(false)
+      setActiveId(add.caseId)
+      setPendingAdd(add)
+    } else {
+      setAddAfterCreate(add)
+      setCreating(true)
+    }
+  }, [add])
 
   // «open this case» from another app (e.g. a note's linked case); a request
   // older than this window is ignored — a new window gets it as initialParams
@@ -105,6 +125,10 @@ export function CasesApp({ initialParams }: ModuleContentProps) {
     ])
     setCreating(false)
     setActiveId(id)
+    if (addAfterCreate) {
+      setPendingAdd({ ...addAfterCreate, caseId: id })
+      setAddAfterCreate(null)
+    }
   }
 
   let body
@@ -122,6 +146,7 @@ export function CasesApp({ initialParams }: ModuleContentProps) {
         onUpdateCase={(p) => updateCase(activeId, p)}
         onPersist={(part) => setCaseFiles((prev) => (prev[activeId] ? { ...prev, [activeId]: { ...prev[activeId], ...part } } : prev))}
         onNewCase={() => setCreating(true)}
+        pendingAdd={pendingAdd && pendingAdd.caseId === activeId ? pendingAdd : null}
       />
     )
   } else if (activeId) {
@@ -142,7 +167,15 @@ export function CasesApp({ initialParams }: ModuleContentProps) {
   return (
     <div className="relative h-full">
       {body}
-      {creating && <CaseCreateDialog onCreate={createCase} onClose={() => setCreating(false)} />}
+      {creating && (
+        <CaseCreateDialog
+          onCreate={createCase}
+          onClose={() => {
+            setCreating(false)
+            setAddAfterCreate(null)
+          }}
+        />
+      )}
     </div>
   )
 }

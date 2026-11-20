@@ -3,12 +3,14 @@ import type { ModuleContentProps } from '../registry'
 import { mockBolos } from '../../../lib/mockData/bolos'
 import type { Bolo, BoloAgency } from '../../../types'
 import { useEntityNavigation } from '../../../windows/useEntityNavigation'
+import { setAppBadge } from '../../../windows/appBadges'
 import { BoloCloseDialog, BoloIncomingBanner, BoloMenu, BoloSeenDialog, BoloToast, BoloUpdateDialog } from './BoloDialogs'
 import { Feed } from './BoloFeed'
 import { BoloMap, BoloMapPicker } from './BoloMap'
 import { BoloNew } from './BoloNew'
 import { BoloPoster } from './BoloPoster'
 import { ICN, PathIcon, PlusIcon } from './icons'
+import { useBoloRequest, type BoloNewRequest, type BoloSubject } from './boloRequests'
 
 export type BoloView = 'feed' | 'map' | 'new' | 'poster'
 export type BoloPick = 'new' | 'seen' | 'map' | null
@@ -87,6 +89,8 @@ export interface BoloUIState {
   nDup: boolean
   nPhotoN: number
   nInstruction: string
+  /** who the new BOLO is about when another module started it (Поиск → «Объявить в розыск»); null = the form's own example */
+  nSubject: BoloSubject | null
 }
 
 const INITIAL: BoloUIState = {
@@ -97,6 +101,7 @@ const INITIAL: BoloUIState = {
   nType: 0, nVid: 0, nAcc: 0, nPc: { '306': true }, nPcQ: '', nCt: 1, nPrio: 1, armed: false, nTerm: 2, nZone: { 1: true },
   nSend: { 0: true, 1: true }, nDup: false, nPhotoN: 2,
   nInstruction: 'Задержать для допроса по угону, доставить в Mission Row. Сообщить автору.',
+  nSubject: null,
   poster: { tpl: null, photos: true, desc: true, reward: true, rewardSum: '$5 000', contact: true, bw: false, aud: 'public', title: '' },
 }
 
@@ -153,17 +158,45 @@ export function pluralOf(n: number, one: string, few: string, many: string) {
  * generator, all sharing one state object — mirrored here as one `useState`
  * instead of prop-drilling two dozen callbacks.
  */
+/** The new-BOLO form's starting state for a person sent from Поиск. */
+function newFormFor(s: BoloSubject): Partial<BoloUIState> {
+  return {
+    view: 'new',
+    dlg: null,
+    menu: false,
+    nType: 0,
+    nVid: s.vid,
+    armed: s.armed,
+    nDup: false,
+    nPc: {},
+    nPcQ: '',
+    nPrio: s.vid === 1 ? 2 : 1,
+    nInstruction: s.vid === 2 ? 'Найти и опросить, без задержания. Сообщить автору.' : 'Задержать и доставить в Mission Row. Сообщить автору.',
+    nSubject: s,
+  }
+}
+
 export function BoloApp({ initialParams }: ModuleContentProps) {
   const openEntity = useEntityNavigation()
   const [bolos] = useState<Bolo[]>(mockBolos)
   const [created, setCreatedBolo] = useState<Bolo | null>(null)
+  const firstReq = initialParams?.boloRequest as BoloNewRequest | undefined
   const [state, setState] = useState<BoloUIState>(() => {
+    if (firstReq) return { ...INITIAL, ...newFormFor(firstReq.subject) }
     const entityId = initialParams?.entityType === 'bolo' ? (initialParams.entityId as string) : undefined
     return entityId ? { ...INITIAL, sel: entityId } : INITIAL
   })
 
   function patch(p: Partial<BoloUIState>) {
     setState((prev) => ({ ...prev, ...p }))
+  }
+
+  // «Объявить в розыск» from Поиск while this window is open → the new-BOLO form on that person
+  const boloReq = useBoloRequest()
+  const [seenReq, setSeenReq] = useState(() => Math.max(boloReq?.n ?? 0, firstReq?.n ?? 0))
+  if (boloReq && boloReq.n > seenReq) {
+    setSeenReq(boloReq.n)
+    setState((prev) => ({ ...prev, ...newFormFor(boloReq.subject) }))
   }
 
   function toast(key: string) {
@@ -181,6 +214,11 @@ export function BoloApp({ initialParams }: ModuleContentProps) {
   }, [])
 
   const all = useMemo(() => (created ? [created, ...bolos] : bolos), [bolos, created])
+
+  // desktop tile counter: active BOLOs not read / acknowledged yet
+  useEffect(() => {
+    setAppBadge('bolo', all.filter((b) => statusOf(b, state.closedMap) === 'open' && b.unread && !state.acked[b.id]).length)
+  }, [all, state.closedMap, state.acked])
 
   const navGroups = useMemo(
     () =>
@@ -227,7 +265,7 @@ export function BoloApp({ initialParams }: ModuleContentProps) {
         <div className="px-3 pb-3 pt-1">
           <button
             type="button"
-            onClick={() => patch({ view: 'new', dlg: null })}
+            onClick={() => patch({ view: 'new', dlg: null, nSubject: null })}
             className="flex h-9 w-full items-center justify-center gap-2 rounded-[6px] font-semibold hover:brightness-110"
             style={{ background: ACCENT, color: ON_ACCENT }}
           >
@@ -304,7 +342,7 @@ export function BoloApp({ initialParams }: ModuleContentProps) {
             patch={patch}
             onPublish={(b) => {
               setCreatedBolo(b)
-              patch({ view: 'feed', nav: 'mine', sel: b.id })
+              patch({ view: 'feed', nav: 'mine', sel: b.id, nSubject: null })
               toast('pub')
             }}
           />
