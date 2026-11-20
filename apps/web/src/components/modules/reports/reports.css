@@ -1,0 +1,48 @@
+/* The reference's <helmet> stylesheet (project/Reports.dc.html), scoped to the Отчёты window. */
+@font-face {
+  font-family: 'Dealerplate California';
+  src: url('/assets/search/fdd301fdb07803c32ff198bc4941a9ae.otf') format('opentype');
+  font-display: swap;
+}
+
+/* The reference renders without Tailwind's preflight; undo the preflight
+ * rules that would otherwise change its layout (box model, borders, inline
+ * SVG/IMG, link decoration). */
+.reports-root,
+.reports-root *,
+.reports-root *::before,
+.reports-root *::after {
+  box-sizing: revert;
+  border: revert;
+}
+.reports-root svg,
+.reports-root img {
+  display: revert;
+  vertical-align: revert;
+  max-width: revert;
+}
+.reports-root a {
+  text-decoration: revert;
+}
+
+.reports-root .btn { border: 0; margin: 0; padding: 0; background: transparent; font: inherit; color: inherit; cursor: pointer; text-align: left }
+.reports-root .btn:focus-visible { outline: 2px solid currentColor; outline-offset: -2px }
+.reports-root .hv:hover { background: rgba(128, 128, 128, .13) !important }
+.reports-root .wclose:hover { background: #C42B1C !important; color: #FFFFFF !important }
+.reports-root .acc:hover { filter: brightness(1.08) }
+.reports-root .lnk:hover { text-decoration: underline; text-underline-offset: 3px }
+.reports-root input,
+.reports-root textarea { font: inherit; color: inherit }
+.reports-root input::placeholder,
+.reports-root textarea::placeholder { color: inherit; opacity: .6 }
+.reports-root textarea:focus,
+.reports-root input:focus { outline: none }
+.reports-root .scroll { scrollbar-width: thin; scrollbar-color: #4A4A4A transparent; overflow-y: auto }
+.reports-root .scroll::-webkit-scrollbar { width: 10px; height: 10px }
+.reports-root .scroll::-webkit-scrollbar-track { background: transparent }
+.reports-root .scroll::-webkit-scrollbar-thumb { background: #4A4A4A; border-radius: 5px; border: 2px solid transparent; background-clip: content-box }
+.reports-root .scroll::-webkit-scrollbar-thumb:hover { background: #6A6A6A; background-clip: content-box }
+.reports-root .ell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.reports-root .num { font-variant-numeric: tabular-nums }
+.reports-root .chip { height: 22px; padding: 0 9px; border-radius: 11px; display: inline-flex; align-items: center; white-space: nowrap; flex-shrink: 0; font-size: 12px; font-weight: 600 }
+.reports-root .lpi { display: inline-block; padding: 0 .32em; margin: 0 .05em; border-radius: 3px; background: #FFFFFF; color: #2C307E; box-shadow: inset 0 0 0 1px #B8BEC8; font-family: 'Dealerplate California', 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 400; font-size: 1.12em; line-height: 1.3; letter-spacing: .04em; white-space: nowrap }

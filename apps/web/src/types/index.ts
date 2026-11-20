@@ -381,47 +381,6 @@ export interface ArrestFile {
   relatedBoloId?: string
 }
 
-export interface ReportPersonLink {
-  personId: string
-  role: string
-}
-
-export interface ReportVehicleLink {
-  vehicleId: string
-  role: string
-}
-
-export interface ReportCharge {
-  personId: string
-  penalCodeId: string
-  count: number
-}
-
-/**
- * "Рапорты" entry (`mockData/reports.ts`) — the first module with
- * composable attachments (persons/vehicles/weapons/charges/evidence by id).
- * This attach-by-id pattern is reused almost 1:1 by `CaseFile` (Дела).
- * `dispatchCallId` links back to the CAD call this report was created from
- * (see `DispatchCall`'s "Создать рапорт" action).
- */
-export interface Report {
-  id: string
-  reportNumber: string
-  title: string
-  reportType: string
-  narrative: string
-  status: 'Черновик' | 'Отправлен' | 'Утверждён'
-  authorName: string
-  incidentDate: string
-  dispatchCallId?: string
-  persons: ReportPersonLink[]
-  vehicles: ReportVehicleLink[]
-  weapons: string[]
-  charges: ReportCharge[]
-  evidenceIds: string[]
-  relatedCaseId?: string
-}
-
 export interface CasePersonLink {
   personId: string
   role: string
@@ -447,8 +406,8 @@ export interface CaseLocation {
  * "Дела" central hub entry (`mockData/cases.ts`) — aggregates everything the
  * rest of the system produces: reports, evidence, warrants, BOLOs, gangs,
  * plus attached persons/vehicles/weapons/locations. This is the direct
- * implementation of "вкладывать людей, места и т.п." Uses the same
- * attach-by-id pattern as `Report`.
+ * implementation of "вкладывать людей, места и т.п." Persons, vehicles and
+ * weapons are attached by id.
  */
 export interface CaseFile {
   id: string

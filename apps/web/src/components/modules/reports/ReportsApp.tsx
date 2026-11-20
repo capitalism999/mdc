@@ -1,123 +1,112 @@
-import { useEffect, useState } from 'react'
-import type { ModuleContentProps } from '../registry'
-import { getPenalCodes } from '../../../lib/endpoints/penalCodes'
-import { getPeople } from '../../../lib/endpoints/people'
-import { getReports } from '../../../lib/endpoints/reports'
-import { getVehicles } from '../../../lib/endpoints/vehicles'
-import { getWeapons } from '../../../lib/endpoints/weapons'
-import type { PenalCode, Person, Report, Vehicle, Weapon } from '../../../types'
+import { useReducer, useRef, type ChangeEvent, type MouseEvent } from 'react'
+import { apps } from '../../../data/apps'
 import { useWindowManager } from '../../../windows/WindowManagerContext'
-import { ReportCard } from './ReportCard'
-import { ReportEditor } from './ReportEditor'
-import { ReportSearch } from './ReportSearch'
+import { getCases, requestOpenCase } from '../cases/casesStore'
+import type { ModuleContentProps } from '../registry'
+import { ReportsShell } from './ReportsShell'
+import { REPORTS, ReportsLogic } from './reportsLogic'
+import type { ReportsVals } from './reportsRuntime'
+import './reports.css'
 
-type View = { kind: 'search' } | { kind: 'detail'; reportId: string }
-
-let draftCounter = 0
-
-function createDraft(dispatchCallId: string): Report {
-  draftCounter += 1
-  return {
-    id: `draft-${Date.now()}-${draftCounter}`,
-    reportNumber: `R-2026-DRAFT-${draftCounter}`,
-    title: 'Новый рапорт',
-    reportType: 'Инцидент',
-    narrative: '',
-    status: 'Черновик',
-    authorName: 'Текущий офицер',
-    incidentDate: new Date().toLocaleDateString('ru-RU'),
-    dispatchCallId,
-    persons: [],
-    vehicles: [],
-    weapons: [],
-    charges: [],
-    evidenceIds: [],
-  }
+interface ReportsLogicApi {
+  state: Record<string, unknown>
+  __onChange: (() => void) | null
+  setState(patch: Record<string, unknown>): void
+  renderVals(): ReportsVals
 }
 
-function buildBreadcrumb(view: View, reports: Report[]): string[] {
-  if (view.kind === 'search') return ['Рапорты']
-  const report = reports.find((r) => r.id === view.reportId)
-  return ['Рапорты', report ? report.reportNumber : view.reportId]
+/** Boards the reference links to → the module window that hosts them. */
+const BOARD_APP: Record<string, string> = {
+  Cases: 'cases',
+  CasesEvd: 'cases',
+  SurveillanceCam: 'cases',
+  ArrestsDetail: 'arrests',
+  ArrestsLog: 'arrests',
+  Warrants: 'warrants',
+  Watch: 'calls',
+  Main: 'calls',
+  WatchApprovals: 'calls',
+  SearchPerson: 'search',
+  SearchVehicle: 'search',
+  BOLOArrested: 'bolo',
+  FTPSign: 'ftp',
 }
+
+const PLATE = /\b\d{1,2}[A-Z]{3}\d{3}\b/
 
 /**
- * "Рапорты" module: journal of reports → editor (drafts) or read-only card
- * (submitted/approved). Deep-links via `initialParams.entityId` (existing
- * report) or `initialParams.dispatchCallId` (creates a brand-new draft —
- * the payoff of the "Создать рапорт" action on a CAD call card).
+ * Отчёты — a literal port of the reference component: `reportsLogic.ts`
+ * holds its data and render logic verbatim, the generated `Reports*.tsx`
+ * files hold its markup. This shell only hosts the logic instance and routes
+ * the reference's board links: report links stay in this window, the rest
+ * open the module window that owns the record.
  */
-export function ReportsApp({ windowId, initialParams }: ModuleContentProps) {
-  const { updateBreadcrumb } = useWindowManager()
-  const [reports, setReports] = useState<Report[]>([])
-  const [people, setPeople] = useState<Person[]>([])
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [weapons, setWeapons] = useState<Weapon[]>([])
-  const [penalCodes, setPenalCodes] = useState<PenalCode[]>([])
-  const [view, setView] = useState<View>(() => {
-    const entityId = initialParams?.entityType === 'report' ? (initialParams.entityId as string) : undefined
-    return entityId ? { kind: 'detail', reportId: entityId } : { kind: 'search' }
-  })
-  const [pendingDispatchCallId] = useState<string | undefined>(
-    () => (initialParams?.entityType === undefined && initialParams?.dispatchCallId ? (initialParams.dispatchCallId as string) : undefined),
-  )
+export function ReportsApp(_props: ModuleContentProps) {
+  const { openWindow } = useWindowManager()
+  const [, rerender] = useReducer((n: number) => n + 1, 0)
+  const logicRef = useRef<ReportsLogicApi | null>(null)
 
-  useEffect(() => {
-    getReports().then(setReports)
-    getPeople().then(setPeople)
-    getVehicles().then(setVehicles)
-    getWeapons().then(setWeapons)
-    getPenalCodes().then(setPenalCodes)
-  }, [])
-
-  useEffect(() => {
-    if (!pendingDispatchCallId) return
-    const draft = createDraft(pendingDispatchCallId)
-    setReports((prev) => [draft, ...prev])
-    setView({ kind: 'detail', reportId: draft.id })
-    // Runs once: consumes the one-shot `initialParams.dispatchCallId` signal.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    updateBreadcrumb(windowId, buildBreadcrumb(view, reports))
-  }, [windowId, view, reports, updateBreadcrumb])
-
-  if (view.kind === 'search') {
-    return <ReportSearch reports={reports} onSelect={(r) => setView({ kind: 'detail', reportId: r.id })} />
+  if (!logicRef.current) {
+    const logic = new ReportsLogic({}) as unknown as ReportsLogicApi
+    logic.__onChange = rerender
+    logicRef.current = logic
   }
+  const logic = logicRef.current
 
-  const report = reports.find((r) => r.id === view.reportId)
-  if (!report) {
-    return <div className="flex h-full items-center justify-center text-[14px] text-ink/40">Рапорт не найден</div>
-  }
-
-  function updateReport(updated: Report) {
-    setReports((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
-  }
-
-  if (report.status === 'Черновик') {
-    return (
-      <ReportEditor
-        report={report}
-        people={people}
-        vehicles={vehicles}
-        weapons={weapons}
-        penalCodes={penalCodes}
-        onChange={updateReport}
-        onBack={() => setView({ kind: 'search' })}
-      />
-    )
+  const v = logic.renderVals()
+  // The reviewer's comment: the reference leaves the field unbound, while its
+  // logic already shows `retNote` as the «Возвращён» note — bind the two.
+  v.__retNote = logic.state.retNote ?? ''
+  v.__onRetNote = (event: ChangeEvent<HTMLTextAreaElement>) => logic.setState({ retNote: event.target.value })
+  v.__go =(href: string, label?: string) => (event: MouseEvent) => {
+    event.preventDefault()
+    const board = String(href || '').replace(/\.dc\.html$/, '')
+    const text = String(label ?? '')
+    // «R-11031 · …» → that report, in this window
+    const rid = /R-\d{5}/.exec(text)?.[0]
+    const rec = rid ? (REPORTS as { id: string; no: string }[]).find((r) => r.no === rid) : undefined
+    if (board === 'Reports' || board === 'ReportsReview') {
+      if (board === 'ReportsReview') logic.setState({ view: 'review', rvTab: 'paper', sel: rec?.id ?? 'r11034' })
+      else if (rec) logic.setState({ view: 'list', sel: rec.id })
+      return
+    }
+    const app = apps.find((a) => a.id === BOARD_APP[board])
+    if (!app) return
+    if (app.id === 'cases') {
+      const no = /[A-Z]{2}-\d{4}-\d{4}/.exec(text)?.[0]
+      const c = no ? getCases().list.find((x) => x.no === no) : undefined
+      if (c) {
+        requestOpenCase(c.id)
+        openWindow(app, { initialParams: { entityType: 'case', entityId: c.id } })
+        return
+      }
+    }
+    if (app.id === 'search') {
+      const q = PLATE.exec(text)?.[0] ?? text.split(' · ')[0].trim()
+      openWindow(app, q ? { initialParams: { label: q } } : undefined)
+      return
+    }
+    openWindow(app)
   }
 
   return (
-    <ReportCard
-      report={report}
-      people={people}
-      vehicles={vehicles}
-      weapons={weapons}
-      penalCodes={penalCodes}
-      onBack={() => setView({ kind: 'search' })}
-    />
+    <div
+      className="reports-root"
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        boxSizing: 'border-box',
+        display: 'flex',
+        overflow: 'hidden',
+        background: v.c.content,
+        color: v.c.text,
+        fontSize: '14px',
+        lineHeight: '20px',
+        fontFamily: "'Segoe UI Variable Text', 'Segoe UI', Inter, system-ui, sans-serif",
+      }}
+    >
+      <ReportsShell $v={v} />
+    </div>
   )
 }
