@@ -50,7 +50,7 @@ export function SearchApp({ initialParams }: ModuleContentProps) {
   if (!logicRef.current) {
     // No `accent` prop: the logic then uses its dark fallback (#60CDFF, black
     // on-accent text), the same accent Mail/Cases render with.
-    const logic = new SearchLogic({ dark: true }) as unknown as SearchLogicApi
+    const logic = new SearchLogic({}) as unknown as SearchLogicApi
     // Tags are shared across windows (mdcStore): start from the current shared set.
     logic.state = { ...logic.state, vw: 'std', ...(getMdcTags() ? { tg: getMdcTags() } : {}) }
     const entityId = initialParams?.entityId as string | undefined

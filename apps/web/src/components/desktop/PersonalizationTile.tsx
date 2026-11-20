@@ -5,7 +5,7 @@ import { AppIconTile } from './AppIconTile'
  * The "Персонализация" shortcut is pinned to the bottom-right corner of the
  * desktop, deliberately outside the regular two-column `AppIconGrid` — it
  * reads as a standalone "customize this desktop" shortcut (future home for
- * wallpaper/theme/appearance settings) rather than another module tile.
+ * wallpaper / appearance settings; closed for now) rather than another module tile.
  */
 export function PersonalizationTile() {
   return (

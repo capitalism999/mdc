@@ -24,9 +24,8 @@ function ResizeHandle({ win, direction, className }: { win: WindowInstance; dire
 }
 
 /**
- * Inline (not `<img>`) so the arrow follows `currentColor` — this needs to
- * flip from white-on-dark to near-black-on-light with the active theme,
- * which a static SVG asset loaded via `<img src>` can't do.
+ * Inline (not `<img>`) so the arrow follows `currentColor` (the window's
+ * text color), which a static SVG asset loaded via `<img src>` can't do.
  */
 function WindowBackArrow({ className }: { className?: string }) {
   return (

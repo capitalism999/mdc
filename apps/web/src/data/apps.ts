@@ -35,6 +35,8 @@ export const personalizationApp: AppTile = {
   id: 'personalization',
   label: 'Персонализация',
   icon: '/assets/apps/personalization.svg',
+  // closed for now: the only setting it had (light theme) is gone
+  stub: true,
 }
 
 /**

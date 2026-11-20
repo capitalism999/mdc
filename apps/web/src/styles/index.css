@@ -2,37 +2,18 @@
 @import "tailwindcss";
 
 /*
- * Theme tokens — dark (default) and light.
+ * Color tokens — the MDT has a single (dark, Windows 11) theme.
  *
- * `--color-ink` is the single "foreground on chrome" token: nearly every
- * `text-white/NN`, `bg-white/NN`, `border-white/NN`, `divide-white/NN`
- * opacity-modified utility in the app has been renamed to the `ink` color
- * (e.g. `text-white/70` -> `text-ink/70`) so it reads correctly as white-on-
- * dark or near-black-on-light depending on the active theme, without
- * touching every call site's opacity value.
- *
+ * `--color-ink` is the "foreground on chrome" color, used with opacity
+ * modifiers (`text-ink/70`, `bg-ink/5`, `border-ink/10`…).
  * `--color-bg-app` / `--color-bg-chrome` / `--color-bg-chrome-2` are the
- * literal (non-opacity) dark surfaces used by the OS shell and module
- * panels (`#000`, `#111`, `#1c1c1c`) — these need a real value swap rather
- * than an opacity override, so they're registered as their own tokens.
- *
- * Brand/status colors (accent blue, danger/success/warning) are left as
- * literal hex values in both themes — they're used as saturated solid
- * fills or tints with black/colored text that already reads fine on both
- * a black and a white canvas.
+ * solid surfaces of the OS shell and module panels.
  */
 @theme {
   --color-ink: #ffffff;
   --color-bg-app: #000000;
   --color-bg-chrome: #111111;
   --color-bg-chrome-2: #1c1c1c;
-}
-
-[data-theme="light"] {
-  --color-ink: #15181c;
-  --color-bg-app: #eef1f4;
-  --color-bg-chrome: #ffffff;
-  --color-bg-chrome-2: #f3f5f7;
 }
 
 @font-face {
@@ -102,8 +83,8 @@ body {
   pointer-events: none;
 }
 
-/* Themed scrollbar — overrides the default OS scrollbar everywhere in the
-   app (window content panes, dropdowns, etc), following the active theme. */
+/* Scrollbar — overrides the default OS scrollbar everywhere in the app
+   (window content panes, dropdowns, etc). */
 * {
   scrollbar-color: color-mix(in srgb, var(--color-ink) 18%, transparent) transparent;
   scrollbar-width: thin;

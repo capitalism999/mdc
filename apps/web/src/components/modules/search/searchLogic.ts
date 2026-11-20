@@ -542,15 +542,10 @@ class Component extends DCLogic {
   renderVals() { return __pl(this.__rv(), {'k': true, 'sample': true, 'sub': true, 'summary': true, 'summaryShort': true, 'text': true, 'title': true, 'v': true, 'vehicle': true}); }
   __rv() {
     var self = this, S = this.state;
-    var dark = this.props.dark !== false;
-    var c = dark
-      ? { mica: '#1D2027', frame: '#3B3B3B', content: '#272727', card: '#303030', btn: '#3A3A3A', search: 'rgba(255,255,255,0.06)', stroke: '#3A3A3A', text: '#FFFFFF', text2: '#C2C2C2', sel: 'rgba(255,255,255,0.08)', sel2: 'rgba(255,255,255,0.14)', chipOn: '#FFFFFF', chipOnFg: '#1B1B1B', link: '#8FD8FF', linkLine: 'rgba(143,216,255,0.45)', mug: '#3A3F47', mugLine: 'rgba(255,255,255,0.07)', mugFig: 'rgba(255,255,255,0.16)', mugFig2: 'rgba(255,255,255,0.35)', photoSky: '#36414E', photoGround: '#2A2F35', carBody: 'rgba(255,255,255,0.22)', carGlass: 'rgba(255,255,255,0.10)' }
-      : { mica: '#EEF2F8', frame: '#D0D5DC', content: '#F7F7F7', card: '#FFFFFF', btn: '#F0F0F0', search: '#FFFFFF', stroke: '#E5E5E5', text: '#1B1B1B', text2: '#5C5C5C', sel: 'rgba(0,0,0,0.06)', sel2: 'rgba(0,0,0,0.1)', chipOn: '#1B1B1B', chipOnFg: '#FFFFFF', link: '#005FB8', linkLine: 'rgba(0,95,184,0.4)', mug: '#D9DDE2', mugLine: 'rgba(0,0,0,0.06)', mugFig: 'rgba(0,0,0,0.16)', mugFig2: 'rgba(0,0,0,0.4)', photoSky: '#C9D3DD', photoGround: '#AEB6BF', carBody: 'rgba(0,0,0,0.28)', carGlass: 'rgba(255,255,255,0.5)' };
-    var accent = this.props.accent || (dark ? '#60CDFF' : '#005FB8');
-    var onAccent = (dark && !this.props.accent) ? '#000000' : '#FFFFFF';
-    var TONES = dark
-      ? { red: ['rgba(232,17,35,0.2)', '#FF99A4'], amber: ['rgba(255,185,0,0.16)', '#FCE100'], green: ['rgba(16,124,16,0.28)', '#6CCB5F'], grey: ['rgba(255,255,255,0.08)', '#C8C8C8'], blue: ['rgba(0,120,212,0.25)', '#99D9FF'] }
-      : { red: ['#FDE7E9', '#A4262C'], amber: ['#FFF4CE', '#7A4A00'], green: ['#DFF6DD', '#0E6A0E'], grey: ['#EFEFEF', '#5C5C5C'], blue: ['#E3F0FB', '#00508F'] };
+    var c = { mica: '#1D2027', frame: '#3B3B3B', content: '#272727', card: '#303030', btn: '#3A3A3A', search: 'rgba(255,255,255,0.06)', stroke: '#3A3A3A', text: '#FFFFFF', text2: '#C2C2C2', sel: 'rgba(255,255,255,0.08)', sel2: 'rgba(255,255,255,0.14)', chipOn: '#FFFFFF', chipOnFg: '#1B1B1B', link: '#8FD8FF', linkLine: 'rgba(143,216,255,0.45)', mug: '#3A3F47', mugLine: 'rgba(255,255,255,0.07)', mugFig: 'rgba(255,255,255,0.16)', mugFig2: 'rgba(255,255,255,0.35)', photoSky: '#36414E', photoGround: '#2A2F35', carBody: 'rgba(255,255,255,0.22)', carGlass: 'rgba(255,255,255,0.10)' };
+    var accent = this.props.accent || '#60CDFF';
+    var onAccent = !this.props.accent ? '#000000' : '#FFFFFF';
+    var TONES = { red: ['rgba(232,17,35,0.2)', '#FF99A4'], amber: ['rgba(255,185,0,0.16)', '#FCE100'], green: ['rgba(16,124,16,0.28)', '#6CCB5F'], grey: ['rgba(255,255,255,0.08)', '#C8C8C8'], blue: ['rgba(0,120,212,0.25)', '#99D9FF'] };
 
     var AGENCY = false;
     var q = (S.q || '').trim().toLowerCase();

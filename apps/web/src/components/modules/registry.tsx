@@ -10,7 +10,6 @@ import { LawsApp } from './laws/LawsApp'
 import { MailApp } from './mail/MailApp'
 import { MailComposeWindow } from './mail/MailComposeWindow'
 import { NotesApp } from './notes/NotesApp'
-import { PersonalizationApp } from './personalization/PersonalizationApp'
 import { ReportsApp } from './reports/ReportsApp'
 import { SangGangApp } from './sanggang/SangGangApp'
 import { SearchApp } from './search/SearchApp'
@@ -42,5 +41,4 @@ export const moduleContent: Record<string, ComponentType<ModuleContentProps>> = 
   sanggang: SangGangApp,
   notes: NotesApp,
   admin: AdminApp,
-  personalization: PersonalizationApp,
 }

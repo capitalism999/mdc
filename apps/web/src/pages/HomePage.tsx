@@ -5,7 +5,6 @@ import { TaskBar } from '../components/chrome/TaskBar'
 import { UserProfile } from '../components/chrome/UserProfile'
 import { WindowBar } from '../components/chrome/WindowBar'
 import { DesktopSurface } from '../components/desktop/DesktopSurface'
-import { ThemeProvider } from '../theme/ThemeContext'
 import { WindowManagerProvider } from '../windows/WindowManagerContext'
 
 /**
@@ -22,8 +21,7 @@ import { WindowManagerProvider } from '../windows/WindowManagerContext'
  */
 export function HomePage() {
   return (
-    <ThemeProvider>
-      <WindowManagerProvider>
+    <WindowManagerProvider>
         <div className="relative flex h-screen w-screen flex-col overflow-clip bg-bg-app">
           <WindowBar />
           <div className="relative flex h-[66px] w-full items-center justify-between bg-bg-chrome px-3">
@@ -39,7 +37,6 @@ export function HomePage() {
           <TaskBar />
           <FullscreenHintToast />
         </div>
-      </WindowManagerProvider>
-    </ThemeProvider>
+    </WindowManagerProvider>
   )
 }
