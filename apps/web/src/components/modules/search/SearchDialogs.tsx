@@ -1,19 +1,36 @@
 /* Generated 1:1 from the design reference (project/Search.dc.html) — markup, styles and copy are a literal port. */
-import { Fragment } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 import { __a, __h, __s, type SearchVals } from './searchRuntime'
 
 export function SearchDialog({ $v }: { $v: SearchVals }) {
-  if (!$v.dlg?.open) return null
+  // MDT: focus moves into the dialog (first field, else the dialog itself) so Esc / typing work at once
+  const boxRef = useRef<HTMLDivElement>(null)
+  const open = !!$v.dlg?.open
+  const title = String($v.dlg?.title ?? '')
+  useEffect(() => {
+    if (!open) return
+    const box = boxRef.current
+    const field = box?.querySelector<HTMLElement>('input, textarea')
+    ;(field ?? box)?.focus()
+  }, [open, title])
+  if (!open) return null
   return (
     <>
       {" "}
-      <div style={{ position: "fixed", left: "0", top: "0", right: "0", bottom: "0", zIndex: "20", background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div role="dialog" className="scroll" aria-label={$v.dlg?.title} style={{ width: $v.dlg?.dlgW, maxHeight: "80vh", borderRadius: "14px", background: $v.c?.card, boxShadow: "0 16px 48px rgba(0,0,0,0.6)", padding: "20px", display: "flex", flexDirection: "column", gap: "14px", color: $v.c?.text }}>
-          <div style={{ fontSize: "18px", fontWeight: "700" }}>
-            {__h($v.dlg?.title)}
+      <div onMouseDown={(e) => { if (e.target === e.currentTarget) $v.dlg?.close() /* MDT: click outside closes */ }} style={{ position: "fixed", left: "0", top: "0", right: "0", bottom: "0", zIndex: "20", background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div ref={boxRef} tabIndex={-1} role="dialog" aria-modal="true" className="scroll" aria-label={$v.dlg?.title} style={{ width: $v.dlg?.dlgW, maxHeight: "80vh", borderRadius: "14px", background: $v.c?.card, boxShadow: "0 16px 48px rgba(0,0,0,0.6)", padding: "20px", display: "flex", flexDirection: "column", gap: "14px", color: $v.c?.text }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+            <div style={{ flex: "1", minWidth: "0", fontSize: "18px", fontWeight: "700" }}>
+              {__h($v.dlg?.title)}
+            </div>
+            <button className="btn hv" onClick={$v.dlg?.close} aria-label="Закрыть диалог" style={{ width: "28px", height: "28px", flexShrink: "0", margin: "-4px -6px 0 0", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", color: $v.c?.text2 }}>
+              <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                <path d="M5 5l10 10M15 5L5 15"></path>
+              </svg>
+            </button>
           </div>
           <div style={{ fontSize: "13px", lineHeight: "19px", color: $v.c?.text2 }}>
-            {__h($v.dlg?.text)}
+            {__h($v.dlg?.wText || $v.dlg?.text)}
           </div>
           {$v.dlg?.hasSearch ? (
             <input type="text" value={__s($v.dlg?.sVal)} onChange={$v.dlg?.setS} placeholder="Поиск статьи: код или название" aria-label="Поиск статьи" style={{ height: "38px", boxSizing: "border-box", padding: "0 12px", borderRadius: "8px", border: "0", background: $v.c?.search, fontSize: "14px", color: $v.c?.text }} />
@@ -87,6 +104,13 @@ export function SearchDialog({ $v }: { $v: SearchVals }) {
                   </Fragment>
                 ))}
               </div>
+              {/* MDT: «Изменить данные» — what the chosen field holds now */}
+              {$v.dlg?.gNow != null ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "10px 12px", borderRadius: "8px", background: $v.c?.card, boxShadow: `inset 0 0 0 1px ${__s($v.c?.stroke)}` }}>
+                  <span style={{ fontSize: "12px", color: $v.c?.text2 }}>{"Сейчас записано"}</span>
+                  <span style={{ fontSize: "14px", fontWeight: "600", color: $v.c?.text, wordBreak: "break-word" }}>{__h($v.dlg?.gNow || "— не указано")}</span>
+                </div>
+              ) : null}
               {__a($v.dlg?.formFields).map((ff: any, $i0: number) => (
                 <Fragment key={$i0}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: $v.c?.text2 }}>
@@ -121,7 +145,7 @@ export function SearchDialog({ $v }: { $v: SearchVals }) {
                         ) : null}
                         {ff?.notChosen ? (
                           <>
-                          <input type="text" value={__s(ff?.pQ)} onChange={ff?.pSet} placeholder="Имя, фамилия или жетон сотрудника" aria-label={ff?.label} style={{ height: "38px", boxSizing: "border-box", padding: "0 12px", borderRadius: "8px", border: "0", background: $v.c?.search, fontSize: "14px", color: $v.c?.text }} />
+                          <input type="text" value={__s(ff?.pQ)} onChange={ff?.pSet} placeholder={ff?.pPh || "Имя, фамилия или жетон сотрудника"} aria-label={ff?.label} style={{ height: "38px", boxSizing: "border-box", padding: "0 12px", borderRadius: "8px", border: "0", background: $v.c?.search, fontSize: "14px", color: $v.c?.text }} />
                           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                             {__a(ff?.pList).map((pp: any, $i1: number) => (
                               <Fragment key={$i1}>
@@ -142,12 +166,14 @@ export function SearchDialog({ $v }: { $v: SearchVals }) {
                             ) : null}
                             {ff?.pHint ? (
                               <span style={{ padding: "0 2px" }}>
-                                {"Введите имя, чтобы выбрать сотрудника (появится ссылка на карточку), или впишите своё значение, например «Штаб LSPD»."}
+                                {ff?.pHintText || "Введите имя, чтобы выбрать сотрудника (появится ссылка на карточку), или впишите своё значение, например «Штаб LSPD»."}
                               </span>
                             ) : null}
-                            <button className="btn lnk" onClick={ff?.pMe} style={{ alignSelf: "flex-start", fontSize: "12px", color: $v.c?.link }}>
-                              {"Это я"}
-                            </button>
+                            {ff?.pNoMe ? null : (
+                              <button className="btn lnk" onClick={ff?.pMe} style={{ alignSelf: "flex-start", fontSize: "12px", color: $v.c?.link }}>
+                                {"Это я"}
+                              </button>
+                            )}
                           </div>
                           </>
                         ) : null}
@@ -361,7 +387,7 @@ export function SearchDialog({ $v }: { $v: SearchVals }) {
             </div>
           ) : null}
           {$v.dlg?.askReason ? (
-            <textarea value={__s($v.dlg?.reason)} onChange={$v.dlg?.setReason} placeholder="Причина (попадёт в журнал действий)" aria-label="Причина" style={{ height: "72px", resize: "none", boxSizing: "border-box", padding: "8px 10px", borderRadius: "8px", border: "0", background: $v.c?.search, font: "inherit", fontSize: "13px", lineHeight: "18px", color: $v.c?.text }} />
+            <textarea value={__s($v.dlg?.reason)} onChange={$v.dlg?.setReason} placeholder={$v.dlg?.reasonPh} aria-label={$v.dlg?.reasonLabel} style={{ height: "72px", resize: "none", boxSizing: "border-box", padding: "8px 10px", borderRadius: "8px", border: "0", background: $v.c?.search, font: "inherit", fontSize: "13px", lineHeight: "18px", color: $v.c?.text }} />
           ) : null}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
             {$v.dlg?.hasCancel ? (

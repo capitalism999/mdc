@@ -16,36 +16,45 @@ function FolderGlyph({ color, size = 32 }: { color: string; size?: number }) {
 }
 
 /** Text field that commits on Enter / blur and cancels on Escape. */
-export function NameInput({ initial, placeholder, onCommit, onCancel, className = '' }: { initial: string; placeholder: string; onCommit: (v: string) => void; onCancel: () => void; className?: string }) {
+export function NameInput({ initial, placeholder, onCommit, onCancel, validate, className = '' }: { initial: string; placeholder: string; onCommit: (v: string) => void; onCancel: () => void; validate?: (v: string) => string | null; className?: string }) {
   const [v, setV] = useState(initial)
   const done = useRef(false)
-  const commit = () => {
+  const t = v.trim()
+  const error = t && t !== initial && validate ? validate(t) : null
+  const commit = (fromBlur = false) => {
     if (done.current) return
+    // Enter on an invalid name keeps the field open; leaving it cancels
+    if (error && !fromBlur) return
     done.current = true
-    const t = v.trim()
-    if (t && t !== initial) onCommit(t)
+    if (t && t !== initial && !error) onCommit(t)
     else onCancel()
   }
   return (
-    <input
-      autoFocus
-      value={v}
-      onChange={(e) => setV(e.target.value)}
-      onFocus={(e) => e.currentTarget.select()}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter') commit()
-        if (e.key === 'Escape') {
-          done.current = true
-          onCancel()
-        }
-      }}
-      onBlur={commit}
-      onClick={(e) => e.stopPropagation()}
-      placeholder={placeholder}
-      aria-label={placeholder}
-      className={`min-w-0 rounded-[6px] bg-black/30 px-2 text-white outline-none ring-1 ring-[#60CDFF] placeholder:text-[#C2C2C2]/60 ${className}`}
-    />
+    <>
+      <input
+        autoFocus
+        value={v}
+        maxLength={80}
+        onChange={(e) => setV(e.target.value)}
+        onFocus={(e) => e.currentTarget.select()}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          if (e.key === 'Enter') commit()
+          if (e.key === 'Escape') {
+            done.current = true
+            onCancel()
+          }
+        }}
+        onBlur={() => commit(true)}
+        onClick={(e) => e.stopPropagation()}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        aria-invalid={!!error}
+        title={error ?? undefined}
+        className={`min-w-0 rounded-[6px] bg-black/30 px-2 text-white outline-none ring-1 placeholder:text-[#C2C2C2]/60 ${error ? 'ring-[#E5484D]' : 'ring-[#60CDFF]'} ${className}`}
+      />
+      {error && <span className="block pt-0.5 text-[11px] font-normal leading-[14px] text-[#FF99A4]">{error}</span>}
+    </>
   )
 }
 
@@ -149,6 +158,7 @@ export function FolderTile({
   onRenameCommit,
   onRenameCancel,
   menu,
+  validate,
 }: {
   name: string
   color: string
@@ -158,6 +168,7 @@ export function FolderTile({
   onRenameCommit: (v: string) => void
   onRenameCancel: () => void
   menu: FolderMenuProps
+  validate?: (v: string) => string | null
 }) {
   return (
     <div
@@ -171,7 +182,7 @@ export function FolderTile({
     >
       <FolderGlyph color={color} />
       <span className="flex min-w-0 flex-1 flex-col">
-        {renaming ? <NameInput initial={name} placeholder="Название папки" onCommit={onRenameCommit} onCancel={onRenameCancel} className="h-7 text-[14px] font-semibold" /> : <span className="ell font-semibold">{name}</span>}
+        {renaming ? <NameInput initial={name} placeholder="Название папки" onCommit={onRenameCommit} onCancel={onRenameCancel} validate={validate} className="h-7 text-[14px] font-semibold" /> : <span className="ell font-semibold">{name}</span>}
         <span className="text-[12px] text-[#C2C2C2]">{sub}</span>
       </span>
       {!renaming && <ChevronRightIcon className="shrink-0 text-[#C2C2C2] group-focus-within:invisible group-hover:invisible" />}
@@ -208,13 +219,13 @@ export function NoFoldersHint({ onAdd }: { onAdd: () => void }) {
 }
 
 /** Name field tile for a folder being created (only rendered while creating). */
-export function NewFolderTile({ color, creating, onCreate, onCancel }: { color: string; creating: boolean; onCreate: (name: string) => void; onCancel: () => void }) {
+export function NewFolderTile({ color, creating, onCreate, onCancel, validate }: { color: string; creating: boolean; onCreate: (name: string) => void; onCancel: () => void; validate?: (v: string) => string | null }) {
   if (!creating) return null
   return (
     <div className="flex items-center gap-3 rounded-[12px] bg-[#303030] p-4">
       <FolderGlyph color={color} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <NameInput initial="" placeholder="Название папки" onCommit={onCreate} onCancel={onCancel} className="h-7 text-[14px] font-semibold" />
+        <NameInput initial="" placeholder="Название папки" onCommit={onCreate} onCancel={onCancel} validate={validate} className="h-7 text-[14px] font-semibold" />
         <span className="text-[11px] text-[#9A9A9A]">Enter — создать, Esc — отмена</span>
       </span>
     </div>

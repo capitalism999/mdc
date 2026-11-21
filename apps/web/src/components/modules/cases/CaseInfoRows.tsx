@@ -35,6 +35,9 @@ interface Props {
   linkOptions?: LinkOption[]
   /** read-only rows filled automatically (from MDC / case documents), shown first */
   autoRows?: { k: string; v: ReactNode; hint: string }[]
+  /** field names the record already has but which are shown elsewhere (MDC,
+   * automatic rows) — a new field can't take them, or it would vanish */
+  reservedKeys?: string[]
 }
 
 /** «Связать» — the case's records with category tabs on top, searchable. */
@@ -457,7 +460,7 @@ const LABEL = 'text-[12px] leading-4 text-[#C2C2C2]'
 const ROW = 'group relative flex flex-col gap-1 py-2.5 text-[13px]'
 const SEP = 'border-b border-[#3A3A3A]'
 
-export function InfoRows({ rows, renderLinkedText, rowRefs = {}, onEdit, onAdd, onRemove, onOpenRef, lockedKeys = [], suggestions = [], linkOptions = [], autoRows = [] }: Props) {
+export function InfoRows({ rows, renderLinkedText, rowRefs = {}, onEdit, onAdd, onRemove, onOpenRef, lockedKeys = [], suggestions = [], linkOptions = [], autoRows = [], reservedKeys = [] }: Props) {
   const [editing, setEditing] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const keys = rows.map(([k]) => k)
@@ -493,7 +496,7 @@ export function InfoRows({ rows, renderLinkedText, rowRefs = {}, onEdit, onAdd, 
                   initialKey={k}
                   initialValue={text!}
                   initialRefs={refs}
-                  existingKeys={keys.filter((x) => x !== k)}
+                  existingKeys={[...keys.filter((x) => x !== k), ...reservedKeys]}
                   suggestions={[]}
                   linkOptions={linkOptions}
                   onSave={(nk, val, nrefs) => {
@@ -545,7 +548,7 @@ export function InfoRows({ rows, renderLinkedText, rowRefs = {}, onEdit, onAdd, 
               initialKey=""
               initialValue=""
               initialRefs={[]}
-              existingKeys={keys}
+              existingKeys={[...keys, ...reservedKeys]}
               suggestions={suggestions}
               linkOptions={linkOptions}
               onSave={(k, val, refs) => {

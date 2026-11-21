@@ -1,75 +1,95 @@
 import { useEffect, useRef, useState } from 'react'
-import { getAccounts } from '../../lib/endpoints/profile'
+import { getProfiles, switchProfile, useActiveProfile } from '../../lib/session'
 import type { OfficerProfile } from '../../types'
+import { useWindowManager } from '../../windows/WindowManagerContext'
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .map((w) => w[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+/** Round avatar with the character's initials in its agency colour and the agency star at the corner (Windows 11 account picture style). */
+function Avatar({ p, size }: { p: OfficerProfile; size: number }) {
+  const badge = Math.round(size * 0.42)
+  return (
+    <span style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      {p.photo ? (
+        <img src={p.photo} alt="" className="h-full w-full rounded-full object-cover object-top" style={{ background: p.color ?? '#3A5F8F' }} draggable={false} />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center rounded-full font-semibold text-white" style={{ background: p.color ?? '#3A5F8F', fontSize: Math.round(size * 0.36) }}>
+          {initials(p.name)}
+        </span>
+      )}
+      {p.logo ? (
+        <span className="absolute flex items-center justify-center rounded-full bg-[#2B2B2B]" style={{ right: -2, bottom: -2, width: badge, height: badge, boxShadow: '0 0 0 2px #2B2B2B' }}>
+          <img src={p.logo} alt="" style={{ width: badge - 4, height: badge - 4, objectFit: 'contain' }} />
+        </span>
+      ) : null}
+    </span>
+  )
+}
 
 /**
- * Badge + rank/name button, right-aligned in the header. Clicking it opens
- * a dropdown to switch between accounts already signed into this client,
- * add another account, or log out. Loads accounts through
- * `lib/endpoints/profile.ts` (mock data until a real backend/NUI config is
- * wired in).
+ * The signed-in character, right-aligned in the header. The flyout (Windows
+ * 11 account picker style) shows the active character — rank, station,
+ * position, department — and the other characters to switch to. Switching
+ * closes the open windows (each may save or ask first), then the MDT works
+ * as the new character: prints, signatures, authorship, report blanks.
  */
 export function UserProfile() {
-  const [accounts, setAccounts] = useState<OfficerProfile[]>([])
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const profile = useActiveProfile()
   const [isOpen, setIsOpen] = useState(false)
-  const [isAdding, setIsAdding] = useState(false)
-  const [newBadge, setNewBadge] = useState('')
-  const [newName, setNewName] = useState('')
+  const [confirmLogout, setConfirmLogout] = useState(false)
+  const [busy, setBusy] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    getAccounts().then((list) => {
-      setAccounts(list)
-      setActiveId((current) => current ?? list[0]?.id ?? null)
-    })
-  }, [])
+  const { closeAll, windows } = useWindowManager()
 
   useEffect(() => {
     if (!isOpen) return
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false)
-        setIsAdding(false)
+        setConfirmLogout(false)
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setIsOpen(false)
+        setConfirmLogout(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [isOpen])
 
-  const profile = accounts.find((a) => a.id === activeId)
-  if (!profile) return null
-
-  function selectAccount(id: string) {
-    setActiveId(id)
+  async function pick(id: string) {
+    if (id === profile.id || busy) return
+    setBusy(true)
+    // the open windows belong to the current character: they close (and may save / ask) first
+    const ok = await closeAll()
+    setBusy(false)
+    if (!ok) return
+    switchProfile(id)
     setIsOpen(false)
-    setIsAdding(false)
   }
 
-  function confirmAddAccount() {
-    if (!newBadge.trim() || !newName.trim()) return
-    const account: OfficerProfile = {
-      id: `account-${Date.now()}`,
-      badgeNumber: newBadge.trim(),
-      rank: 'Deputy Sheriff',
-      name: newName.trim(),
+  async function logOut() {
+    if (!(await closeAll())) {
+      setConfirmLogout(false)
+      return
     }
-    setAccounts((prev) => [...prev, account])
-    setActiveId(account.id)
-    setNewBadge('')
-    setNewName('')
-    setIsAdding(false)
-    setIsOpen(false)
-  }
-
-  function logOut() {
     window.location.reload()
   }
 
-  const menuItemCls = (isActive: boolean) =>
-    `flex w-full items-center gap-2 rounded-[4px] px-2 py-1.5 text-left text-[13px] hover:bg-ink/10 ${
-      isActive ? 'bg-[#48adec]/15 text-[#48adec]' : 'text-ink/80'
-    }`
+  const others = getProfiles().filter((p) => p.id !== profile.id)
 
   return (
     <div className="relative" ref={containerRef}>
@@ -77,9 +97,12 @@ export function UserProfile() {
         type="button"
         onClick={() => {
           setIsOpen((open) => !open)
-          setIsAdding(false)
+          setConfirmLogout(false)
         }}
-        className="flex h-[54px] items-center gap-1.5 overflow-hidden rounded-[6px] bg-ink/5 px-3.5"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        title="Сменить персонажа или выйти"
+        className={`flex h-[54px] items-center gap-2 overflow-hidden rounded-[6px] px-3 ${isOpen ? 'bg-ink/10' : 'bg-ink/5 hover:bg-ink/10'}`}
       >
         <div className="flex flex-col items-start gap-1 text-[12px]">
           <span className="font-semibold leading-[12px] text-ink">{profile.badgeNumber}</span>
@@ -88,75 +111,81 @@ export function UserProfile() {
             <span>{profile.name}</span>
           </div>
         </div>
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 10 10"
-          fill="none"
-          className={`h-2.5 w-2.5 shrink-0 text-ink transition-transform ${isOpen ? 'rotate-180' : ''}`}
-        >
-          <path
-            d="M4.6575 8.15375C4.69573 8.20927 4.74687 8.25466 4.80654 8.28602C4.8662 8.31738 4.9326 8.33376 5 8.33376C5.0674 8.33376 5.1338 8.31738 5.19346 8.28602C5.25313 8.25466 5.30427 8.20927 5.3425 8.15375L9.0925 2.73708C9.13591 2.67461 9.16136 2.60143 9.1661 2.5255C9.17083 2.44957 9.15467 2.3738 9.11937 2.30641C9.08407 2.23903 9.03097 2.1826 8.96585 2.14327C8.90073 2.10394 8.82607 2.08321 8.75 2.08333H1.25C1.1741 2.08365 1.09972 2.10464 1.03487 2.14407C0.97001 2.18349 0.917126 2.23985 0.881904 2.30708C0.846681 2.37431 0.830452 2.44987 0.834962 2.52564C0.839472 2.6014 0.86455 2.67451 0.9075 2.73708L4.6575 8.15375Z"
-            fill="currentColor"
-            fillOpacity="0.4"
-          />
+        <svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-ink/50 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true">
+          <path d="M5 8l5 5 5-5" />
         </svg>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-10 mt-2 w-[260px] rounded-[6px] border border-ink/10 bg-bg-chrome-2 p-1 shadow-lg">
-          {accounts.map((account) => (
-            <button
-              key={account.id}
-              type="button"
-              onClick={() => selectAccount(account.id)}
-              className={menuItemCls(account.id === activeId)}
-            >
-              <div className="flex flex-1 flex-col items-start leading-[1.3]">
-                <span className="font-semibold">{account.badgeNumber} · {account.name}</span>
-                <span className="text-ink/50">{account.rank}</span>
-              </div>
-              {account.id === activeId && <span className="text-[#48adec]">✓</span>}
-            </button>
-          ))}
-
-          <div className="my-1 h-px bg-ink/10" />
-
-          {isAdding ? (
-            <div className="flex flex-col gap-1.5 px-2 py-1.5">
-              <input
-                type="text"
-                value={newBadge}
-                onChange={(e) => setNewBadge(e.target.value)}
-                placeholder="Номер жетона"
-                className="rounded-[4px] border border-ink/10 bg-ink/5 px-2 py-1 text-[13px] text-ink placeholder:text-ink/40 focus:outline-none"
-              />
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Имя"
-                className="rounded-[4px] border border-ink/10 bg-ink/5 px-2 py-1 text-[13px] text-ink placeholder:text-ink/40 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={confirmAddAccount}
-                className="rounded-[4px] bg-[#48adec]/15 px-2 py-1 text-[13px] text-[#48adec] hover:bg-[#48adec]/25"
-              >
-                Добавить
-              </button>
+        <div role="menu" aria-label="Персонажи" className="absolute right-0 top-full z-[60] mt-2 w-[360px] overflow-hidden rounded-[8px] border border-[#3A3A3A] bg-[#2B2B2B] text-white shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
+          {/* the active character */}
+          <div className="flex items-center gap-4 px-5 pb-4 pt-5">
+            <Avatar p={profile} size={64} />
+            <div className="flex min-w-0 flex-1 flex-col leading-[1.35]">
+              <span className="truncate text-[16px] font-semibold">{profile.name}</span>
+              <span className="truncate text-[13px] text-white/80">{profile.rank}</span>
+              <span className="truncate text-[12px] text-white/60">
+                {profile.station}
+                {profile.position ? ` · ${profile.position}` : ''}
+              </span>
+              <span className="truncate text-[12px] text-white/60">
+                {profile.agencyShort} · {profile.badgeNumber}
+              </span>
             </div>
-          ) : (
-            <button type="button" onClick={() => setIsAdding(true)} className={menuItemCls(false)}>
-              + Добавить аккаунт
-            </button>
-          )}
+          </div>
+          <div className="mx-5 truncate rounded-[6px] bg-white/[0.05] px-3 py-2 text-[12px] text-white/70" title={profile.agencyName}>
+            {profile.agencyName}
+          </div>
 
-          <div className="my-1 h-px bg-ink/10" />
+          {/* switch */}
+          <div className="mt-3 border-t border-[#3A3A3A] px-2 pb-1 pt-2">
+            <div className="px-3 pb-1 pt-1 text-[12px] font-semibold text-white/60">Сменить персонажа</div>
+            {others.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                role="menuitem"
+                disabled={busy}
+                onClick={() => void pick(p.id)}
+                className="flex w-full items-center gap-3 rounded-[6px] px-3 py-2 text-left hover:bg-white/[0.06] disabled:opacity-60"
+              >
+                <Avatar p={p} size={36} />
+                <span className="flex min-w-0 flex-1 flex-col leading-[1.3]">
+                  <span className="truncate text-[13px] font-semibold">{p.name}</span>
+                  <span className="truncate text-[12px] text-white/60">
+                    {p.rank} · {p.agencyShort}
+                  </span>
+                  <span className="truncate text-[11px] text-white/45">{p.station}</span>
+                </span>
+              </button>
+            ))}
+            {windows.length > 0 ? <div className="px-3 pb-1 pt-1 text-[11px] leading-[15px] text-white/45">При смене персонажа открытые окна закроются — черновики сохранятся.</div> : null}
+          </div>
 
-          <button type="button" onClick={logOut} className={`${menuItemCls(false)} text-[#ff8ba0]`}>
-            Выйти из аккаунта
-          </button>
+          {/* footer */}
+          <div className="flex items-center gap-2 border-t border-[#3A3A3A] bg-[#252525] px-4 py-3">
+            {confirmLogout ? (
+              <>
+                <span className="flex-1 text-[12px] leading-[16px] text-white/80">Выйти? Все окна будут закрыты.</span>
+                <button type="button" autoFocus onClick={() => void logOut()} className="h-8 rounded-[6px] bg-[#C42B1C] px-3 text-[13px] font-semibold text-white hover:brightness-110">
+                  Выйти
+                </button>
+                <button type="button" onClick={() => setConfirmLogout(false)} className="h-8 rounded-[6px] bg-white/[0.08] px-3 text-[13px] hover:bg-white/[0.12]">
+                  Отмена
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="flex-1 text-[12px] text-white/45">SALETS MDT</span>
+                <button type="button" onClick={() => setConfirmLogout(true)} className="flex h-8 items-center gap-2 rounded-[6px] px-3 text-[13px] text-white/85 hover:bg-white/[0.08]">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M8 4H4.5A1.5 1.5 0 003 5.5v9A1.5 1.5 0 004.5 16H8M13 6.5L16.5 10 13 13.5M16.5 10H8" />
+                  </svg>
+                  Выйти
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

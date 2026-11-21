@@ -1,6 +1,7 @@
 /* Generated 1:1 from the design reference (project/Search.dc.html) — markup, styles and copy are a literal port. */
 import { Fragment } from 'react'
 import { personPhoto } from '../../shared/personPhotos'
+import { RecordMoreMenu } from './RecordMoreMenu'
 import { __a, __h, __s, type SearchVals } from '../searchRuntime'
 
 export function PlainRecord({ $v }: { $v: SearchVals }) {
@@ -85,7 +86,7 @@ export function PlainRecord({ $v }: { $v: SearchVals }) {
               </>
             ) : null}
             {$v.bolo?.restricted ? (
-              <a href="#" onClick={$v.__go("MailList")} className="hv" style={{ flexShrink: "0", height: "32px", padding: "0 12px", borderRadius: "6px", display: "flex", alignItems: "center", background: $v.c?.btn, color: $v.c?.text, fontSize: "13px", textDecoration: "none", whiteSpace: "nowrap" }}>
+              <a href="#" onClick={$v.__go("MailBolo")} className="hv" style={{ flexShrink: "0", height: "32px", padding: "0 12px", borderRadius: "6px", display: "flex", alignItems: "center", background: $v.c?.btn, color: $v.c?.text, fontSize: "13px", textDecoration: "none", whiteSpace: "nowrap" }}>
                 {"Написать "}{__h($v.bolo?.ctShort)}
               </a>
             ) : null}
@@ -102,7 +103,7 @@ export function PlainRecord({ $v }: { $v: SearchVals }) {
           {$v.rec?.isVehicle ? (
             <div style={{ position: "relative", width: "260px", height: "156px", flexShrink: "0", borderRadius: "10px", overflow: "hidden", background: `linear-gradient(180deg, ${__s($v.c?.photoSky)} 0%, ${__s($v.c?.photoSky)} 62%, ${__s($v.c?.photoGround)} 62%, ${__s($v.c?.photoGround)} 100%)` }}>
               {" "}
-              <img src="/assets/search/9c4359f8cb243131e90b0261de58cce8.png" alt="Фото" width="220" height="132" style={{ position: "absolute", left: "20px", top: "8px", objectFit: "contain", display: "block", width: "220px", height: "132px" }} />
+              <img src={$v.rec?.carImg} alt="Фото" width="220" height="132" style={{ position: "absolute", left: "20px", top: "8px", objectFit: "contain", display: "block", width: "220px", height: "132px" }} />
               {" "}
             </div>
           ) : null}
@@ -198,11 +199,6 @@ export function PlainRecord({ $v }: { $v: SearchVals }) {
               <button className="btn lnk" onClick={$v.tg?.add} style={{ fontSize: "12px", color: $v.c?.link }}>
                 {__h($v.tg?.addLabel)}
               </button>
-              {$v.tg?.canEdit ? (
-                <button className="btn lnk" onClick={$v.tg?.edit} style={{ fontSize: "12px", color: $v.c?.link }}>
-                  {"Изменить данные"}
-                </button>
-              ) : null}
             </div>
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "2px" }}>
               {__a($v.rec?.badges).map((b: any, $i0: number) => (
@@ -256,7 +252,7 @@ export function PlainRecord({ $v }: { $v: SearchVals }) {
                   <path d="M10 3l8 14H2z"></path>
                   <path d="M10 8.5v3.5M10 14.5v.2"></path>
                 </svg>
-                {"Создать BOLO"}
+                {__h($v.__boloLabel ?? "Создать BOLO")}
               </a>
               <button className="btn hv" onClick={$v.dl?.print} style={{ height: "32px", padding: "0 12px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", background: $v.c?.btn }}>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
@@ -266,6 +262,7 @@ export function PlainRecord({ $v }: { $v: SearchVals }) {
                 </svg>
                 {"Распечатать"}
               </button>
+              <RecordMoreMenu $v={$v} />
             </div>
           </div>
         </div>
@@ -341,7 +338,8 @@ export function PlainRecord({ $v }: { $v: SearchVals }) {
                             </button>
                           ) : null}
                           {rw?.isCase ? (
-                            <a href="#" onClick={$v.__go("Cases")} className="lnk" style={{ fontSize: "13px", color: $v.c?.link, textDecoration: "underline", textDecorationColor: $v.c?.linkLine, textUnderlineOffset: "3px" }}>
+                            <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end" }}>
+                            <a href="#" onClick={$v.__case(rw?.v)} className="lnk" style={{ fontSize: "13px", color: $v.c?.link, textDecoration: "underline", textDecorationColor: $v.c?.linkLine, textUnderlineOffset: "3px" }}>
                               {__a(rw?.vP).map((qp: any, $i2: number) => (
                                 <Fragment key={$i2}>
                                   {qp?.a ? (
@@ -357,6 +355,8 @@ export function PlainRecord({ $v }: { $v: SearchVals }) {
                                 </Fragment>
                               ))}
                             </a>
+                              {$v.__caseWhere?.(rw?.v) ? <span className="ell" title={$v.__caseWhere(rw?.v)} style={{ fontSize: "12px", color: $v.c?.text2, maxWidth: "320px" }}>{"↳ " + $v.__caseWhere(rw?.v)}</span> : null}
+                            </span>
                           ) : null}
                           {rw?.plain ? (
                             <span>

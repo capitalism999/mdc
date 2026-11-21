@@ -14,6 +14,10 @@ export interface BoloSubject {
   /** the grounds typed in Поиск */
   reason: string
   armed: boolean
+  /** a vehicle (Поиск → машина): name = model, code = plate, sub = description */
+  isVeh?: boolean
+  /** the person's photo, when known */
+  photo?: string | null
 }
 
 export interface BoloNewRequest {
@@ -48,4 +52,32 @@ function subscribe(f: () => void) {
 
 export function useBoloRequest(): BoloNewRequest | null {
   return useSyncExternalStore(subscribe, getBoloRequest)
+}
+
+/** «Open this BOLO» from another module (Дела, Поиск): `id` is a record id
+ * (b409) or its number (B-0409). An open BOLO window switches to it; a new
+ * window gets it as `initialParams` (entityId / label). */
+export interface BoloOpenRequest {
+  id: string
+  n: number
+}
+
+let lastOpen: BoloOpenRequest | null = null
+const openSubs = new Set<() => void>()
+
+export function requestOpenBolo(id: string): BoloOpenRequest {
+  lastOpen = { id, n: (lastOpen?.n ?? 0) + 1 }
+  openSubs.forEach((f) => f())
+  return lastOpen
+}
+
+function subscribeOpen(f: () => void) {
+  openSubs.add(f)
+  return () => {
+    openSubs.delete(f)
+  }
+}
+
+export function useBoloOpenRequest(): BoloOpenRequest | null {
+  return useSyncExternalStore(subscribeOpen, () => lastOpen)
 }

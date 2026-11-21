@@ -171,7 +171,8 @@ export function PlaceEditForm({ item, area, onAreaChange, onSave, onCancel, onRe
         </svg>
         Переставить на карте
       </button>}
-      <div className="flex justify-end gap-1.5 pt-0.5">
+      {/* sticky, so «Сохранить / Создать» stays in reach in a short window */}
+      <div className="sticky bottom-0 z-[2] -mx-4 -mb-5 flex justify-end gap-1.5 rounded-b-[12px] border-t border-[#3A3A3A] bg-[#303030] px-4 pb-3 pt-2.5">
         <button type="button" onClick={onCancel} className="h-8 rounded-[6px] px-3 text-[13px] text-[#C2C2C2] hover:bg-white/10">
           Отмена
         </button>
@@ -246,7 +247,7 @@ export function PlaceLinksSection({ links, options, onChange, onOpen }: { links:
   const free = options.filter((o) => (o.group === 'Люди' || o.group === 'Улики') && !links.some((l) => l.id === o.id))
   return (
     <div>
-      <div className="mb-1.5 ml-1 text-[13px] font-semibold text-[#C2C2C2]">Связано · {links.length}</div>
+      <div className="mb-1.5 ml-1 text-[13px] font-semibold text-[#C2C2C2]">Связано · {links.filter((l) => byId(l.id)).length}</div>
       <div className="rounded-[12px] bg-[#303030] px-3.5">
         {links.map((l) => {
           const o = byId(l.id)

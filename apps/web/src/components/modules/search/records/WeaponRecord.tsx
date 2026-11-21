@@ -1,5 +1,6 @@
 /* Generated 1:1 from the design reference (project/Search.dc.html) — markup, styles and copy are a literal port. */
 import { Fragment } from 'react'
+import { RecordMoreMenu } from './RecordMoreMenu'
 import { __a, __h, __s, type SearchVals } from '../searchRuntime'
 
 export function WeaponRecord({ $v }: { $v: SearchVals }) {
@@ -48,11 +49,6 @@ export function WeaponRecord({ $v }: { $v: SearchVals }) {
               <button className="btn lnk" onClick={$v.tg?.add} style={{ fontSize: "12px", color: $v.c?.link }}>
                 {__h($v.tg?.addLabel)}
               </button>
-              {$v.tg?.canEdit ? (
-                <button className="btn lnk" onClick={$v.tg?.edit} style={{ fontSize: "12px", color: $v.c?.link }}>
-                  {"Изменить данные"}
-                </button>
-              ) : null}
             </div>
           </div>
         </div>
@@ -83,9 +79,7 @@ export function WeaponRecord({ $v }: { $v: SearchVals }) {
             </svg>
             {"Поделиться"}
           </button>
-          <span style={{ alignSelf: "center", fontSize: "12px", color: $v.c?.text2 }}>
-            {"Действия записываются от вашего имени, быть на смене не нужно."}
-          </span>
+          <RecordMoreMenu $v={$v} />
         </div>
         {$v.w?.hasAlert ? (
           <div style={{ display: "flex", gap: "14px", padding: "14px 16px", borderRadius: "12px", background: $v.w?.alertBg }}>
@@ -332,7 +326,7 @@ export function WeaponRecord({ $v }: { $v: SearchVals }) {
                   {__a($v.w?.cases).map((cs: any, $i0: number) => (
                     <Fragment key={$i0}>
                       {" "}
-                      <a href="#" onClick={$v.__go("Cases")} className="hv" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", textDecoration: "none", color: "inherit" }}>
+                      <a href="#" onClick={$v.__case(cs?.no)} className="hv" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", textDecoration: "none", color: "inherit" }}>
                         <span style={{ width: "32px", height: "32px", flexShrink: "0", borderRadius: "8px", background: "#2B3A55", color: "#99D9FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
                             <rect x="2.5" y="6" width="15" height="10.5" rx="2"></rect>
@@ -346,6 +340,12 @@ export function WeaponRecord({ $v }: { $v: SearchVals }) {
                           <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
                             {__h(cs?.role)}
                           </span>
+                          {$v.__caseWhere?.(cs?.no) ? (
+                            <span className="ell" title={$v.__caseWhere(cs?.no)} style={{ fontSize: "12px", color: $v.c?.text2, display: "flex", alignItems: "center", gap: "4px" }}>
+                              <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M5 3v8a3 3 0 003 3h8M12.5 10.5L16 14l-3.5 3.5" /></svg>
+                              {__h($v.__caseWhere(cs?.no))}
+                            </span>
+                          ) : null}
                         </span>
                       </a>
                       {" "}

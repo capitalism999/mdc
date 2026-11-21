@@ -23,7 +23,6 @@ export const MDC_TONE: Record<MdcTone, { bg: string; fg: string }> = {
   blue: { bg: 'rgba(0,120,212,0.25)', fg: '#99D9FF' },
 }
 
-const CAR_PHOTO = '/assets/search/9c4359f8cb243131e90b0261de58cce8.png'
 
 type OpenRec = (id: string, label?: string) => void
 
@@ -127,7 +126,7 @@ function OtherCases({ rows, caseNo }: { rows: [string, string][]; caseNo: string
 }
 
 /** Status strip + flags for the header card (under the name). */
-export function MdcHeaderFlags({ link, onOpenBolo }: { link: MdcLink; onOpenBolo: () => void }) {
+export function MdcHeaderFlags({ link, onOpenBolo }: { link: MdcLink; onOpenBolo: (no?: string) => void }) {
   const { rec, bolo, veh } = link
   // Tags («Опасен», «Вооружён»…) — shared with every Поиск window, live.
   const shared = useMdcTags()
@@ -160,7 +159,7 @@ export function MdcHeaderFlags({ link, onOpenBolo }: { link: MdcLink; onOpenBolo
         </div>
       )}
       {bolo && !bolo.restricted && (
-        <button type="button" onClick={onOpenBolo} className="rounded-[8px] px-2.5 py-2 text-left text-[12px] leading-[17px] hover:brightness-110" style={{ background: MDC_TONE.red.bg }}>
+        <button type="button" onClick={() => onOpenBolo(bolo.no)} className="rounded-[8px] px-2.5 py-2 text-left text-[12px] leading-[17px] hover:brightness-110" style={{ background: MDC_TONE.red.bg }}>
           <span className="flex items-center gap-1.5 font-semibold text-[#FF99A4]">
             <span className="flex-1">
               {bolo.vid ?? 'Ориентировка'} · BOLO {bolo.no}
@@ -497,7 +496,7 @@ export function MdcMissing({ title, text, action }: { title: string; text: strin
 /** Vehicle photos with paging (prev/next + dots). Known vehicles show the
  * registry render from three angles; an unidentified one shows camera frames
  * of the silhouette. */
-export function VehiclePhotos({ known }: { known: boolean }) {
+export function VehiclePhotos({ known, src }: { known: boolean; src: string }) {
   const [i, setI] = useState(0)
   const n = 3
   const go = (d: number) => setI((p) => (p + d + n) % n)
@@ -511,7 +510,7 @@ export function VehiclePhotos({ known }: { known: boolean }) {
     <div className="group/ph relative h-[150px] w-full overflow-hidden rounded-[10px]" style={{ background: known ? 'linear-gradient(180deg, #36414E 0%, #36414E 62%, #2A2F35 62%, #2A2F35 100%)' : 'linear-gradient(180deg, #2B3036 0%, #23272C 100%)' }}>
       {known ? (
         <img
-          src={CAR_PHOTO}
+          src={src}
           alt={`Фото ${i + 1} из ${n}`}
           draggable={false}
           className="absolute left-1/2 top-[10px] h-[126px] w-[210px] object-contain transition-transform duration-200"

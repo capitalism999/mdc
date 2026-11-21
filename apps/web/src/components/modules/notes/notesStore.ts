@@ -45,21 +45,48 @@ export function useNotesState(): NotesState {
   return useSyncExternalStore(subscribe, getNotesState)
 }
 
-/** Author shown on a note: «12D3 Thorne Watts» → «Thorne Watts» (a badge has digits). */
+/** Author shown on a note: «12D3 Thorne Watts» / «Dept. 3 Eleanor Harper» → the name (the badge goes). */
 export function noteAuthorName(n: OfficerNote): string {
-  return n.author.replace(/^\S*\d\S*\s+/, '')
+  return n.author.replace(/^(?:Dept\.\s*\d+\s+|\S*\d\S*\s+)/, '')
 }
 
 export function isMyNote(n: OfficerNote, me = mockProfile.name): boolean {
-  return noteAuthorName(n) === me
+  return noteAuthorName(n) === me || n.author.endsWith(' ' + me)
+}
+
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
+
+/** `time` / `dateFull` of a note written now: «Сегодня, 14:05» and
+ * «21 ноября 2026 г. в 14:05» (same forms as the mock notes). */
+export function nowStamps(d = new Date()): { time: string; dateFull: string } {
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return { time: `Сегодня, ${hm}`, dateFull: `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()} г. в ${hm}` }
+}
+
+/** The order the list shows notes in: pinned, then Сегодня / Вчера / Ранее. */
+export function displayOrder(list: OfficerNote[]): OfficerNote[] {
+  const rank = (n: OfficerNote) => (n.isPinned ? 0 : n.time.startsWith('Сегодня') ? 1 : n.time.startsWith('Вчера') ? 2 : 3)
+  return list.map((n, i) => ({ n, i })).sort((a, b) => rank(a.n) - rank(b.n) || a.i - b.i).map((x) => x.n)
 }
 
 let copySeq = 0
-/** «Сделать себе копию»: a new note of the current user with the same text;
- * not tied to any case. Returns its id. */
+/** copy id → the note it was copied from (so a second «Сделать себе копию»
+ * opens the copy already made instead of piling up duplicates) */
+const copySource = new Map<string, string>()
+
+/** The current user's copy of note `id`, if they made one and still have it. */
+export function findMyCopy(id: string): OfficerNote | undefined {
+  return state.notes.find((n) => copySource.get(n.id) === id && isMyNote(n))
+}
+
+/** «Сделать себе копию»: a new note of the current user with the same text
+ * («… (копия)»), not tied to any case. Returns its id — or the id of the copy
+ * made earlier, when there is one. */
 export function copyNote(id: string): string | null {
   const src = state.notes.find((n) => n.id === id)
   if (!src) return null
+  const existing = findMyCopy(id)
+  if (existing) return existing.id
   const nid = `copy-${Date.now()}-${copySeq++}`
   const copy: OfficerNote = {
     ...src,
@@ -67,14 +94,14 @@ export function copyNote(id: string): string | null {
     folder: 'cases',
     isPinned: false,
     author: `${mockProfile.badgeNumber} ${mockProfile.name}`,
-    time: 'Сегодня, только что',
-    dateFull: 'Только что',
-    title: src.title,
+    ...nowStamps(),
+    title: `${src.title || 'Без названия'} (копия)`,
     blocks: src.blocks.map((b, i) => ({ ...b, id: `${nid}-b${i}` })),
     linkedCaseId: undefined,
     caseNo: undefined,
     copiedFrom: `${noteAuthorName(src)} · ${src.title}`,
   }
+  copySource.set(nid, id)
   setNotes((prev) => [copy, ...prev])
   return nid
 }

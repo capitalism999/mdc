@@ -3,18 +3,39 @@ import type { ComponentType } from 'react'
 import { mockProfile } from '../../../lib/mockData/profile'
 import type { MailMessage } from '../../../types'
 import { getAvatarColor, getInitials } from './avatar'
-import { ArchiveIcon, AttachIcon, ChevronDownIcon, CloseIcon, DraftIcon, FolderIcon, InboxIcon, PinIcon, SearchIcon, SentIcon, TrashIcon } from './icons'
+import { ArchiveIcon, AttachIcon, ChevronDownIcon, CloseIcon, DraftIcon, FolderIcon, ImportantIcon, InboxIcon, PinIcon, SearchIcon, SentIcon, TrashIcon } from './icons'
 import type { MailView } from './MailApp'
-import { pluralLetters, splitMatch, stripHtml } from './text'
+import { isDraft, pluralLetters, splitMatch, stripHtml } from './text'
 
 interface MailListProps {
   messages: MailMessage[]
   view: MailView
   selectedId: string | null
   wide: boolean
+  /** narrow window: the list is the only pane and fills it */
+  fill?: boolean
+  /** slimmer list column (window below ~1100px) */
+  compact?: boolean
   onSelectFolder: (view: MailView) => void
   onSelect: (id: string) => void
   onCompose: () => void
+  /** reports whether a search query is active */
+  onSearchChange?: (active: boolean) => void
+}
+
+/** Counter next to a folder, as in Outlook: unread letters; drafts count all. */
+function folderBadge(f: MailView, c: { unread: number; total: number }) {
+  return f === 'drafts' ? c.total : c.unread
+}
+
+/** Who a row is about: the sender, or the recipients for sent mail / drafts. */
+function rowParty(m: MailMessage) {
+  if (isDraft(m)) return m.to || '(нет получателей)'
+  return m.folder === 'sent' ? m.to : m.from
+}
+
+function DraftLabel() {
+  return <span className="shrink-0 text-[#FF6B6B]">[Черновик]</span>
 }
 
 const FOLDER_NAMES: Record<MailView, string> = {
@@ -82,13 +103,16 @@ function Avatar({ name, size }: { name: string; size: number }) {
  * a compact one-line table when the reader pane is hidden (`wide`), or
  * two/three-line cards with a reading pane alongside otherwise.
  */
-export function MailList({ messages, view, selectedId, wide, onSelectFolder, onSelect, onCompose }: MailListProps) {
+export function MailList({ messages, view, selectedId, wide, fill, compact, onSelectFolder, onSelect, onCompose, onSearchChange }: MailListProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [searchFocus, setSearchFocus] = useState(false)
   const [unreadOnly, setUnreadOnly] = useState(false)
   const [attachOnly, setAttachOnly] = useState(false)
   const [flagOnly, setFlagOnly] = useState(false)
+  /** Letters that were unread when «Непрочитанные» was opened: they stay in
+   * the list after being read, until the user leaves that tab. */
+  const [unreadKeep, setUnreadKeep] = useState<Set<string>>(() => new Set())
   const menuRef = useRef<HTMLDivElement>(null)
 
   const q = query.trim()
@@ -100,9 +124,22 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
     function onDown(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false)
     }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
     document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [menuOpen])
+
+  useEffect(() => {
+    onSearchChange?.(searching)
+    // report changes of the flag only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searching])
 
   useEffect(() => {
     setUnreadOnly(false)
@@ -125,22 +162,28 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
       return [m.subject, m.preview, m.from, stripHtml(m.body)].some((t) => t.toLowerCase().includes(ql))
     }
     let base = searching ? messages.filter((m) => m.folder !== 'trash' && hit(m)) : messages.filter((m) => inFolder(m, view))
-    if (unreadOnly) base = base.filter((m) => !m.read)
+    if (unreadOnly) base = base.filter((m) => !m.read || unreadKeep.has(m.id))
     if (searching && attachOnly) base = base.filter((m) => m.attachments && m.attachments.length > 0)
     if (searching && flagOnly) base = base.filter((m) => m.pinned)
     return base
-  }, [messages, view, searching, ql, unreadOnly, attachOnly, flagOnly])
+  }, [messages, view, searching, ql, unreadOnly, unreadKeep, attachOnly, flagOnly])
+
+  function setUnreadTab(on: boolean) {
+    setUnreadOnly(on)
+    setUnreadKeep(new Set(on ? messages.filter((m) => !m.read).map((m) => m.id) : []))
+  }
 
   const people = useMemo(() => {
     const seen = new Map<string, MailMessage>()
     messages.forEach((m) => {
-      if (m.kind === 'player' && m.folder !== 'sent' && !seen.has(m.from)) seen.set(m.from, m)
+      // people who wrote to us — not our own sent mail or drafts
+      if (m.kind === 'player' && m.folder !== 'sent' && m.folder !== 'drafts' && m.from !== 'Черновик' && !seen.has(m.from)) seen.set(m.from, m)
     })
     return Array.from(seen.values()).slice(0, 3)
   }, [messages])
 
   const groups = searching ? (list.length ? [{ key: 'Лучшие совпадения', items: list }] : []) : groupByDate(list)
-  const folderCount = folderCounts[view]?.total ?? 0
+  const folderCount = folderCounts[view] ? folderBadge(view, folderCounts[view]) : 0
 
   function split(text: string) {
     return searching ? (splitMatch(text, q) ?? ([text, '', ''] as const)) : ([text, '', ''] as const)
@@ -157,34 +200,38 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
   }
 
   const chips: { label: string; active: boolean; toggle: () => void }[] = [
-    { label: 'Непрочитанные', active: unreadOnly, toggle: () => setUnreadOnly((v) => !v) },
+    { label: 'Непрочитанные', active: unreadOnly, toggle: () => setUnreadTab(!unreadOnly) },
     { label: 'С вложениями', active: attachOnly, toggle: () => setAttachOnly((v) => !v) },
     { label: 'С флажком', active: flagOnly, toggle: () => setFlagOnly((v) => !v) },
   ]
 
-  const TriggerIcon = FOLDER_ICONS[view]
+  const TriggerIcon = searching ? SearchIcon : FOLDER_ICONS[view]
 
   return (
     <section
       aria-label="Список писем"
-      className={`flex min-w-0 flex-col border-r border-[#3A3A3A] bg-[#1D2027] text-white ${wide ? 'flex-1' : 'w-[400px] shrink-0'}`}
+      className={`flex min-w-0 flex-col border-r border-[#3A3A3A] bg-[#1D2027] text-white ${wide || fill ? 'flex-1' : compact ? 'w-[320px] shrink-0' : 'w-[400px] shrink-0'}`}
     >
       <div className={`flex ${wide ? 'items-center gap-2 py-2 pl-4 pr-4' : 'flex-col gap-0 pt-2'}`}>
-        <div className={`relative flex items-center gap-1 px-2 pb-2 pt-1 ${wide ? 'w-[300px] shrink-0 pt-0' : ''}`} ref={menuRef}>
+        <div className={`relative flex items-center gap-1 px-2 pb-2 pt-1 ${wide ? 'w-[300px] min-w-[200px] shrink pt-0' : ''}`} ref={menuRef}>
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex h-9 flex-1 items-center gap-2 rounded-[6px] px-2.5 hover:bg-white/10"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            title={searching ? `Результаты поиска · папка «${FOLDER_NAMES[view]}»` : undefined}
+            className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-[6px] px-2.5 hover:bg-white/10"
           >
             <TriggerIcon className="shrink-0 text-white" />
-            <span className="text-[16px] font-semibold">{FOLDER_NAMES[view]}</span>
+            <span className="truncate text-[16px] font-semibold">{searching ? 'Результаты поиска' : FOLDER_NAMES[view]}</span>
             <ChevronDownIcon className="shrink-0 text-white/70" />
             <span className="flex-1" />
-            <span className="text-[12px] text-[#C8C8C8]">{folderCount > 0 ? folderCount : ''}</span>
+            {!searching && <span className="text-[12px] font-semibold text-white">{folderCount > 0 ? folderCount : ''}</span>}
           </button>
           {!wide && (
             <button
               type="button"
+              data-create=""
               onClick={onCompose}
               aria-label="Новое письмо"
               title="Новое письмо"
@@ -202,7 +249,7 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
               {FOLDER_ORDER.map((f) => {
                 const active = view === f
                 const c = folderCounts[f]
-                const count = c.unread > 0 ? c.unread : c.total
+                const count = folderBadge(f, c)
                 return (
                   <button
                     key={f}
@@ -216,7 +263,7 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
                     <span className={`h-4 w-[3px] rounded-[2px] bg-[#60CDFF] ${active ? 'opacity-100' : 'opacity-0'}`} />
                     <RowIcon folder={f} active={active} />
                     <span className={`flex-1 text-left ${active ? 'font-semibold' : ''}`}>{FOLDER_NAMES[f]}</span>
-                    <span className={`text-[12px] ${c.unread > 0 ? 'font-semibold text-white' : 'text-[#C8C8C8]'}`}>{count > 0 ? count : ''}</span>
+                    <span className={`text-[12px] ${f !== 'drafts' ? 'font-semibold text-white' : 'text-[#C8C8C8]'}`}>{count > 0 ? count : ''}</span>
                   </button>
                 )
               })}
@@ -224,7 +271,7 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
           )}
         </div>
 
-        <div className={`relative px-2 pb-2 ${wide ? 'w-[380px] shrink-0 pb-0' : ''}`}>
+        <div className={`relative px-2 pb-2 ${wide ? 'w-[380px] min-w-[220px] shrink pb-0' : ''}`}>
           <label
             className="flex h-8 items-center gap-2 rounded-[6px] px-2.5"
             style={{ background: searchFocus ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.07)' }}
@@ -236,6 +283,9 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setSearchFocus(true)}
               onBlur={() => setSearchFocus(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setQuery('')
+              }}
               placeholder="Поиск"
               aria-label="Поиск"
               className="min-w-0 flex-1 bg-transparent text-[14px] text-white outline-none placeholder:text-[#C8C8C8]"
@@ -270,7 +320,7 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
           )}
           {searching && (
             <div className="px-0.5 pt-1.5 text-[12px] text-[#C8C8C8]">
-              {list.length} {pluralLetters(list.length)} по запросу «{q}» · во всех папках
+              {list.length} {pluralLetters(list.length)} по запросу «{q}» · во всех папках, кроме «Удалённые»
             </div>
           )}
         </div>
@@ -312,7 +362,7 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
         <div className="flex gap-1 px-4 pb-2">
           <button
             type="button"
-            onClick={() => setUnreadOnly(false)}
+            onClick={() => setUnreadTab(false)}
             className={`relative h-[30px] rounded-[4px] px-3 ${!unreadOnly ? 'font-semibold' : 'text-[#C8C8C8] hover:bg-white/5'}`}
           >
             Все
@@ -320,7 +370,7 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
           </button>
           <button
             type="button"
-            onClick={() => setUnreadOnly(true)}
+            onClick={() => setUnreadTab(true)}
             className={`relative h-[30px] rounded-[4px] px-3 ${unreadOnly ? 'font-semibold' : 'text-[#C8C8C8] hover:bg-white/5'}`}
           >
             Непрочитанные{folderCounts[view]?.unread ? ` (${folderCounts[view].unread})` : ''}
@@ -329,12 +379,12 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
         </div>
       )}
 
-      {wide && (
+      {wide && list.length > 0 && (
         <div className="mx-2 flex h-8 items-center gap-4 border-b border-[#3A3A3A] py-0 pl-[68px] pr-4 text-[12px] text-[#C8C8C8]">
           <span className="w-[220px]">От</span>
           <span className="flex-1">Тема</span>
           <span className="w-14" />
-          <span className="w-16 text-right">Получено</span>
+          <span className="w-[118px] shrink-0 text-right">Получено</span>
         </div>
       )}
 
@@ -343,14 +393,16 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
           <div className="flex flex-col items-center gap-2 px-6 py-20 text-center text-[#C8C8C8]">
             <FolderIcon className="h-12 w-12 opacity-60" />
             <div className="text-[16px] font-semibold text-white">{searching ? 'Ничего не найдено' : 'Здесь пусто'}</div>
-            <div>{searching ? `По запросу «${q}» писем нет. Проверьте написание или уберите фильтры.` : 'В этой папке нет писем.'}</div>
+            <div>{searching ? `По запросу «${q}» писем нет (папка «Удалённые» не просматривается). Проверьте написание или уберите фильтры.` : unreadOnly ? 'Непрочитанных писем нет.' : 'В этой папке нет писем.'}</div>
           </div>
         ) : (
           groups.map((group, i) => (
             <div key={`${group.key}-${i}`}>
               <div className="px-3 pb-1 pt-3 text-[12px] font-semibold text-[#C8C8C8]">{group.key}</div>
               {group.items.map((m) => {
-                const party = m.folder === 'sent' ? m.to : m.from
+                const party = rowParty(m)
+                const draft = isDraft(m)
+                const important = !!m.important
                 const unread = !m.read
                 const flagged = !!m.pinned
                 const hasAttach = !!m.attachments && m.attachments.length > 0
@@ -368,16 +420,20 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
                     >
                       <span className="flex w-2 justify-center">{unread && <span className="h-2 w-2 rounded-full bg-[#60CDFF]" />}</span>
                       <Avatar name={party} size={28} />
-                      <span className={`w-[220px] shrink-0 truncate ${unread ? 'font-semibold' : ''}`}>{party}</span>
+                      <span className={`flex w-[220px] shrink-0 items-center gap-1.5 ${unread ? 'font-semibold' : ''}`}>
+                        {draft && <DraftLabel />}
+                        <span className="truncate">{party}</span>
+                      </span>
                       <span className="min-w-0 flex-1 truncate">
-                        <span className={unread ? 'font-semibold' : ''}>{m.subject}</span>
+                        <span className={unread ? 'font-semibold' : ''}>{m.subject || '(без темы)'}</span>
                         <span className="text-[#C8C8C8]"> — {m.preview}</span>
                       </span>
                       <span className="flex w-14 justify-end gap-2 text-[#C8C8C8]">
+                        {important && <ImportantIcon className="shrink-0 text-[#C42B1C]" />}
                         {hasAttach && <AttachIcon aria-label="Есть вложение" />}
                         {flagged && <PinIcon filled className="text-[#C42B1C]" />}
                       </span>
-                      <span className={`w-16 shrink-0 text-right text-[12px] ${unread ? 'font-semibold text-white' : 'text-[#C8C8C8]'}`}>{m.time}</span>
+                      <span className={`w-[118px] shrink-0 whitespace-nowrap text-right text-[12px] ${unread ? 'font-semibold text-white' : 'text-[#C8C8C8]'}`}>{m.time}</span>
                     </button>
                   )
                 }
@@ -394,15 +450,23 @@ export function MailList({ messages, view, selectedId, wide, onSelectFolder, onS
                     <span className="flex min-w-0 flex-1 flex-col gap-px">
                       <span className="flex items-center gap-1.5">
                         {unread && <span className="h-2 w-2 shrink-0 rounded-full bg-[#60CDFF]" />}
+                        {draft && <DraftLabel />}
                         <span className={`min-w-0 flex-1 truncate ${unread ? 'font-semibold' : ''}`}>{party}</span>
+                        {important && <ImportantIcon className="shrink-0 text-[#C42B1C]" />}
                         {hasAttach && <AttachIcon className="shrink-0 text-[#C8C8C8]" aria-label="Есть вложение" />}
                         {flagged && <PinIcon filled className="shrink-0 text-[#C42B1C]" />}
                         <span className={`shrink-0 text-[12px] ${unread ? 'font-semibold text-white' : 'text-[#C8C8C8]'}`}>{m.time}</span>
                       </span>
                       <span className={`truncate ${unread ? 'font-semibold' : ''}`}>
-                        {sA}
-                        <Mark text={sM} />
-                        {sB}
+                        {m.subject ? (
+                          <>
+                            {sA}
+                            <Mark text={sM} />
+                            {sB}
+                          </>
+                        ) : (
+                          '(без темы)'
+                        )}
                       </span>
                       <span className="truncate text-[13px] text-[#C8C8C8]">
                         {pA}

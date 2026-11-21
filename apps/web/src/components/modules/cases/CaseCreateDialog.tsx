@@ -6,6 +6,7 @@ import { SingleDropdown } from './CaseDropdown'
 import { ChargesEditor, LeadPicker } from './CaseHeaderEdit'
 import { CASE_STATUSES } from './caseStatus'
 import type { StaffEntry } from './staffDirectory'
+import { mockProfile } from '../../../lib/mockData/profile'
 
 /** «Новое дело»: title, status, classification, lead, charges and who gets
  * access (with roles). The new
@@ -31,7 +32,7 @@ export function CaseCreateDialog({ onCreate, onClose }: { onCreate: (d: NewCaseD
   const [title, setTitle] = useState('')
   const [status, setStatus] = useState('Новое')
   const [grif, setGrif] = useState<CaseAccessState['grif']>('normal')
-  const [lead, setLead] = useState({ name: 'Thorne Watts', rank: 'Deputy Sheriff (Bonus I)' })
+  const [lead, setLead] = useState({ name: mockProfile.name, rank: mockProfile.rank })
   const [charges, setCharges] = useState<[string, string][]>([])
   const [tried, setTried] = useState(false)
   // access: the lead is always first; the others are picked here
@@ -45,18 +46,25 @@ export function CaseCreateDialog({ onCreate, onClose }: { onCreate: (d: NewCaseD
     setOthers((prev) => {
       let list = prev.filter((m) => !same(m, next.name))
       // whoever creates the case keeps managing it when the lead goes to someone else
-      if (lead.name === 'Thorne Watts' && next.name !== 'Thorne Watts' && !list.some((m) => same(m, 'Thorne Watts'))) list = [{ name: 'Thorne Watts', role: 'manager', sub: 'Deputy Sheriff (Bonus I) · создал дело' }, ...list]
+      if (lead.name === mockProfile.name && next.name !== mockProfile.name && !list.some((m) => same(m, mockProfile.name))) list = [{ name: mockProfile.name, role: 'manager', sub: mockProfile.rank + ' · создал дело' }, ...list]
       return list
     })
     setLead(next)
   }
+  // Esc / a click outside on a filled-in form asks first instead of losing it
+  const dirty = !!title.trim() || status !== 'Новое' || grif !== 'normal' || lead.name !== mockProfile.name || charges.length > 0 || others.length > 0
+  const [confirmClose, setConfirmClose] = useState(false)
+  const softClose = () => (dirty ? setConfirmClose(true) : onClose())
   useEffect(() => {
     const esc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key !== 'Escape') return
+      if (confirmClose) setConfirmClose(false)
+      else if (dirty) setConfirmClose(true)
+      else onClose()
     }
     window.addEventListener('keydown', esc)
     return () => window.removeEventListener('keydown', esc)
-  }, [onClose])
+  }, [onClose, dirty, confirmClose])
   const titleError = !title.trim() ? 'Укажите, что расследуется' : null
   const create = () => {
     setTried(true)
@@ -68,7 +76,7 @@ export function CaseCreateDialog({ onCreate, onClose }: { onCreate: (d: NewCaseD
     <div
       className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 p-4"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose()
+        if (e.target === e.currentTarget) softClose()
       }}
     >
       <div role="dialog" aria-label="Новое дело" className="flex max-h-[min(720px,100%)] w-[620px] max-w-full flex-col rounded-[12px] border border-[#3A3A3A] bg-[#2C2C2C] text-white shadow-[0_24px_60px_rgba(0,0,0,0.5)]">
@@ -84,19 +92,20 @@ export function CaseCreateDialog({ onCreate, onClose }: { onCreate: (d: NewCaseD
           </button>
         </div>
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pb-4 pt-1">
-          <label className={field}>
+          <label className={`${field} -mb-2`}>
             Название
             <input
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && create()}
+              maxLength={160}
               placeholder="Например, кража со взломом, Mirror Park"
               aria-invalid={tried && !!titleError}
               className="h-9 rounded-[6px] bg-[#3A3A3A] px-2.5 text-[14px] font-normal text-white outline-none placeholder:text-[#C2C2C2]/60"
               style={{ boxShadow: tried && titleError ? 'inset 0 0 0 1px #E5484D' : 'none' }}
             />
-            {tried && titleError && <span className="font-normal text-[#FF99A4]">{titleError}</span>}
+            <span className="min-h-[16px] font-normal leading-4 text-[#FF99A4]">{tried && titleError ? titleError : ''}</span>
           </label>
           <div className="grid grid-cols-2 gap-3">
             <div className={field}>
@@ -122,7 +131,9 @@ export function CaseCreateDialog({ onCreate, onClose }: { onCreate: (d: NewCaseD
             </span>
           </div>
           <div className={field}>
-            Статьи <span className="font-normal text-[#9A9A9A]">— можно добавить позже</span>
+            <span>
+              Статьи <span className="font-normal text-[#9A9A9A]">— можно добавить позже</span>
+            </span>
             <span className="rounded-[6px] bg-[#3A3A3A] px-2.5 py-2 font-normal text-white">
               {charges.length === 0 && <span className="block pb-1 text-[13px] text-[#C2C2C2]">Пока без статей</span>}
               <ChargesEditor charges={charges} onChange={(c) => setCharges(c)} />
@@ -158,6 +169,17 @@ export function CaseCreateDialog({ onCreate, onClose }: { onCreate: (d: NewCaseD
           </div>
         </div>
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[#3A3A3A] px-5 py-3.5">
+          {confirmClose && (
+            <span role="alert" className="mr-auto flex min-w-0 items-center gap-2 text-[13px]">
+              <span className="min-w-0 truncate text-[#FCE100]">Закрыть без сохранения?</span>
+              <button type="button" onClick={onClose} className="h-[30px] shrink-0 rounded-[6px] bg-[#C42B1C] px-3 text-[12px] font-semibold text-white hover:brightness-110">
+                Закрыть
+              </button>
+              <button type="button" autoFocus onClick={() => setConfirmClose(false)} className="h-[30px] shrink-0 rounded-[6px] px-2 text-[12px] text-[#99D9FF] hover:bg-white/10">
+                Продолжить
+              </button>
+            </span>
+          )}
           <button type="button" onClick={onClose} className="h-[34px] rounded-[8px] bg-[#3A3A3A] px-4 text-[13px] hover:brightness-125">
             Отмена
           </button>

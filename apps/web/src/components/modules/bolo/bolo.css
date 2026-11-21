@@ -1,0 +1,94 @@
+/* The reference's <helmet> stylesheet (project/BOLO.dc.html), scoped to the BOLO window. */
+@font-face {
+  font-family: 'Dealerplate California';
+  src: url('/assets/bolo/fdd301fdb07803c32ff198bc4941a9ae.otf') format('opentype');
+  font-display: swap;
+}
+
+/* The reference renders without Tailwind's preflight; undo the preflight
+ * rules that would otherwise change its layout (box model, borders, inline
+ * SVG/IMG, link decoration). */
+.bolo-root,
+.bolo-root *,
+.bolo-root *::before,
+.bolo-root *::after {
+  box-sizing: revert;
+  border: revert;
+}
+.bolo-root svg,
+.bolo-root img {
+  display: revert;
+  vertical-align: revert;
+  max-width: revert;
+}
+.bolo-root a {
+  text-decoration: revert;
+}
+
+.bolo-root .btn { border: 0; margin: 0; padding: 0; background: transparent; font: inherit; color: inherit; cursor: pointer; text-align: left }
+.bolo-root .btn:focus-visible { outline: 2px solid currentColor; outline-offset: -2px }
+.bolo-root .hv:hover { background: rgba(128, 128, 128, .13) !important }
+.bolo-root .wclose:hover { background: #C42B1C !important; color: #FFFFFF !important }
+.bolo-root .acc:hover { filter: brightness(1.08) }
+.bolo-root .lnk:hover { text-decoration: underline; text-underline-offset: 3px }
+.bolo-root input,
+.bolo-root textarea { font: inherit; color: inherit }
+.bolo-root input::placeholder,
+.bolo-root textarea::placeholder { color: inherit; opacity: .6 }
+.bolo-root textarea:focus,
+.bolo-root input:focus { outline: none }
+.bolo-root .scroll { scrollbar-width: thin; scrollbar-color: #4A4A4A transparent; overflow-y: auto }
+.bolo-root .scroll::-webkit-scrollbar { width: 10px; height: 10px }
+.bolo-root .scroll::-webkit-scrollbar-track { background: transparent }
+.bolo-root .scroll::-webkit-scrollbar-thumb { background: #4A4A4A; border-radius: 5px; border: 2px solid transparent; background-clip: content-box }
+.bolo-root .scroll::-webkit-scrollbar-thumb:hover { background: #6A6A6A; background-clip: content-box }
+.bolo-root .ell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.bolo-root .num { font-variant-numeric: tabular-nums }
+.bolo-root .chip { height: 22px; padding: 0 9px; border-radius: 11px; display: inline-flex; align-items: center; white-space: nowrap; flex-shrink: 0; font-size: 12px; font-weight: 600 }
+.bolo-root .lpi { display: inline-block; padding: 0 .32em; margin: 0 .05em; border-radius: 3px; background: #FFFFFF; color: #2C307E; box-shadow: inset 0 0 0 1px #B8BEC8; font-family: 'Dealerplate California', 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 400; font-size: 1.12em; line-height: 1.3; letter-spacing: .04em; white-space: nowrap }
+.bolo-root .plate { height: 24px; padding: 0 8px; border-radius: 4px; background: #F2F2EE; color: #1B2A4A; border: 1px solid #C9CDD4; font-size: 13px; font-weight: 700; letter-spacing: 1.2px; display: inline-flex; align-items: center; font-family: 'Cascadia Mono', Consolas, monospace; white-space: nowrap }
+.bolo-root .lp { position: relative; display: block; width: 120px; height: 60px; flex-shrink: 0; align-self: flex-start; background: url(/assets/bolo/aeec39e3277b294b2374a61e4c82c77e.png) center/100% 100% no-repeat; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.45) }
+.bolo-root .lp > span { position: absolute; left: 4%; right: 4%; top: 36%; height: 56%; display: flex; align-items: center; justify-content: center; font-family: 'Dealerplate California', 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 400; font-size: 32px; line-height: 1; color: #2C307E; letter-spacing: .03em; white-space: nowrap }
+.bolo-root .lps { font-family: 'Dealerplate California', 'Barlow Condensed', 'Arial Narrow', sans-serif !important; color: #2C307E !important; background: #FFFFFF !important; font-size: 16px !important; font-weight: 400 !important; letter-spacing: .04em !important }
+
+/* Poster headline face (Cyrillic + Latin subsets). */
+@font-face { font-family: 'PosterHead'; src: url('/assets/bolo/6989e296a8ac74c0317248d66bafe783.woff2') format('woff2'); unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; font-weight: 700; font-display: swap }
+@font-face { font-family: 'PosterHead'; src: url('/assets/bolo/b5a7cf674f78683438eda67d1c98daa9.woff2') format('woff2'); font-weight: 700; font-display: swap }
+
+/* MDT: the reference is drawn for a 1440 px window; a smaller window narrows the
+ * side panes and stacks the card / form columns instead of crushing them. */
+.bolo-root { container: bolo / inline-size }
+.bolo-root .bolo-detail,
+.bolo-root .bolo-form { container-type: inline-size }
+@container bolo (max-width: 1280px) {
+  .bolo-root .bolo-list { width: 320px !important }
+  .bolo-root .bolo-rail { width: 300px !important }
+}
+@container bolo (max-width: 1120px) {
+  .bolo-root .bolo-side { width: 226px !important }
+  .bolo-root .bolo-list { width: 290px !important }
+  .bolo-root .bolo-rail { width: 270px !important }
+}
+@container (max-width: 760px) {
+  .bolo-root .bolo-cols { grid-template-columns: minmax(0, 1fr) !important }
+}
+@container (max-width: 620px) {
+  .bolo-root .bolo-g2 { grid-template-columns: minmax(0, 1fr) !important }
+  .bolo-root .bolo-g6 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important }
+}
+.bolo-root div:has(> .bolo-tile) { flex-wrap: wrap }
+.bolo-root .bolo-tile { flex: 1 1 112px !important; min-width: 0 }
+
+/* MDT: dialogs never outgrow the window — the body scrolls, the footer stays;
+ * the map picker shrinks with the window. */
+.bolo-root [role="dialog"]:not([aria-label="Указать на карте"]):not([aria-label="Где замечен"]) { max-height: calc(100% - 32px); display: flex; flex-direction: column }
+.bolo-root [role="dialog"]:not([aria-label="Указать на карте"]):not([aria-label="Где замечен"]) > :first-child { flex: 1 1 auto; min-height: 0; overflow-y: auto }
+.bolo-root [role="dialog"]:not([aria-label="Указать на карте"]):not([aria-label="Где замечен"]) > :last-child:not(:first-child) { flex-shrink: 0 }
+.bolo-root [role="dialog"][aria-label="Указать на карте"] { width: min(1060px, calc(100% - 48px)) !important; height: min(780px, calc(100% - 48px)) !important }
+
+/* MDT: the poster body is a fixed A4 column — its blocks keep their size and
+ * only the description gives way (clamped to whole lines by BoloApp), so the
+ * staff note or the reward never overlap the text. */
+.bolo-root [data-bolo-body] { overflow: hidden }
+.bolo-root [data-bolo-body] > * { flex-shrink: 0 }
+.bolo-root [data-bolo-body] > [data-bolo-narr] { flex-shrink: 1; min-height: 14.5px; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical }

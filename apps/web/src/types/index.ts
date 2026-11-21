@@ -3,6 +3,31 @@ export interface OfficerProfile {
   badgeNumber: string
   rank: string
   name: string
+  /** the character's agency — what headers, prints and authorship show */
+  agency?: 'lssd' | 'lspd' | 'dao' | 'court'
+  /** «LOS SANTOS COUNTY SHERIFF'S DEPARTMENT» */
+  agencyName?: string
+  /** «LSSD» */
+  agencyShort?: string
+  /** the agency in Russian text («Департамент шерифа округа Лос-Сантос») */
+  agencyRu?: string
+  /** employee number on blanks («20388») */
+  employeeNo?: string
+  /** «Davis Sheriff's Station» */
+  station?: string
+  /** «Patrol Deputy» */
+  position?: string
+  /** agency star / badge, and the seal shown next to it on paper */
+  logo?: string
+  seal?: string
+  /** avatar / accent colour of the agency */
+  color?: string
+  /** portrait photo (falls back to initials) */
+  photo?: string
+  /** desktop wallpaper glow colour of the agency */
+  wallpaper?: string
+  /** large emblem on the desktop (the agency's badge / seal) */
+  emblem?: string
 }
 
 export interface AppTile {
@@ -37,6 +62,8 @@ export interface MailMessage {
    * (e.g. "Детектив-сержант, отдел расследований"). */
   role?: string
   to: string
+  /** «Копия» recipients, comma-separated like `to`. */
+  cc?: string
   subject: string
   preview: string
   body: string
@@ -557,6 +584,8 @@ export interface CasePinned {
 
 export interface CaseFileDetail {
   id: string
+  /** owning agency (default LSPD); other agencies see it only with access granted */
+  agency?: CaseAgency
   no: string
   short: string
   title: string
@@ -583,8 +612,13 @@ export interface CaseFileDetail {
 
 /** One row of the "Дела" home list (`CasesHome`) — every case in the
  * department shows up here even if it has no `CaseFileDetail` yet. */
+/** Whose case base a case belongs to (LSPD / LSSD / прокуратура / суд). */
+export type CaseAgency = 'lspd' | 'lssd' | 'dao' | 'court'
+
 export interface CaseListRow {
   id: string
+  /** owning agency (default LSPD) */
+  agency?: CaseAgency
   grif?: 'conf' | 'secret'
   no: string
   title: string

@@ -79,6 +79,7 @@ export function EditableTitle({ value, onSave }: { value: string; onSave: (v: st
             setEditing(false)
           }
         }}
+        maxLength={160}
         aria-label="Название дела"
         className="m-0 w-full resize-none rounded-[8px] bg-black/30 px-2 py-0.5 text-[28px] font-bold leading-9 tracking-[-0.2px] text-white outline-none ring-1 ring-[#60CDFF]"
       />
@@ -86,7 +87,7 @@ export function EditableTitle({ value, onSave }: { value: string; onSave: (v: st
   }
   return (
     <div className="group flex items-start gap-2">
-      <h1 className="m-0 min-w-0 text-[28px] font-bold leading-9 tracking-[-0.2px]">{value}</h1>
+      <h1 className="m-0 min-w-0 break-words text-[28px] font-bold leading-9 tracking-[-0.2px]">{value}</h1>
       <PencilBtn
         label="Изменить название дела"
         className="mt-0.5 h-8 w-8"
@@ -106,7 +107,7 @@ export function LeadPicker({ name, onPick, children, align = 'left', variant = '
   const ref = useOutside(open, () => setOpen(false))
   const people = (q.trim() ? findStaff(q) : staffDirectory()).filter((s) => !s.group)
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative min-w-0">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -114,9 +115,9 @@ export function LeadPicker({ name, onPick, children, align = 'left', variant = '
         aria-expanded={open}
         aria-label="Сменить ведущего"
         title="Сменить ведущего"
-        className={`flex text-left hover:bg-white/[0.08] ${variant === 'avatar' ? '-my-1 -mr-1.5 items-center gap-1.5 rounded-[14px] py-1 pl-1 pr-2' : '-mx-2 -my-1 items-start gap-2.5 rounded-[8px] px-2 py-1'} ${open ? 'bg-white/[0.08]' : ''}`}
+        className={`flex min-w-0 text-left hover:bg-white/[0.08] ${variant === 'avatar' ? '-my-1 -mr-1.5 items-center gap-1.5 rounded-[14px] py-1 pl-1 pr-2' : '-mx-2 -my-1 max-w-[calc(100%+16px)] items-start gap-2.5 rounded-[8px] px-2 py-1'} ${open ? 'bg-white/[0.08]' : ''}`}
       >
-        <span className="flex min-w-0 flex-col">{children}</span>
+        <span className="flex min-w-0 flex-col overflow-hidden [&>span]:truncate">{children}</span>
         <svg className={`shrink-0 text-[#C2C2C2] transition-transform ${variant === 'text' ? 'mt-[5px]' : ''} ${open ? 'rotate-180' : ''}`} width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M5 8l5 5 5-5" />
         </svg>

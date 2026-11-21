@@ -23,7 +23,7 @@ export function ReportsTypes({ $v }: { $v: ReportsVals }) {
             {"Новый тип"}
           </button>
         </div>
-        <div className="scroll" style={{ flex: "1", minHeight: "0", padding: "4px 28px 24px 32px", display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "14px", alignContent: "start" }}>
+        <div className="scroll" style={{ flex: "1", minHeight: "0", padding: "4px 28px 24px 32px", display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "14px", alignContent: "start", gridAutoRows: "1fr" /* MDT: equal-height cards */ }}>
           {__a($v.tcards).map((t: any, $i0: number) => (
             <Fragment key={$i0}>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px 18px", borderRadius: "10px", background: $v.c?.card }}>
@@ -53,13 +53,13 @@ export function ReportsTypes({ $v }: { $v: ReportsVals }) {
                     <span className="num" style={{ color: $v.c?.text, fontWeight: "600" }}>
                       {__h(t?.nf)}
                     </span>
-                    {" полей"}
+                    {" "}{__h(t?.nfW)}
                   </span>
                   <span>
                     <span className="num" style={{ color: $v.c?.text, fontWeight: "600" }}>
                       {__h(t?.ns)}
                     </span>
-                    {" секции"}
+                    {" "}{__h(t?.nsW)}
                   </span>
                   <span>
                     <span className="num" style={{ color: $v.c?.text, fontWeight: "600" }}>
@@ -77,7 +77,7 @@ export function ReportsTypes({ $v }: { $v: ReportsVals }) {
                     </Fragment>
                   ))}
                 </div>
-                <div style={{ display: "flex", gap: "8px", paddingTop: "2px" }}>
+                <div style={{ display: "flex", gap: "8px", paddingTop: "2px", marginTop: "auto" }}>
                   <button className="btn acc" onClick={t?.make} style={{ height: "32px", padding: "0 14px", borderRadius: "6px", background: $v.accent, color: $v.onAccent, fontWeight: "600", whiteSpace: "nowrap" }}>
                     {"Создать отчёт"}
                   </button>

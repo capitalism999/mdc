@@ -3,13 +3,14 @@ import type { CaseAccessRole, CaseAccessState, CaseSectionLevel } from '../../..
 import { CloseIcon, LockIcon } from './icons'
 import type { StaffEntry } from './staffDirectory'
 import { AccessMembers } from './CaseAccessMembers'
+import { useDismiss } from './CaseDropdown'
 
 const GRIFS: { id: CaseAccessState['grif']; label: string; desc: string; tone: string }[] = [
   { id: 'normal', label: 'Обычное', desc: 'Видят все с доступом к делу', tone: '#6CCB5F' },
   { id: 'conf', label: 'Конфиденциально', desc: 'Скрыто из общего поиска MDT', tone: '#FCE100' },
   { id: 'secret', label: 'Секретно', desc: 'Только по личному приглашению', tone: '#FF99A4' },
 ]
-const SECTION_LEVELS: { id: CaseSectionLevel; label: string; desc: string }[] = [
+export const SECTION_LEVELS: { id: CaseSectionLevel; label: string; desc: string }[] = [
   { id: 'all', label: 'Все с доступом', desc: 'Без ограничений: видят все, у кого есть доступ к делу' },
   { id: 'members', label: 'Участники и выше', desc: 'Скрыто от наблюдателей и «только просмотр»' },
   { id: 'managers', label: 'Администраторы и ведущий', desc: 'Только администраторы дела и ведущий' },
@@ -57,6 +58,8 @@ export function CaseAccessDialog({
   onClose,
 }: CaseAccessDialogProps) {
   const [sectionMenu, setSectionMenu] = useState<string | null>(null)
+  // the open section menu closes on an outside press / Escape (not the dialog)
+  const sectionMenuRef = useDismiss(sectionMenu !== null, () => setSectionMenu(null))
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -126,7 +129,7 @@ export function CaseAccessDialog({
                 const locked = level !== 'all'
                 const menuUp = i >= arr.length - 4 && arr.length > 4
                 return (
-                  <div key={s.id} className="relative flex items-center gap-3 px-3">
+                  <div key={s.id} ref={sectionMenu === s.id ? sectionMenuRef : undefined} className="relative flex items-center gap-3 px-3">
                     <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" className="shrink-0">
                       <path d="M2 5.5A1.5 1.5 0 013.5 4h4l2 2h7A1.5 1.5 0 0118 7.5v8a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 012 15.5z" fill={s.color ?? '#5C6B70'} />
                     </svg>

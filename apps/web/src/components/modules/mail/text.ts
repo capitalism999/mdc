@@ -1,3 +1,10 @@
+import type { MailMessage } from '../../../types'
+
+/** A letter in «Черновики» (mock drafts carry the sender «Черновик»). */
+export function isDraft(m: MailMessage) {
+  return m.folder === 'drafts' || m.from === 'Черновик'
+}
+
 export function stripHtml(html: string) {
   return html
     .replace(/<[^>]+>/g, ' ')

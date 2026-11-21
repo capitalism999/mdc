@@ -184,7 +184,7 @@ export function ChangelogButton() {
       </button>
 
       {isOpen && (
-        <div role="dialog" aria-label="Патчноут" className="absolute right-0 top-full z-50 mt-2 flex max-h-[min(640px,calc(100vh-120px))] w-[420px] flex-col overflow-hidden rounded-[8px] border border-white/[0.08] bg-[#202020] text-white shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
+        <div role="dialog" aria-label="Патчноут" className="absolute right-0 top-full z-50 mt-2 flex max-h-[min(640px,calc(100vh-150px))] w-[420px] flex-col overflow-hidden rounded-[8px] border border-white/[0.08] bg-[#202020] text-white shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
           <div className="flex shrink-0 items-center gap-3 px-4 pb-3 pt-3.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[#60CDFF]/[0.15] text-[#60CDFF]">
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

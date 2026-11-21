@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { CasePlaceArea, CaseTreeItem } from '../../../types'
 import { PlaceTypeIcon } from './placeIcons'
-import { GEO } from '../bolo/BoloMap'
+import { GEO } from '../shared/sanAndreasMap'
 import { MultiDropdown, SingleDropdown } from './CaseDropdown'
 import { BOLO_RED, CaseMap, type MapFocus } from './CaseMap'
 import { PLACE_TYPE_COLOR, PLACE_TYPE_LABEL, placeAuthor, placeWhen, timeKey, type BoloPin } from './casePlaces'
@@ -24,7 +24,7 @@ interface Props {
   /** people of the case (for «маршрут человека») */
   people: { id: string; title: string }[]
   boloPins: BoloPin[]
-  onOpenBolo: () => void
+  onOpenBolo: (no?: string) => void
   accent: string
   /** title → author from the case journal */
   authorHints: Record<string, string>

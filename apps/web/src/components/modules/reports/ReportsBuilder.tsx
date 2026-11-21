@@ -1,6 +1,7 @@
 /* Generated 1:1 from the design reference (project/Reports.dc.html) — markup, styles and copy are a literal port. */
 import { Fragment } from 'react'
 import { __a, __h, __s, type ReportsVals } from './reportsRuntime'
+import { ReportsZoomBar } from './ReportsZoom'
 
 export function ReportsBuilder({ $v }: { $v: ReportsVals }) {
   if (!$v.isBuilder) return null
@@ -10,7 +11,7 @@ export function ReportsBuilder({ $v }: { $v: ReportsVals }) {
         <div style={{ width: "590px", flexShrink: "0", display: "flex", flexDirection: "column", borderRight: `1px solid ${__s($v.c?.stroke)}` }}>
           <div className="scroll" style={{ flex: "1", minHeight: "0", padding: "18px 22px 16px 24px", display: "flex", flexDirection: "column", gap: "14px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <button className="btn hv" onClick={$v.goTypes} aria-label="Назад" style={{ width: "32px", height: "32px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <button className="btn hv" onClick={$v.bd?.cancel} aria-label="Назад" style={{ width: "32px", height: "32px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12.5 4.5L7 10l5.5 5.5"></path>
                 </svg>
@@ -31,11 +32,11 @@ export function ReportsBuilder({ $v }: { $v: ReportsVals }) {
                   <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
                     {"Название"}
                   </span>
-                  <input value={__s($v.bd?.name)} onChange={$v.bd?.onName} style={{ boxSizing: "border-box", height: "32px", padding: "0 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "13px" }} />
+                  <input value={__s($v.bd?.name)} onChange={$v.bd?.onName} placeholder="Например, Карточка полевого опроса" style={{ boxSizing: "border-box", height: "32px", padding: "0 10px", borderRadius: "6px", border: "0", borderBottom: $v.bd?.nameErr ? "2px solid #FF99A4" : `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "13px" }} />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
-                    {"Заголовок на бланке"}
+                    {"Подзаголовок (англ.)"}
                   </span>
                   <input value={__s($v.bd?.en)} onChange={$v.bd?.onEn} style={{ boxSizing: "border-box", height: "32px", padding: "0 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "13px" }} />
                 </label>
@@ -84,12 +85,12 @@ export function ReportsBuilder({ $v }: { $v: ReportsVals }) {
                       <Fragment key={$i1}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 4px 0 2px", borderRadius: "6px", background: $v.c?.card }}>
                           <span style={{ display: "flex", flexDirection: "column" }}>
-                            <button className="btn hv" aria-label="Выше" onClick={f?.up} style={{ width: "22px", height: "14px", display: "flex", alignItems: "center", justifyContent: "center", color: $v.c?.text2 }}>
+                            <button className="btn hv" aria-label="Выше" onClick={f?.up} disabled={!f?.up} style={{ width: "22px", height: "14px", display: "flex", alignItems: "center", justifyContent: "center", color: $v.c?.text2, opacity: f?.up ? 1 : 0.3, cursor: f?.up ? "pointer" : "default" }}>
                               <svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                 <path d="M4 13l6-6 6 6"></path>
                               </svg>
                             </button>
-                            <button className="btn hv" aria-label="Ниже" onClick={f?.dn} style={{ width: "22px", height: "14px", display: "flex", alignItems: "center", justifyContent: "center", color: $v.c?.text2 }}>
+                            <button className="btn hv" aria-label="Ниже" onClick={f?.dn} disabled={!f?.dn} style={{ width: "22px", height: "14px", display: "flex", alignItems: "center", justifyContent: "center", color: $v.c?.text2, opacity: f?.dn ? 1 : 0.3, cursor: f?.dn ? "pointer" : "default" }}>
                               <svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                 <path d="M4 7l6 6 6-6"></path>
                               </svg>
@@ -148,7 +149,7 @@ export function ReportsBuilder({ $v }: { $v: ReportsVals }) {
                       {__h(s?.r)}
                     </span>
                     <input value={__s(s?.cond)} onChange={s?.onC} placeholder="всегда" style={{ flex: "1", minWidth: "0", height: "26px", padding: "0 6px", border: "0", background: "transparent", fontSize: "13px", color: $v.c?.text2 }} />
-                    <button className="btn hv" aria-label="Убрать шаг" onClick={s?.rm} style={{ width: "24px", height: "24px", borderRadius: "5px", display: "flex", alignItems: "center", justifyContent: "center", color: $v.c?.text2 }}>
+                    <button className="btn hv" aria-label="Убрать шаг" onClick={s?.rm} disabled={!s?.rm} style={{ width: "24px", height: "24px", borderRadius: "5px", display: "flex", alignItems: "center", justifyContent: "center", color: $v.c?.text2, visibility: s?.rm ? "visible" : "hidden" }}>
                       <svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                         <path d="M4 4l12 12M16 4L4 16"></path>
                       </svg>
@@ -162,7 +163,7 @@ export function ReportsBuilder({ $v }: { $v: ReportsVals }) {
                 </span>
                 {__a($v.bd?.roles).map((p: any, $i0: number) => (
                   <Fragment key={$i0}>
-                    <button className="btn hv" onClick={p?.add} style={{ height: "24px", padding: "0 9px", borderRadius: "12px", background: $v.c?.btn, fontSize: "12px", whiteSpace: "nowrap" }}>
+                    <button className="btn hv" onClick={p?.add} disabled={!p?.add} title={p?.used ? "Уже в маршруте" : undefined} style={{ height: "24px", padding: "0 9px", borderRadius: "12px", background: $v.c?.btn, fontSize: "12px", whiteSpace: "nowrap", opacity: p?.used ? 0.4 : 1, cursor: p?.used ? "default" : "pointer" }}>
                       {__h(p?.t)}
                     </button>
                   </Fragment>
@@ -201,22 +202,22 @@ export function ReportsBuilder({ $v }: { $v: ReportsVals }) {
             </div>
           </div>
           <div style={{ flexShrink: "0", padding: "12px 22px 14px 24px", display: "flex", alignItems: "center", gap: "8px", borderTop: `1px solid ${__s($v.c?.stroke)}` }}>
-            <span style={{ flex: "1", fontSize: "12px", lineHeight: "16px", color: $v.c?.text2 }}>
+            <span style={{ flex: "1", fontSize: "12px", lineHeight: "16px", color: $v.bd?.footWarn ? "#FCE100" : $v.c?.text2 }}>
               {__h($v.bd?.foot)}
             </span>
-            <button className="btn hv" onClick={$v.goTypes} style={{ height: "34px", padding: "0 16px", borderRadius: "6px", background: $v.c?.btn, whiteSpace: "nowrap", textAlign: "center" }}>
-              {"Отмена"}
+            <button className="btn hv" onClick={$v.bd?.cancel} style={{ height: "34px", padding: "0 16px", borderRadius: "6px", background: $v.c?.btn, whiteSpace: "nowrap", textAlign: "center" }}>
+              {__h($v.bd?.cancelT)}
             </button>
             <button className="btn acc" onClick={$v.bd?.publish} style={{ height: "34px", padding: "0 16px", borderRadius: "6px", background: $v.accent, color: $v.onAccent, fontWeight: "600", whiteSpace: "nowrap", textAlign: "center" }}>
               {__h($v.bd?.pubT)}
             </button>
           </div>
         </div>
-        <div className="scroll" style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", alignItems: "center", padding: "50px 0 24px 0", gap: "10px", background: $v.c?.rail }}>
+        <div className="scroll" data-paper-scroll="1" style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", alignItems: "center", padding: "50px 0 24px 0", gap: "10px", background: $v.c?.rail }}>
           <span style={{ alignSelf: "flex-start", marginLeft: "40px", fontSize: "12px", color: $v.c?.text2 }}>
             {"Чистый бланк, как его получит офицер. Меняется вместе с полями слева."}
           </span>
-          <div style={{ position: "relative", width: "560px", flexShrink: "0", boxSizing: "border-box", display: "flex", flexDirection: "column", minHeight: "792px", background: "#FFFFFF", color: "#111111", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", fontFamily: "Tahoma, Arial, 'Segoe UI', sans-serif", padding: "16px 22px 14px 22px" }}>
+          <div style={{ alignSelf: "stretch", flexShrink: "0", padding: "0 24px" }}><div style={{ zoom: $v.__zoom, margin: "0 auto", position: "relative", width: "560px", flexShrink: "0", boxSizing: "border-box", display: "flex", flexDirection: "column", minHeight: "792px", background: "#FFFFFF", color: "#111111", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", fontFamily: "Tahoma, Arial, 'Segoe UI', sans-serif", padding: "16px 22px 14px 22px" }}>
             {$v.pBld?.lp ? (
               <div style={{ display: "flex", alignItems: "stretch", border: "1.5px solid #111111", marginBottom: "2px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 8px", flex: "1", minWidth: "0" }}>
@@ -432,14 +433,15 @@ export function ReportsBuilder({ $v }: { $v: ReportsVals }) {
                   {__h($v.pBld?.fr)}
                 </span>
                 <span>
-                  {"Los Santos County Sheriff's Department"}
+                  {__h($v.pBld?.agFoot)}
                 </span>
                 <span>
                   {"2026"}
                 </span>
               </div>
             </div>
-          </div>
+          </div></div>
+          <ReportsZoomBar $v={$v} />
         </div>
       </div>
     </>

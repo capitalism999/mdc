@@ -67,7 +67,8 @@ interface Props {
 
 export function CaseEventDialog({ initial, accent, onSave, onClose }: Props) {
   const now = nowParts()
-  const parts = initial ? splitEventTitle(initial.title) : { time: now.time, name: '' }
+  // time only when known: a new event starts without one
+  const parts = initial ? splitEventTitle(initial.title) : { time: '', name: '' }
   const [name, setName] = useState(parts.name)
   const [date, setDate] = useState(initial?.date ?? now.date)
   const [time, setTime] = useState(parts.time)

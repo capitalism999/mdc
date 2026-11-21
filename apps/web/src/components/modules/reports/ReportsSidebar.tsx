@@ -8,7 +8,7 @@ export function ReportsSidebar({ $v }: { $v: ReportsVals }) {
       {/* MDT: the reference's «Отчёты» title row is dropped — the window title bar already names the app */}
       <div style={{ padding: "12px 12px 12px 12px" }}>
         {" "}
-        <button className="btn acc" onClick={$v.goNew} style={{ width: "100%", height: "36px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: $v.accent, color: $v.onAccent, fontWeight: "600" }}>
+        <button data-create="" className="btn acc" onClick={$v.goNew} style={{ width: "100%", height: "36px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: $v.accent, color: $v.onAccent, fontWeight: "600" }}>
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
             <path d="M10 4v12M4 10h12"></path>
           </svg>
@@ -16,7 +16,7 @@ export function ReportsSidebar({ $v }: { $v: ReportsVals }) {
         </button>
         {" "}
       </div>
-      <nav style={{ flex: "1", minHeight: "0", display: "flex", flexDirection: "column", gap: "2px", padding: "0 8px" }}>
+      <nav className="scroll" style={{ flex: "1", minHeight: "0", overflowY: "auto", display: "flex", flexDirection: "column", gap: "2px", padding: "0 8px 12px 8px" }}>
         {__a($v.nav).map((n: any, $i0: number) => (
           <Fragment key={$i0}>
             {/* MDT: category heading («Сержант», «Бланки») */}

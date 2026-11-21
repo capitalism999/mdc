@@ -86,10 +86,10 @@ export function NoteCaseMenu({ note, onLink, onOpen }: { note: OfficerNote; onLi
         style={{ color: linked ? '#F2F2F2' : undefined }}
       >
         <LinkCaseIcon />
-        {linked && <span className="text-[13px]">{linked.no}</span>}
+        {linked && <span className="hidden whitespace-nowrap text-[13px] @[520px]:inline">{linked.no}</span>}
       </button>
       {open && (
-        <div role="dialog" aria-label="Прикрепить к делу" className="absolute right-0 top-10 z-20 flex w-[380px] flex-col rounded-[8px] border border-[#363636] bg-[#2C2C2C] text-[#F2F2F2] shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
+        <div role="dialog" aria-label="Прикрепить к делу" className="absolute right-0 top-10 z-20 flex w-[min(380px,calc(100cqw+48px))] flex-col rounded-[8px] border border-[#363636] bg-[#2C2C2C] text-[#F2F2F2] shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
           <div className="px-3 pb-2 pt-3">
             <div className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold">
               {stepCase && (
@@ -114,7 +114,28 @@ export function NoteCaseMenu({ note, onLink, onOpen }: { note: OfficerNote; onLi
                 <circle cx="8.5" cy="8.5" r="5" />
                 <path d="M12.5 12.5l4.5 4.5" />
               </svg>
-              <input key={caseId ?? 'cases'} autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={stepCase ? 'Найти папку' : 'Номер или название дела'} aria-label={stepCase ? 'Найти папку' : 'Найти дело'} className="min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-[#B4B4B4]" />
+              <input
+                key={caseId ?? 'cases'}
+                autoFocus
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                // Enter: the first case found / the first folder it can go into
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  if (!stepCase) {
+                    if (shown[0]) {
+                      setCaseId(shown[0].row.id)
+                      setQ('')
+                    }
+                    return
+                  }
+                  const fo = shownFolders.find((f) => !(where?.folderId === f.id && note.linkedCaseId === stepCase.id))
+                  if (fo) {
+                    onLink(stepCase.id, fo.id)
+                    setOpen(false)
+                  }
+                }} placeholder={stepCase ? 'Найти папку' : 'Номер или название дела'} aria-label={stepCase ? 'Найти папку' : 'Найти дело'} className="min-w-0 flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-[#B4B4B4]" />
             </label>
           </div>
 

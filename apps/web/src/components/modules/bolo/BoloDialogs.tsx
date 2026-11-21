@@ -1,394 +1,353 @@
-import type { ReactNode } from 'react'
-import type { Bolo } from '../../../types'
-import { ACCENT, C, ON_ACCENT, TONE, type BoloUIState } from './BoloApp'
-import { nearestPlace } from './BoloMap'
-import { CloseIcon, PathIcon } from './icons'
-import { MapThumb } from '../shared/sanAndreasMap'
+/* Generated 1:1 from the design reference (project/BOLO.dc.html) — markup, styles and copy are a literal port. */
+import { Fragment } from 'react'
+import { __a, __h, __s, type BoloVals } from './boloRuntime'
+import { BoloTerrain } from './boloTerrain'
+import { BoloArrestPicker, BoloCloseNote, BoloUpdateEditors } from './boloPickers'
 
-interface DlgProps {
-  state: BoloUIState
-  patch: (p: Partial<BoloUIState>) => void
-  toast: (key: string) => void
-  selected: Bolo
-}
-
-function Toggle({ on }: { on: boolean }) {
+export function BoloSeenDialog({ $v }: { $v: BoloVals }) {
+  if (!$v.seenDlg) return null
   return (
-    <span className="relative h-5 w-10 shrink-0 rounded-[10px] box-border" style={{ background: on ? TONE.red[1] : 'transparent', border: `1px solid ${on ? TONE.red[1] : C.stroke2}` }}>
-      <span className="absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full transition-transform" style={{ background: on ? '#000' : C.text2, transform: on ? 'translateX(20px)' : 'translateX(0)' }} />
-    </span>
-  )
-}
-
-function DialogShell({ title, sub, width, children, foot }: { title: string; sub: string; width: number; children: ReactNode; foot: ReactNode }) {
-  return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
-      <div role="dialog" aria-label={title} className="box-border overflow-hidden rounded-[10px]" style={{ width, background: C.dialog, border: `1px solid ${C.stroke}`, boxShadow: '0 32px 64px rgba(0,0,0,0.55)' }}>
-        <div className="flex flex-col gap-3.5 p-6">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[20px] font-semibold leading-7">{title}</span>
-            <span className="text-[13px]" style={{ color: C.text2 }}>
-              {sub}
-            </span>
+    <>
+      <div onClick={(e) => { if (e.target === e.currentTarget) $v.closeSeen() }} data-ov="" style={{ position: "absolute", inset: "0", zIndex: "20", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div role="dialog" aria-label="Отметить: замечен" style={{ width: "640px", boxSizing: "border-box", borderRadius: "10px", background: $v.c?.dialog, border: `1px solid ${__s($v.c?.stroke)}`, boxShadow: "0 32px 64px rgba(0,0,0,0.55)", overflow: "hidden" }}>
+          {" "}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px", padding: "24px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <span style={{ fontSize: "20px", lineHeight: "28px", fontWeight: "600" }}>
+                {"Замечен: "}{__h($v.b?.title)}
+              </span>
+              <span style={{ fontSize: "13px", color: $v.c?.text2 }}>
+                {__h($v.b?.id)}{" · отметку увидят все на смене и автор ориентировки"}
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: "14px" }}>
+              <div style={{ position: "relative", width: "220px", height: "170px", flexShrink: "0", borderRadius: "10px", overflow: "hidden", background: $v.c?.mapWater }}>
+                <BoloTerrain $v={$v} mode="seen" pts={undefined}>
+                </BoloTerrain>
+                <span style={{ position: "absolute", left: "6px", right: "6px", bottom: "6px", display: "none" }}></span>
+                <span style={{ position: "absolute", right: "6px", top: "6px", padding: "2px 6px", borderRadius: "4px", background: "rgba(0,0,0,0.5)", color: "#FFFFFF", fontSize: "10px" }}>
+                  {__h($v.seenSrcTag)}
+                </span>
+                <button className="btn" onClick={$v.pickForSeen} style={{ position: "absolute", left: "6px", right: "6px", bottom: "6px", height: "28px", borderRadius: "6px", background: "rgba(0,0,0,0.6)", color: "#FFFFFF", fontSize: "12px", fontWeight: "600", textAlign: "center" }}>
+                  {"Уточнить на карте"}
+                </button>
+              </div>
+              <div style={{ flex: "1", display: "flex", flexDirection: "column", gap: "10px" }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
+                    {"Где"}
+                  </span>
+                  <input type="text" value={$v.sfv('place', $v.seenPlaceText)} onChange={$v.sfon('place')} style={{ height: "32px", boxSizing: "border-box", padding: "0 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, color: $v.c?.text }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
+                    {"Когда"}
+                  </span>
+                  <input type="text" value={$v.sfv('when', 'Сейчас · ' + $v.__now)} onChange={$v.sfon('when')} style={{ height: "32px", boxSizing: "border-box", padding: "0 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, color: $v.c?.text }} />
+                </label>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
+                    {"Куда двигался"}
+                  </span>
+                  <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                    {__a($v.dirs).map((o: any, $i0: number) => (
+                      <Fragment key={$i0}>
+                        <button className="btn hv" onClick={o?.pick} style={{ height: "28px", padding: "0 10px", borderRadius: "14px", background: o?.bg, color: o?.fg, fontSize: "12px", fontWeight: o?.fw, whiteSpace: "nowrap" }}>
+                          {__h(o?.t)}
+                        </button>
+                      </Fragment>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
+                {"Как выглядел"}
+              </span>
+              <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                {__a($v.how).map((o: any, $i0: number) => (
+                  <Fragment key={$i0}>
+                    <button className="btn hv" onClick={o?.pick} style={{ height: "28px", padding: "0 10px", borderRadius: "14px", background: o?.bg, color: o?.fg, fontSize: "12px", fontWeight: o?.fw, whiteSpace: "nowrap" }}>
+                      {__h(o?.t)}
+                    </button>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+            <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
+                {"Комментарий"}
+              </span>
+              <textarea rows={2} style={{ resize: "none", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "14px", lineHeight: "20px", color: $v.c?.text }} value={$v.sfv('note', '')} onChange={$v.sfon('note')} placeholder="Что видели: одежда, с кем, что делал" />
+            </label>
+            <button className="btn" onClick={$v.toggleBackup} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", borderRadius: "8px", background: $v.backupBg }}>
+              <span style={{ position: "relative", width: "40px", height: "20px", boxSizing: "border-box", flexShrink: "0", borderRadius: "10px", background: $v.bTogBg, border: `1px solid ${__s($v.bTogBorder)}` }}>
+                <span style={{ position: "absolute", top: "2px", left: "2px", width: "14px", height: "14px", borderRadius: "50%", background: $v.bKnob, transform: `translateX(${__s($v.bX)})` }}></span>
+              </span>
+              <span style={{ display: "flex", flexDirection: "column", lineHeight: "17px" }}>
+                <span style={{ fontWeight: "600", color: $v.backupFg }}>
+                  {"Нужна поддержка"}
+                </span>
+                <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
+                  {"Диспетчер получит вызов с вашей позицией, ближайшие экипажи — уведомление"}
+                </span>
+              </span>
+            </button>
           </div>
-          {children}
-        </div>
-        <div className="flex justify-end gap-2 p-3.5 px-6" style={{ background: C.dialogFoot, borderTop: `1px solid ${C.stroke}` }}>
-          {foot}
+          {" "}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", padding: "14px 24px", background: $v.c?.dialogFoot, borderTop: `1px solid ${__s($v.c?.stroke)}` }}>
+            <button className="btn hv" onClick={$v.closeSeen} style={{ width: "120px", height: "34px", borderRadius: "6px", background: $v.c?.btn, textAlign: "center" }}>
+              {"Отмена"}
+            </button>
+            <button className="btn acc" onClick={$v.sendSeen} style={{ width: "200px", height: "34px", borderRadius: "6px", background: $v.accent, color: $v.onAccent, fontWeight: "600", textAlign: "center" }}>
+              {"Отправить отметку"}
+            </button>
+          </div>
+          {" "}
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
-const DIRS = ['На север', 'На юг', 'На восток', 'На запад', 'Стоит на месте']
-const HOWS = ['Пешком', 'В Bravado Bison', 'В другой машине']
-
-export function BoloSeenDialog({ state, patch, toast, selected }: DlgProps) {
-  const place = state.seenPin ? nearestPlace(state.seenPin.x, state.seenPin.y) : 'Grove St / Forum Dr, Davis'
-  const pinPos = state.seenPin ?? { x: 46, y: 76 }
-
-  function send() {
-    const pin = state.seenPin ?? { x: 46, y: 76 }
-    patch({
-      extraSeenMap: { ...state.extraSeenMap, [selected.id]: { x: pin.x, y: pin.y, place } },
-      dlg: null,
-    })
-    toast(state.backup ? 'backup' : 'seen')
-  }
-
+export function BoloUpdateDialog({ $v }: { $v: BoloVals }) {
+  if (!$v.updDlg) return null
   return (
-    <DialogShell
-      title={`Замечен: ${selected.title}`}
-      sub={`${selected.no} · отметку увидят все на смене и автор ориентировки`}
-      width={640}
-      foot={
-        <>
-          <button type="button" onClick={() => patch({ dlg: null })} className="h-[34px] w-[120px] rounded-[6px] text-center hover:brightness-110" style={{ background: C.btn }}>
-            Отмена
-          </button>
-          <button type="button" onClick={send} className="h-[34px] w-[200px] rounded-[6px] text-center font-semibold hover:brightness-110" style={{ background: ACCENT, color: ON_ACCENT }}>
-            Отправить отметку
-          </button>
-        </>
-      }
-    >
-      <div className="flex gap-3.5">
-        <div className="relative h-[170px] w-[220px] shrink-0 overflow-hidden rounded-[10px]" style={{ background: C.mapWater }}>
-          <MapThumb points={[pinPos]} maxZoom={6}>
-            <span className="absolute h-[22px] w-[22px] -translate-x-1/2 -translate-y-full rotate-[-45deg] rounded-[50%_50%_50%_0]" style={{ left: `${pinPos.x}%`, top: `${pinPos.y}%`, background: ACCENT, border: '2px solid #fff' }} />
-          </MapThumb>
-          <button
-            type="button"
-            onClick={() => patch({ pick: 'seen', dlg: null, pin: state.seenPin ?? { x: 46, y: 76 } })}
-            className="absolute inset-x-1.5 bottom-1.5 h-7 rounded-[6px] text-center text-[12px] font-semibold text-white hover:brightness-125"
-            style={{ background: 'rgba(0,0,0,0.6)' }}
-          >
-            Уточнить на карте
-          </button>
-        </div>
-        <div className="flex flex-1 flex-col gap-2.5">
-          <label className="flex flex-col gap-1">
-            <span className="text-[12px] font-semibold" style={{ color: C.text2 }}>
-              Где
-            </span>
-            <input value={place} readOnly className="h-8 rounded-[6px] px-2.5" style={{ background: C.field, borderBottom: `1px solid ${C.stroke2}`, color: C.text }} />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-[12px] font-semibold" style={{ color: C.text2 }}>
-              Когда
-            </span>
-            <input readOnly value="Сейчас · 17.11, 16:12" className="h-8 rounded-[6px] px-2.5" style={{ background: C.field, borderBottom: `1px solid ${C.stroke2}`, color: C.text }} />
-          </label>
-          <div className="flex flex-col gap-1">
-            <span className="text-[12px] font-semibold" style={{ color: C.text2 }}>
-              Куда двигался
-            </span>
-            <div className="flex flex-wrap gap-1">
-              {DIRS.map((t, i) => (
-                <button key={t} type="button" onClick={() => patch({ dir: i })} className="h-7 whitespace-nowrap rounded-[14px] px-2.5 text-[12px] hover:shadow-[inset_0_0_0_999px_rgba(255,255,255,0.08)]" style={{ background: state.dir === i ? C.btn : 'transparent', fontWeight: state.dir === i ? 600 : 400 }}>
-                  {t}
-                </button>
+    <>
+      <div onClick={(e) => { if (e.target === e.currentTarget) $v.cancelUpd() }} data-ov="" style={{ position: "absolute", inset: "0", zIndex: "20", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div role="dialog" aria-label="Обновить ориентировку" style={{ width: "560px", boxSizing: "border-box", borderRadius: "10px", background: $v.c?.dialog, border: `1px solid ${__s($v.c?.stroke)}`, boxShadow: "0 32px 64px rgba(0,0,0,0.55)", overflow: "hidden" }}>
+          {" "}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px", padding: "24px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <span style={{ fontSize: "20px", lineHeight: "28px", fontWeight: "600" }}>
+                {"Обновить ориентировку"}
+              </span>
+              <span style={{ fontSize: "13px", color: $v.c?.text2 }}>
+                {__h($v.b?.id)}{" · "}{__h($v.b?.title)}
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <span style={{ fontSize: "13px", fontWeight: "600", color: $v.c?.text2 }}>
+                {"Что изменилось"}
+              </span>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                {__a($v.updWhat).map((o: any, $i0: number) => (
+                  <Fragment key={$i0}>
+                    <button className="btn hv" onClick={o?.pick} style={{ height: "30px", padding: "0 12px", borderRadius: "15px", background: o?.bg, color: o?.fg, fontSize: "13px", fontWeight: o?.fw, whiteSpace: "nowrap" }}>
+                      {__h(o?.t)}
+                    </button>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+            <BoloUpdateEditors $v={$v} />
+            <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <span style={{ fontSize: "13px", fontWeight: "600", color: $v.c?.text2 }}>
+                {"Коротко для смены"}
+              </span>
+              <textarea rows={3} onChange={$v.onUpdText} placeholder="Что нового, одной-двумя фразами" style={{ resize: "none", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "14px", lineHeight: "20px", color: $v.c?.text }} value={__s($v.updTextVal)} />
+              <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
+                {"Выберите выше, что изменилось, — поля откроются для правки и сразу попадут в карточку и листовку. Этот текст уйдёт в уведомление и историю."}
+              </span>
+            </label>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {__a($v.updChecks).map((o: any, $i0: number) => (
+                <Fragment key={$i0}>
+                  <button className="btn" onClick={o?.pick} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "5px 0", textAlign: "left" }}>
+                    <span style={{ width: "18px", height: "18px", boxSizing: "border-box", flexShrink: "0", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", background: o?.bg, border: `1px solid ${__s(o?.border)}`, color: $v.onAccent }}>
+                      {o?.on ? (
+                        <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M4.5 10.5l3.5 3.5 7.5-8"></path>
+                        </svg>
+                      ) : null}
+                    </span>
+                    <span style={{ display: "flex", flexDirection: "column", lineHeight: "18px" }}>
+                      <span>
+                        {__h(o?.t)}
+                      </span>
+                      <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
+                        {__a(o?.subP).map((qp: any, $i1: number) => (
+                          <Fragment key={$i1}>
+                            {qp?.a ? (
+                              <>
+                              {__h(qp?.t)}
+                              </>
+                            ) : null}
+                            {qp?.b ? (
+                              <span className="lpi">
+                                {__h(qp?.t)}
+                              </span>
+                            ) : null}
+                          </Fragment>
+                        ))}
+                      </span>
+                    </span>
+                  </button>
+                </Fragment>
               ))}
             </div>
           </div>
-        </div>
-      </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-[12px] font-semibold" style={{ color: C.text2 }}>
-          Как выглядел
-        </span>
-        <div className="flex flex-wrap gap-1">
-          {HOWS.map((t, i) => {
-            const on = !!state.how[i]
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => patch({ how: { ...state.how, [i]: !on } })}
-                className="h-7 whitespace-nowrap rounded-[14px] px-2.5 text-[12px] hover:shadow-[inset_0_0_0_999px_rgba(255,255,255,0.08)]"
-                style={{ background: on ? C.btn : 'transparent', fontWeight: on ? 600 : 400 }}
-              >
-                {t}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-      <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-semibold" style={{ color: C.text2 }}>
-          Комментарий
-        </span>
-        <textarea rows={2} defaultValue="Пешком, в красной бандане, зашёл во двор дома 1207." className="resize-none rounded-[6px] px-2.5 py-2 text-[14px] leading-5" style={{ background: C.field, borderBottom: `1px solid ${C.stroke2}`, color: C.text }} />
-      </label>
-      <button type="button" onClick={() => patch({ backup: !state.backup })} className="flex items-center gap-3 rounded-[8px] p-2.5 hover:brightness-110" style={{ background: state.backup ? TONE.red[0] : C.card }}>
-        <Toggle on={state.backup} />
-        <span className="flex flex-col text-left leading-[17px]">
-          <span className="font-semibold" style={{ color: state.backup ? TONE.red[1] : C.text }}>
-            Нужна поддержка
-          </span>
-          <span className="text-[12px]" style={{ color: C.text2 }}>
-            Диспетчер получит вызов с вашей позицией, ближайшие экипажи — уведомление
-          </span>
-        </span>
-      </button>
-    </DialogShell>
-  )
-}
-
-const UPD_WHAT = ['Фото', 'Транспорт', 'Последнее место', 'Приметы', 'Инструкция', 'Вид или статья']
-
-export function BoloUpdateDialog({ state, patch, toast, selected }: DlgProps) {
-  const ack = selected.acknowledgedOf + (state.acked[selected.id] ? 1 : 0)
-  const textVal = state.updText === null ? selected.updateDraft ?? '' : state.updText
-
-  function confirm() {
-    const chosen = UPD_WHAT.filter((_, i) => state.updWhat[i]).map((t) => t.toLowerCase())
-    const summary = `Обновлено: ${chosen.join(', ') || 'описание'}${textVal ? `. ${textVal}` : ''}`
-    patch({ updatedMap: { ...state.updatedMap, [selected.id]: summary }, dlg: null, updText: null })
-    toast('upd')
-  }
-
-  return (
-    <DialogShell
-      title="Обновить ориентировку"
-      sub={`${selected.no} · ${selected.title}`}
-      width={560}
-      foot={
-        <>
-          <button type="button" onClick={() => patch({ dlg: null, updText: null })} className="h-[34px] w-[120px] rounded-[6px] text-center hover:brightness-110" style={{ background: C.btn }}>
-            Отмена
-          </button>
-          <button type="button" onClick={confirm} className="h-[34px] w-[160px] rounded-[6px] text-center font-semibold hover:brightness-110" style={{ background: ACCENT, color: ON_ACCENT }}>
-            Обновить
-          </button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-1.5">
-        <span className="text-[13px] font-semibold">Что изменилось</span>
-        <div className="flex flex-wrap gap-1.5">
-          {UPD_WHAT.map((t, i) => {
-            const on = !!state.updWhat[i]
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => patch({ updWhat: { ...state.updWhat, [i]: !on } })}
-                className="h-[30px] whitespace-nowrap rounded-[15px] px-3 text-[13px] hover:brightness-110"
-                style={{ background: on ? '#FFFFFF' : C.btn, color: on ? '#1B1B1B' : C.text, fontWeight: on ? 600 : 400 }}
-              >
-                {t}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-      <label className="flex flex-col gap-1.5">
-        <span className="text-[13px] font-semibold">Коротко для смены</span>
-        <textarea
-          rows={3}
-          value={textVal}
-          onChange={(e) => patch({ updText: e.target.value })}
-          placeholder="Что нового, одной-двумя фразами"
-          className="resize-none rounded-[6px] px-2.5 py-2 text-[14px] leading-5"
-          style={{ background: C.field, borderBottom: `1px solid ${C.stroke2}`, color: C.text }}
-        />
-        <span className="text-[12px]" style={{ color: C.text2 }}>
-          Сами поля карточки правятся в форме ориентировки, этот текст попадёт в уведомление и историю.
-        </span>
-      </label>
-      <div className="flex flex-col gap-1">
-        {(
-          [
-            ['updNotify', `Уведомить ознакомившихся · ${ack}`, 'Всплывёт у них с пометкой «Обновлена»'],
-            ['updReack', 'Попросить ознакомиться заново', 'Счётчик «Ознакомились» начнётся с нуля'],
-          ] as const
-        ).map(([key, t, sub]) => {
-          const on = !!state[key]
-          return (
-            <button key={key} type="button" onClick={() => patch({ [key]: !on } as Partial<BoloUIState>)} className="-mx-1.5 flex items-center gap-2.5 rounded-[6px] px-1.5 py-1.5 text-left hover:bg-white/5">
-              <span className="box-border flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px]" style={{ background: on ? ACCENT : 'transparent', border: `1px solid ${on ? ACCENT : C.stroke2}`, color: ON_ACCENT }}>
-                {on && <PathIcon d="M4.5 10.5l3.5 3.5 7.5-8" className="h-[11px] w-[11px]" />}
-              </span>
-              <span className="flex flex-col leading-[18px]">
-                <span>{t}</span>
-                <span className="text-[12px]" style={{ color: C.text2 }}>
-                  {sub}
-                </span>
-              </span>
+          {" "}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", padding: "14px 24px", background: $v.c?.dialogFoot, borderTop: `1px solid ${__s($v.c?.stroke)}` }}>
+            <button className="btn hv" onClick={$v.cancelUpd} style={{ width: "120px", height: "34px", borderRadius: "6px", background: $v.c?.btn, textAlign: "center" }}>
+              {"Отмена"}
             </button>
-          )
-        })}
-      </div>
-    </DialogShell>
-  )
-}
-
-export function BoloCloseDialog({ state, patch, toast, selected }: DlgProps) {
-  const reasons =
-    selected.kind === 'missing'
-      ? [['Найден', 'Жив, передан родственникам или EMS'], ['Вернулся сам', 'По сообщению родственников'], ['Ошибка или дубль', 'Ориентировка создана по ошибке']]
-      : selected.kind === 'veh'
-        ? [['Найдена', 'Машина обнаружена, на штрафстоянке или у владельца'], ['Отменена владельцем', 'Заявление отозвано'], ['Ошибка или дубль', 'Ориентировка создана по ошибке']]
-        : [['Задержан', 'Привяжите арест, чтобы ссылка появилась в карточке'], ['Снят с розыска', 'Ордер отозван или основание отпало'], ['Ошибка или дубль', 'Ориентировка создана по ошибке']]
-
-  function confirm() {
-    const labels = selected.kind === 'missing' ? ['Найден', 'Вернулся сам', 'Ошибка'] : selected.kind === 'veh' ? ['Найдена', 'Отменена владельцем', 'Ошибка'] : ['Задержан', 'Снят с розыска', 'Ошибка']
-    patch({ closedMap: { ...state.closedMap, [selected.id]: labels[state.closeWhy] }, dlg: null })
-    toast('closed')
-  }
-
-  return (
-    <DialogShell
-      title="Закрыть ориентировку"
-      sub={`${selected.no} · ${selected.title}`}
-      width={520}
-      foot={
-        <>
-          <button type="button" onClick={() => patch({ dlg: null })} className="h-[34px] w-[120px] rounded-[6px] text-center hover:brightness-110" style={{ background: C.btn }}>
-            Отмена
-          </button>
-          <button type="button" onClick={confirm} className="h-[34px] w-[160px] rounded-[6px] text-center font-semibold hover:brightness-110" style={{ background: ACCENT, color: ON_ACCENT }}>
-            Закрыть
-          </button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-1.5">
-        {reasons.map((r, i) => {
-          const on = state.closeWhy === i
-          return (
-            <button key={r[0]} type="button" onClick={() => patch({ closeWhy: i })} className="flex items-center gap-2.5 rounded-[8px] p-2.5 hover:brightness-110" style={{ background: on ? C.sel : C.card, boxShadow: on ? `inset 0 0 0 1px ${C.stroke2}` : 'none' }}>
-              <span className="box-border h-4 w-4 shrink-0 rounded-full" style={{ border: on ? `5px solid ${ACCENT}` : `1.5px solid ${C.stroke2}` }} />
-              <span className="flex flex-col text-left leading-[18px]">
-                <span className="font-semibold">{r[0]}</span>
-                <span className="text-[12px]" style={{ color: C.text2 }}>
-                  {r[1]}
-                </span>
-              </span>
+            <button className="btn acc" onClick={$v.confirmUpd} style={{ width: "160px", height: "34px", borderRadius: "6px", background: $v.accent, color: $v.onAccent, fontWeight: "600", textAlign: "center" }}>
+              {"Обновить"}
             </button>
-          )
-        })}
+          </div>
+          {" "}
+        </div>
       </div>
-      <span className="text-[12px]" style={{ color: C.text2 }}>
-        Связанные ориентировки, например на машину, предложим закрыть следующим шагом.
-      </span>
-    </DialogShell>
+    </>
   )
 }
 
-export function BoloMenu({ state, patch, toast, selected }: DlgProps) {
-  const items = [
-    { t: 'Обновить ориентировку', d: 'M4 14.5V16h1.5L15 6.5 13.5 5zM12 6.5l1.5 1.5', go: () => patch({ menu: false, dlg: 'update' }) },
-    { t: 'Продлить на 24 ч', d: 'M10 17.5a7.5 7.5 0 100-15 7.5 7.5 0 000 15zM10 6v4l2.5 1.5', go: () => { patch({ menu: false, extMap: { ...state.extMap, [selected.id]: '18.11, 20:00' } }); toast('ext') } },
-    { t: `Доступ: все агентства`, d: 'M5.5 9V6.5a4.5 4.5 0 019 0V9M4 9h12v8.5H4z', go: () => patch({ menu: false }) },
-    { t: 'Скопировать текст для рации', d: 'M7 7h9v10H7zM4 13V3h9', go: () => { patch({ menu: false }); toast('radio') } },
-  ]
+export function BoloCloseDialog({ $v }: { $v: BoloVals }) {
+  if (!$v.closeDlg) return null
   return (
-    <div role="menu" className="absolute right-5 top-[84px] z-10 box-border w-[280px] rounded-[8px] p-1" style={{ background: C.flyout, border: `1px solid ${C.stroke}`, boxShadow: '0 16px 32px rgba(0,0,0,0.45)' }}>
-      {items.map((m) => (
-        <button key={m.t} role="menuitem" type="button" onClick={m.go} className="flex h-[34px] w-full items-center gap-2.5 whitespace-nowrap rounded-[4px] px-2.5 text-left hover:bg-white/10">
-          <PathIcon d={m.d} className="h-[15px] w-[15px] shrink-0" style={{ color: C.text2 }} />
-          <span className="truncate">{m.t}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
-export function BoloIncomingBanner({ patch, acked }: { patch: (p: Partial<BoloUIState>) => void; acked: Record<string, boolean> }) {
-  return (
-    <div role="alert" className="absolute right-5 top-[52px] z-30 box-border flex w-[380px] flex-col gap-2.5 rounded-[10px] p-4" style={{ background: C.flyout, border: `1px solid ${C.stroke}`, boxShadow: '0 16px 40px rgba(0,0,0,0.55)' }}>
-      <div className="flex items-center gap-2">
-        <span className="flex h-[18px] w-[18px] items-center justify-center rounded-[5px]" style={{ background: '#C42B1C', color: '#fff' }}>
-          <PathIcon d="M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 100-13zM10 8a2 2 0 100 4 2 2 0 100-4z" className="h-3 w-3" />
-        </span>
-        <span className="flex-1 text-[12px]" style={{ color: C.text2 }}>
-          Новая ориентировка от FIB · сейчас
-        </span>
-        <button type="button" onClick={() => patch({ incoming: false })} aria-label="Скрыть" className="flex h-6 w-6 items-center justify-center rounded-[4px] hover:bg-white/10" style={{ color: C.text2 }}>
-          <CloseIcon className="h-2.5 w-2.5" />
-        </button>
-      </div>
-      <div className="flex gap-3">
-        <span className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[8px]" style={{ background: C.mug }}>
-          <span className="absolute inset-x-0 top-3 text-center text-[20px] font-bold">?</span>
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="font-semibold">Неизвестный в балаклаве</span>
-          <span className="text-[12px] leading-4" style={{ color: C.text2 }}>
-            B-0420 · вооружённое ограбление Fleeca Bank, Great Ocean Hwy. Тёмный седан без номеров, на север.
-          </span>
-          <span className="flex gap-1 pt-0.5">
-            <span className="inline-flex h-5 items-center rounded-[10px] px-[7px] text-[11px]" style={{ background: TONE.red[0], color: TONE.red[1] }}>
-              Высокий
+    <>
+      <div onClick={(e) => { if (e.target === e.currentTarget) $v.cancelClose() }} data-ov="" style={{ position: "absolute", inset: "0", zIndex: "20", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div role="dialog" aria-label="Закрыть ориентировку" style={{ width: "520px", boxSizing: "border-box", borderRadius: "10px", background: $v.c?.dialog, border: `1px solid ${__s($v.c?.stroke)}`, boxShadow: "0 32px 64px rgba(0,0,0,0.55)", overflow: "hidden" }}>
+          {" "}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px", padding: "24px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <span style={{ fontSize: "20px", lineHeight: "28px", fontWeight: "600" }}>
+                {"Закрыть ориентировку"}
+              </span>
+              <span style={{ fontSize: "13px", color: $v.c?.text2 }}>
+                {__h($v.b?.id)}{" · "}{__h($v.b?.title)}
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {__a($v.closeReasons).map((o: any, $i0: number) => (
+                <Fragment key={$i0}>
+                  <button className="btn hv" onClick={o?.pick} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderRadius: "8px", background: o?.bg, boxShadow: o?.ring }}>
+                    <span style={{ width: "16px", height: "16px", boxSizing: "border-box", borderRadius: "50%", border: o?.radio }}></span>
+                    <span style={{ flex: "1", display: "flex", flexDirection: "column", lineHeight: "18px" }}>
+                      <span style={{ fontWeight: "600" }}>
+                        {__h(o?.t)}
+                      </span>
+                      <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
+                        {__a(o?.subP).map((qp: any, $i1: number) => (
+                          <Fragment key={$i1}>
+                            {qp?.a ? (
+                              <>
+                              {__h(qp?.t)}
+                              </>
+                            ) : null}
+                            {qp?.b ? (
+                              <span className="lpi">
+                                {__h(qp?.t)}
+                              </span>
+                            ) : null}
+                          </Fragment>
+                        ))}
+                      </span>
+                    </span>
+                  </button>
+                </Fragment>
+              ))}
+            </div>
+            {$v.closeArrestOn ? <BoloArrestPicker $v={$v} /> : null}
+            {$v.closeNoteOn ? <BoloCloseNote $v={$v} /> : null}
+            <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
+              {"Связанные ориентировки, например на машину, предложим закрыть следующим шагом."}
             </span>
-            <span className="inline-flex h-5 items-center rounded-[10px] px-[7px] text-[11px]" style={{ background: TONE.red[0], color: TONE.red[1] }}>
-              Вооружён и опасен
+          </div>
+          {" "}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", padding: "14px 24px", background: $v.c?.dialogFoot, borderTop: `1px solid ${__s($v.c?.stroke)}` }}>
+            <button className="btn hv" onClick={$v.cancelClose} style={{ width: "120px", height: "34px", borderRadius: "6px", background: $v.c?.btn, textAlign: "center" }}>
+              {"Отмена"}
+            </button>
+            <button className="btn acc" onClick={$v.confirmClose} style={{ width: "160px", height: "34px", borderRadius: "6px", background: $v.accent, color: $v.onAccent, fontWeight: "600", textAlign: "center" }}>
+              {"Закрыть"}
+            </button>
+          </div>
+          {" "}
+        </div>
+      </div>
+    </>
+  )
+}
+
+export function BoloIncoming({ $v }: { $v: BoloVals }) {
+  if (!$v.incoming) return null
+  return (
+    <>
+      <div role="alert" style={{ position: "absolute", right: "20px", top: "52px", zIndex: "40", width: "380px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "10px", background: $v.c?.flyout, border: `1px solid ${__s($v.c?.stroke)}`, boxShadow: "0 16px 40px rgba(0,0,0,0.55)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ width: "18px", height: "18px", borderRadius: "5px", background: "#C42B1C", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="10" cy="10" r="6.5"></circle>
+              <circle cx="10" cy="10" r="2"></circle>
+            </svg>
+          </span>
+          <span style={{ flex: "1", fontSize: "12px", color: $v.c?.text2 }}>
+            {"Новая ориентировка от LSSD · сейчас"}
+          </span>
+          <button className="btn hv" onClick={$v.dismissIncoming} aria-label="Скрыть" style={{ width: "24px", height: "24px", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", color: $v.c?.text2 }}>
+            <svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M4 4l12 12M16 4L4 16"></path>
+            </svg>
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <span style={{ position: "relative", width: "52px", height: "52px", flexShrink: "0", borderRadius: "8px", overflow: "hidden", background: $v.c?.mug }}>
+            <span style={{ position: "absolute", left: "0", right: "0", top: "12px", textAlign: "center", fontSize: "20px", fontWeight: "700" }}>
+              {"?"}
             </span>
           </span>
-        </span>
+          <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
+            <span style={{ fontWeight: "600" }}>
+              {"Неизвестный в балаклаве"}
+            </span>
+            <span style={{ fontSize: "12px", lineHeight: "16px", color: $v.c?.text2 }}>
+              {"B-0420 · вооружённое ограбление Fleeca Bank, Great Ocean Hwy. Тёмный седан без номеров, на север."}
+            </span>
+            <span style={{ display: "flex", gap: "4px", paddingTop: "2px" }}>
+              <span className="chip" style={{ height: "20px", fontSize: "11px", padding: "0 7px", background: $v.redBg, color: $v.redFg }}>
+                {"Высокий"}
+              </span>
+              <span className="chip" style={{ height: "20px", fontSize: "11px", padding: "0 7px", background: $v.redBg, color: $v.redFg }}>
+                {"Вооружён и опасен"}
+              </span>
+            </span>
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button className="btn hv" onClick={$v.ackIncoming} style={{ flex: "1", height: "32px", borderRadius: "6px", background: $v.c?.btn, textAlign: "center" }}>
+            {"Ознакомлен"}
+          </button>
+          <button className="btn acc" onClick={$v.openIncoming} style={{ flex: "1", height: "32px", borderRadius: "6px", background: $v.accent, color: $v.onAccent, fontWeight: "600", textAlign: "center" }}>
+            {"Открыть"}
+          </button>
+        </div>
       </div>
-      <div className="flex gap-2">
-        <button type="button" onClick={() => patch({ incoming: false, acked: { ...acked, b420: true } })} className="h-8 flex-1 rounded-[6px] text-center hover:brightness-110" style={{ background: C.btn }}>
-          Ознакомлен
-        </button>
-        <button type="button" onClick={() => patch({ incoming: false, view: 'feed', nav: 'active', sel: 'b420' })} className="h-8 flex-1 rounded-[6px] text-center font-semibold hover:brightness-110" style={{ background: ACCENT, color: ON_ACCENT }}>
-          Открыть
-        </button>
-      </div>
-    </div>
+    </>
   )
 }
 
-const TOAST_COPY: Record<string, { title: string; text: (b: Bolo) => string }> = {
-  seen: { title: 'Отметка отправлена', text: () => 'Автор ориентировки и все на смене увидят её на карте.' },
-  backup: { title: 'Отметка и запрос поддержки отправлены', text: () => 'Диспетчер создал вызов с вашей позицией.' },
-  closed: { title: 'Ориентировка закрыта', text: () => 'Все на смене получили уведомление, карточка ушла в архив.' },
-  pub: { title: 'Ориентировка опубликована', text: () => 'Разослано на смену, диспетчер получил текст для рации.' },
-  photo: { title: 'Фото добавлено', text: () => 'Его увидят все, кто откроет ориентировку.' },
-  pdf: { title: 'PDF готов', text: (b) => `BOLO-${b.no.slice(2)}.pdf сохранён, можно печатать.` },
-  mail: { title: 'Листовка отправлена', text: () => 'PDF ушёл в Почту участку для печати.' },
-  ext: { title: 'Ориентировка продлена', text: () => 'Срок обновлён в карточке, смена получила уведомление.' },
-  upd: { title: 'Ориентировка обновлена', text: () => 'Ознакомившиеся получили уведомление «Обновлена».' },
-  radio: { title: 'Текст скопирован', text: () => 'Вставьте в рацию или зачитайте на канале.' },
-}
-
-export function BoloToast({ toastKey, selected }: { toastKey: string; selected: Bolo }) {
-  const copy = TOAST_COPY[toastKey]
-  if (!copy) return null
+export function BoloToast({ $v }: { $v: BoloVals }) {
+  if (!$v.toast) return null
   return (
-    <div role="status" className="absolute bottom-6 right-6 z-30 box-border flex w-[360px] gap-3 rounded-[8px] p-3.5" style={{ background: C.flyout, border: `1px solid ${C.stroke}`, boxShadow: '0 12px 32px rgba(0,0,0,0.4)' }}>
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full" style={{ background: TONE.green[0], color: TONE.green[1] }}>
-        <PathIcon d="M4.5 10.5l3.5 3.5 7.5-8" className="h-3.5 w-3.5" />
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="font-semibold">{copy.title}</span>
-        <span className="text-[13px]" style={{ color: C.text2 }}>
-          {copy.text(selected)}
+    <>
+      <div role="status" style={{ position: "absolute", right: "24px", bottom: "24px", zIndex: "30", width: "360px", boxSizing: "border-box", display: "flex", gap: "12px", padding: "14px 16px", borderRadius: "8px", background: $v.c?.flyout, border: `1px solid ${__s($v.c?.stroke)}`, boxShadow: "0 12px 32px rgba(0,0,0,0.45)" }}>
+        <span style={{ width: "28px", height: "28px", flexShrink: "0", borderRadius: "50%", background: $v.greenBg, color: $v.T?.green, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4.5 10.5l3.5 3.5 7.5-8"></path>
+          </svg>
         </span>
-      </span>
-    </div>
+        <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
+          <span style={{ fontWeight: "600" }}>
+            {__h($v.toastTitle)}
+          </span>
+          <span style={{ fontSize: "13px", color: $v.c?.text2 }}>
+            {__h($v.toastText)}
+          </span>
+        </span>
+      </div>
+    </>
   )
 }

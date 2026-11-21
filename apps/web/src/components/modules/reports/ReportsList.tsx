@@ -187,7 +187,7 @@ export function ReportsList({ $v }: { $v: ReportsVals }) {
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 28px", borderTop: `1px solid ${__s($v.c?.stroke)}` }}>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center", gap: "8px", padding: "12px 28px", borderTop: `1px solid ${__s($v.c?.stroke)}` }}>
             <button className="btn hv" onClick={$v.w?.openDoc} style={{ height: "34px", padding: "0 14px", borderRadius: "6px", display: "flex", alignItems: "center", gap: "8px", background: $v.c?.btn }}>
               <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M5 2.5h7l3 3v12H5zM8 9h4M8 12h4"></path>
@@ -200,6 +200,11 @@ export function ReportsList({ $v }: { $v: ReportsVals }) {
             {$v.w?.hasSec ? (
               <button className="btn hv" onClick={$v.w?.sec} style={{ height: "34px", padding: "0 14px", borderRadius: "6px", background: $v.c?.btn, whiteSpace: "nowrap" }}>
                 {__h($v.w?.secT)}
+              </button>
+            ) : null}
+            {$v.w?.hasEdit ? (
+              <button className="btn hv" onClick={$v.w?.edit} style={{ height: "34px", padding: "0 14px", borderRadius: "6px", background: $v.c?.btn, whiteSpace: "nowrap" }}>
+                {"Редактировать"}
               </button>
             ) : null}
             {$v.w?.hasPri ? (
@@ -218,10 +223,10 @@ export function ReportsToast({ $v }: { $v: ReportsVals }) {
   if (!$v.toast) return null
   return (
     <>
-      <div role="status" style={{ position: "absolute", right: "24px", bottom: "24px", zIndex: "30", width: "360px", boxSizing: "border-box", display: "flex", gap: "12px", padding: "14px 16px", borderRadius: "8px", background: $v.c?.flyout, border: `1px solid ${__s($v.c?.stroke)}`, boxShadow: "0 12px 32px rgba(0,0,0,0.45)" }}>
-        <span style={{ width: "28px", height: "28px", flexShrink: "0", borderRadius: "50%", background: $v.greenBg, color: $v.greenFg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div role="status" style={{ position: "absolute", right: "24px", top: "12px", zIndex: "30", width: "360px", boxSizing: "border-box", display: "flex", gap: "12px", padding: "14px 16px", borderRadius: "8px", background: $v.c?.flyout, border: `1px solid ${__s($v.c?.stroke)}`, boxShadow: "0 12px 32px rgba(0,0,0,0.45)" }}>
+        <span style={{ width: "28px", height: "28px", flexShrink: "0", borderRadius: "50%", background: $v.toastBad ? $v.redBg : $v.greenBg, color: $v.toastBad ? $v.redFg : $v.greenFg, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M4.5 10.5l3.5 3.5 7.5-8"></path>
+            <path d={$v.toastBad ? "M10 5v6M10 14.5h.01" : "M4.5 10.5l3.5 3.5 7.5-8"}></path>
           </svg>
         </span>
         <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -232,6 +237,15 @@ export function ReportsToast({ $v }: { $v: ReportsVals }) {
             {__h($v.toastText)}
           </span>
         </span>
+        {/* MDT: undo for «Удалить черновик», and a close button */}
+        {$v.toastUndo ? (
+          <button className="btn hv" onClick={$v.toastUndo} style={{ alignSelf: "center", height: "30px", padding: "0 12px", borderRadius: "6px", background: $v.c?.btn, color: $v.c?.link, fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>
+            {"Отменить"}
+          </button>
+        ) : null}
+        <button className="btn hv" onClick={$v.toastClose} aria-label="Закрыть уведомление" style={{ alignSelf: "flex-start", width: "24px", height: "24px", flexShrink: "0", borderRadius: "5px", display: "flex", alignItems: "center", justifyContent: "center", color: $v.c?.text2 }}>
+          <svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16"></path></svg>
+        </button>
       </div>
     </>
   )

@@ -45,11 +45,31 @@ const sectionOf = (where: string) => {
   return /^[A-Z]{2}-\d/.test(top) ? 'Дело целиком' : top
 }
 
-function Row({ r, last, onWho, onSection }: { r: CaseLogRow; last: boolean; onWho?: (w: string) => void; onSection?: (s: string) => void }) {
+/** Opens what a journal row is about (a record, a folder or the case); null = nothing to open. */
+export type LogOpener = (r: CaseLogRow) => (() => void) | null
+
+function Row({ r, last, onWho, onSection, opener }: { r: CaseLogRow; last: boolean; onWho?: (w: string) => void; onSection?: (s: string) => void; opener?: LogOpener }) {
   const sec = r.where.split(' › ')[0]
   const rest = r.where.slice(sec.length)
+  const open = opener?.(r) ?? null
   return (
-    <div className="flex items-center px-4">
+    <div
+      className={`flex items-center px-4 ${open ? 'cursor-pointer hover:bg-white/[0.04]' : ''}`}
+      {...(open
+        ? {
+            role: 'button',
+            tabIndex: 0,
+            title: 'Открыть: ' + r.where,
+            onClick: open,
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault()
+                open()
+              }
+            },
+          }
+        : {})}
+    >
       <span className={`flex min-w-0 flex-1 items-center gap-3.5 py-2.5 ${last ? '' : 'border-b border-[#3A3A3A]'}`}>
         <span className="min-w-0 flex-1 leading-[18px]">
           <span className="flex min-w-0 items-center gap-1.5 text-[12px] text-[#C2C2C2]">
@@ -59,7 +79,7 @@ function Row({ r, last, onWho, onSection }: { r: CaseLogRow; last: boolean; onWh
             </span>
             <span className="ell min-w-0">
               {onSection ? (
-                <button type="button" onClick={() => onSection(sectionOf(r.where))} className="hover:text-[#99D9FF] hover:underline" title={`Только раздел «${sectionOf(r.where)}»`}>
+                <button type="button" onClick={(e) => (e.stopPropagation(), onSection(sectionOf(r.where)))} className="hover:text-[#99D9FF] hover:underline" title={`Только раздел «${sectionOf(r.where)}»`}>
                   {sec}
                 </button>
               ) : (
@@ -70,7 +90,7 @@ function Row({ r, last, onWho, onSection }: { r: CaseLogRow; last: boolean; onWh
           </span>
           <span className="ell mt-0.5 block text-[13px]">{r.detail}</span>
           {onWho ? (
-            <button type="button" onClick={() => onWho(r.who)} className="block text-[12px] text-[#C2C2C2] hover:text-[#99D9FF] hover:underline" title={`Только действия: ${r.who}`}>
+            <button type="button" onClick={(e) => (e.stopPropagation(), onWho(r.who))} className="block text-[12px] text-[#C2C2C2] hover:text-[#99D9FF] hover:underline" title={`Только действия: ${r.who}`}>
               {r.who}
             </button>
           ) : (
@@ -84,7 +104,7 @@ function Row({ r, last, onWho, onSection }: { r: CaseLogRow; last: boolean; onWh
 }
 
 /** Overview block: the 10 latest journal rows + «Показать все». */
-export function RecentActivity({ rows, onShowAll }: { rows: CaseLogRow[]; onShowAll: () => void }) {
+export function RecentActivity({ rows, onShowAll, opener }: { rows: CaseLogRow[]; onShowAll: () => void; opener?: LogOpener }) {
   const latest = [...rows].sort((a, b) => timeKey(b.when) - timeKey(a.when)).slice(0, 10)
   return (
     <div>
@@ -102,7 +122,7 @@ export function RecentActivity({ rows, onShowAll }: { rows: CaseLogRow[]; onShow
       <div className="overflow-hidden rounded-[12px] bg-[#303030]">
         {latest.length === 0 && <div className="px-4 py-3 text-[13px] text-[#C2C2C2]">Изменений пока нет</div>}
         {latest.map((r, i) => (
-          <Row key={r.when + r.where + i} r={r} last={i === latest.length - 1} />
+          <Row key={r.when + r.where + i} r={r} last={i === latest.length - 1} opener={opener} />
         ))}
       </div>
     </div>
@@ -110,7 +130,7 @@ export function RecentActivity({ rows, onShowAll }: { rows: CaseLogRow[]; onShow
 }
 
 
-export function CaseActivityLog({ rows }: { rows: CaseLogRow[] }) {
+export function CaseActivityLog({ rows, opener }: { rows: CaseLogRow[]; opener?: LogOpener }) {
   const [q, setQ] = useState('')
   const [action, setAction] = useState<Action | 'all'>('all')
   const [who, setWho] = useState<string[]>([])
@@ -210,7 +230,7 @@ export function CaseActivityLog({ rows }: { rows: CaseLogRow[] }) {
             </div>
             <div className="overflow-hidden rounded-[12px] bg-[#303030]">
               {g.rows.map((r, i) => (
-                <Row key={r.when + r.where + i} r={r} last={i === g.rows.length - 1} onWho={(w) => setWho([w])} onSection={(sec) => setSection([sec])} />
+                <Row key={r.when + r.where + i} r={r} last={i === g.rows.length - 1} onWho={(w) => setWho([w])} onSection={(sec) => setSection([sec])} opener={opener} />
               ))}
             </div>
           </div>

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { CaseListRow } from '../../../types'
+import { mockProfile } from '../../../lib/mockData/profile'
+import { AGENCY_SHORT, caseDeskName } from './casesStore'
 import { CaseFolderIcon, ChevronRightIcon, PeopleIcon, RootIcon, SearchIcon } from './icons'
 
 const ACCENT = '#60CDFF'
@@ -58,10 +60,10 @@ export function CasesHome({ cases, onOpenCase, onNewCase }: CasesHomeProps) {
   const shown = status === 'any' ? base : base.filter((k) => k.group === status)
 
   return (
-    <div className="flex h-full min-w-0 text-white">
-      <aside className="flex w-[300px] shrink-0 flex-col border-r border-[#3A3A3A] bg-[#1D2027]">
+    <div className="@container flex h-full min-w-0 text-white">
+      <aside className="flex w-[300px] shrink-0 flex-col @max-[900px]:w-[220px] border-r border-[#3A3A3A] bg-[#1D2027]">
         <div className="flex flex-col gap-2 px-3.5 pb-3 pt-3.5">
-          <button type="button" onClick={onNewCase} className="flex h-9 items-center justify-center gap-2 rounded-[6px] bg-[#60CDFF] text-[14px] font-semibold text-black hover:brightness-110">
+          <button type="button" data-create="" onClick={onNewCase} className="flex h-9 items-center justify-center gap-2 rounded-[6px] bg-[#60CDFF] text-[14px] font-semibold text-black hover:brightness-110">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M10 4v12M4 10h12" />
             </svg>
@@ -111,14 +113,14 @@ export function CasesHome({ cases, onOpenCase, onNewCase }: CasesHomeProps) {
         </nav>
       </aside>
 
-      <main className="scroll min-w-0 flex-1 overflow-y-auto bg-[#272727] px-10 pb-8 pt-1">
+      <main className="scroll min-w-0 flex-1 overflow-y-auto bg-[#272727] px-10 pb-8 pt-1 @max-[900px]:px-5">
         <div className="flex max-w-[1040px] flex-col gap-[18px]">
           <div className="flex items-end gap-4 pt-4">
             <div className="flex-1">
               <h1 className="m-0 text-[28px] font-bold leading-9 tracking-[-0.2px]">{VIEWS.find((v) => v.id === view)?.label}</h1>
               <div className="text-[13px] text-[#C2C2C2]">
                 {plural(shown.length)}
-                {ql ? ` по запросу «${query.trim()}»` : ''} · Отдел расследований LSPD
+                {ql ? ` по запросу «${query.trim()}»` : ''} · {caseDeskName()}
               </div>
             </div>
           </div>
@@ -133,7 +135,7 @@ export function CasesHome({ cases, onOpenCase, onNewCase }: CasesHomeProps) {
                   type="button"
                   onClick={() => setStatus(s.id)}
                   style={{ background: on ? '#FFFFFF' : 'rgba(255,255,255,0.07)', color: on ? '#1B1B1B' : '#FFFFFF' }}
-                  className="flex h-[30px] items-center gap-1.5 rounded-full px-3 text-[13px]"
+                  className="flex h-[30px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px]"
                 >
                   {s.tone && <span className="h-[7px] w-[7px] rounded-full" style={{ background: TONE[s.tone].fg }} />}
                   {s.label} {count}
@@ -170,10 +172,15 @@ export function CasesHome({ cases, onOpenCase, onNewCase }: CasesHomeProps) {
                           <span className="min-w-0 truncate" title={k.title}>{k.title}</span>
                         </span>
                         <span className="truncate text-[12px] text-[#C2C2C2]">
+                          {(k.agency ?? 'lspd') !== (mockProfile.agency ?? 'lssd') && (
+                            <span className="mr-1.5 rounded-[4px] bg-[#2B3A55] px-1.5 py-px text-[11px] text-[#99D9FF]" title="Дело другого ведомства — вам выдан доступ">
+                              {AGENCY_SHORT[k.agency ?? 'lspd']} · доступ выдан
+                            </span>
+                          )}
                           {k.lead} · изменено {k.updated}
                         </span>
                       </span>
-                      <span className="flex shrink-0 items-center gap-3.5 text-[12px] text-[#C2C2C2]">
+                      <span className="flex shrink-0 items-center gap-3.5 text-[12px] text-[#C2C2C2] @max-[820px]:hidden">
                         <span title="Участники" className="flex items-center gap-1">
                           <PeopleIcon className="h-[13px] w-[13px]" />
                           {k.ppl}
@@ -191,8 +198,8 @@ export function CasesHome({ cases, onOpenCase, onNewCase }: CasesHomeProps) {
                           {k.exp}
                         </span>
                       </span>
-                      <span className="w-[150px] shrink-0 text-right">
-                        <span className="rounded-[10px] px-2.5 py-0.5 text-[12px] font-semibold" style={{ background: t.bg, color: t.fg }}>
+                      <span className="w-[150px] shrink-0 text-right @max-[820px]:w-auto">
+                        <span className="whitespace-nowrap rounded-[10px] px-2.5 py-0.5 text-[12px] font-semibold" style={{ background: t.bg, color: t.fg }}>
                           {k.status}
                         </span>
                       </span>

@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { mockProfile } from '../../../lib/mockData/profile'
+function isMine(by) { var n = mockProfile.name; return by === n || String(by).indexOf(n.split(' ').pop()) >= 0; }
 /* Verbatim port of the design reference's component logic (project/Reports.dc.html,
  * <script data-dc-script>): all records, derivations and handlers are unchanged so
  * every screen state renders exactly as in the reference. Ours: the DCLogic base
@@ -24,7 +26,7 @@ var __PLRE = /\b\d{1,2}[A-Z]{3}\d{3}\b/g;
 function __plt(s) { return [{ t: String(s == null ? '' : s), a: true, b: false }]; }
 function __plp(s) { var out = [], last = 0, m; __PLRE.lastIndex = 0; while ((m = __PLRE.exec(s))) { if (m.index > last) out.push({ t: s.slice(last, m.index), a: true, b: false }); out.push({ t: m[0], a: false, b: true }); last = m.index + m[0].length; } if (last < s.length || !out.length) out.push({ t: s.slice(last), a: true, b: false }); return out; }
 function __cl(o) { return JSON.parse(JSON.stringify(o)); }
-function F(k, l, kind, w, o, cw) { var f = { k: k, l: l, kind: kind, w: w || 1 }; if (o !== undefined) f.o = o; if (cw) f.cw = cw; return f; }
+function F(k, l, kind, w, o, cw) { var f = { k: k, l: l, kind: kind, w: w || 1 }; if (o !== undefined) f.o = o; if (cw) f.cw = cw; if (l === 'От помощника шерифа') Object.defineProperty(f, 'l', { enumerable: true, configurable: true, get: function () { return mockProfile.agency === 'lspd' ? 'От офицера' : 'От помощника шерифа'; } }); return f; }
 function FH(f, h, x) { if (h) f.h = h; if (x) { for (var q in x) f[q] = x[q]; } return f; }
 var ENT = { bodyrec: 'CasesEvd.dc.html', cctvrec: 'SurveillanceCam.dc.html', report: 'Reports.dc.html', force: 'ReportsReview.dc.html', arrest: 'ArrestsDetail.dc.html', warrant: 'Warrants.dc.html', case: 'Cases.dc.html', call: 'Watch.dc.html', unit: 'Watch.dc.html', person: 'SearchPerson.dc.html', vehicle: 'SearchVehicle.dc.html' };
 var ENTS = { person: 'Tyrone Webb', warrant: 'W-2231 · судья Eleanor Harper', case: 'LS-2026-0893 · ограбление 24/7', force: 'R-11034 · тейзер', report: 'R-11031 · арест Tyrone Webb', bodyrec: 'Нагрудная камера Carlos Mendez · 17.11, 16:20', cctvrec: 'Камера магазина · 17.11, 16:10', arrest: 'A-2026-1203 · Tyrone Webb', unit: '2-A-03', call: '#4509 · ДТП', vehicle: 'Vapid Dominator · 4XKD019' };
@@ -207,25 +209,26 @@ class Component extends DCLogic {
     var c = { mica: '#1D2027', frame: '#3B3B3B', content: '#272727', card: '#303030', btn: '#3A3A3A', stroke: '#3A3A3A', stroke2: '#555555', text: '#FFFFFF', text2: '#C2C2C2', sel: 'rgba(255,255,255,0.06)', link: '#8FD8FF', flyout: '#2C2C2C', rail: '#242424', field: 'rgba(255,255,255,0.06)', dialog: '#2B2B2B', dialogFoot: '#202020' };
     var TN = { red: ['rgba(232,17,35,0.22)', '#FF99A4'], amber: ['rgba(255,185,0,0.16)', '#FCE100'], green: ['rgba(16,124,16,0.28)', '#6CCB5F'], grey: ['rgba(255,255,255,0.08)', '#C8C8C8'], blue: ['rgba(0,120,212,0.25)', '#99D9FF'], violet: ['rgba(135,100,184,0.28)', '#C9B6F2'] };
     var accent = '#60CDFF', onAccent = '#000000';
-    function toast(k) { self.setState({ toast: k }); clearTimeout(self._t); self._t = setTimeout(function () { self.setState({ toast: null }); }, 4000); }
+    function toast(k) { self.setState({ toast: k }); clearTimeout(self._t); self._t = setTimeout(function () { self.setState({ toast: null }); }, k === 'del' ? 8000 : 5000); }
     var ALL = R.slice();
     // MDT: reports made in this window (newest first), drafts deleted from it
     (S.made || []).forEach(function (m) { ALL.unshift(m); });
     ALL = ALL.filter(function (x) { return !(S.gone || {})[x.id]; });
+    ALL = ALL.map(function (x) { var e = (S.ed || {})[x.id]; return e ? Object.assign({}, x, e) : x; }); /* MDT: «Редактировать» */
     if (!ALL.length) ALL = R.slice(0, 1);
     function stOf(x) { return S.st[x.id] || x.status; }
     var judge = false;
     var meIsSgt = S.view === 'review' || S.view === 'sgt' || ((S.view === 'types' || S.view === 'builder') && !!S.asSgt); /* MDT: role kept on types screens */
-    var me = meIsSgt ? { ini: 'RN', name: 'Ryan Nolan', role: 'Сержант · ватч-командир', bg: '#14233F', fg: '#C9A54B' } : { ini: 'CM', name: 'Carlos Mendez', role: 'Офицер · 2-A-03 · LSPD', bg: '#14233F', fg: '#C9A54B' };
+    var me = meIsSgt ? { ini: 'RN', name: 'Ryan Nolan', role: 'Сержант · ватч-командир', bg: '#14233F', fg: '#C9A54B' } : { ini: mockProfile.name.split(' ').map(function (w) { return w.charAt(0); }).join('').slice(0, 2), name: mockProfile.name, role: mockProfile.rank + ' · ' + mockProfile.badgeNumber + ' · ' + (mockProfile.agencyShort || ''), bg: '#14233F', fg: '#C9A54B' };
     var NAV_IC = { mine: 'M10 9a3.2 3.2 0 100-6.4A3.2 3.2 0 0010 9zM3.5 17.5c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6', draft: 'M5 2.5h7l3 3v12H5zM8 9h4', review: 'M10 17.5a7.5 7.5 0 100-15 7.5 7.5 0 000 15zM10 6v4l2.5 1.5', signed: 'M4 10.5l3.5 3.5L16 5.5', all: 'M5 2.5h7l3 3v12H5z' };
     var NAV = meIsSgt ? [['review', 'Ждут меня', 'M10 17.5a7.5 7.5 0 100-15 7.5 7.5 0 000 15zM10 6v4l2.5 1.5'], ['signed', 'Утверждённые', 'M4 10.5l3.5 3.5L16 5.5'], ['all', 'Все отчёты', 'M5 2.5h7l3 3v12H5z']] : [['mine', 'Мои отчёты', 'M10 9a3.2 3.2 0 100-6.4A3.2 3.2 0 0010 9zM3.5 17.5c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6'], ['draft', 'Черновики', 'M5 2.5h7l3 3v12H5zM8 9h4'], ['review', 'На утверждении', 'M10 17.5a7.5 7.5 0 100-15 7.5 7.5 0 000 15zM10 6v4l2.5 1.5'], ['signed', 'Утверждённые', 'M4 10.5l3.5 3.5L16 5.5'], ['all', 'Все отчёты отдела', 'M5 2.5h7l3 3v12H5z']];
-    function inNav(x, n) { var s = stOf(x); return n === 'all' ? (s !== 'draft' || (!meIsSgt && x.by.indexOf('Mendez') >= 0)) : n === 'mine' ? x.by.indexOf('Mendez') >= 0 || x.by.indexOf('Watts') >= 0 : n === 'draft' ? s === 'draft' || s === 'returned' : n === 'review' ? s === 'review' : n === 'signed' ? s === 'signed' : false; }
+    function inNav(x, n) { var s = stOf(x); return n === 'all' ? (s !== 'draft' || (!meIsSgt && isMine(x.by))) : n === 'mine' ? isMine(x.by) : n === 'draft' ? (s === 'draft' || s === 'returned') && isMine(x.by) : n === 'review' ? s === 'review' : n === 'signed' ? s === 'signed' : false; }
     NAV = NAV.concat([['types', 'Типы отчётов', IC.types]]);
     var onTypes = S.view === 'types' || S.view === 'builder';
     var nav = NAV.map(function (n) { if (n[0] === 'types') return { t: n[1], icon: n[2], count: String(ORDER.length), bg: onTypes ? 'rgba(255,255,255,0.08)' : 'transparent', op: onTypes ? 1 : 0, fw: onTypes ? 600 : 400, cfw: 400, cc: c.text2, pick: function () { self.setState({ view: 'types', bt: null }); } }; var on = !onTypes && (((S.view === 'list' || S.view === 'sgt') && S.nav === n[0]) || (S.view === 'review' && n[0] === 'review')); var cnt = ALL.filter(function (x) { return inNav(x, n[0]); }).length; var hot = n[0] === 'review' && meIsSgt; return { t: n[1], icon: n[2], count: String(cnt), bg: on ? 'rgba(255,255,255,0.08)' : 'transparent', op: on ? 1 : 0, fw: on ? 600 : 400, cfw: hot ? 700 : 400, cc: hot ? c.text : c.text2, pick: function () { self.setState({ nav: n[0], view: meIsSgt ? (n[0] === 'review' ? 'review' : 'sgt') : 'list', sel: (ALL.filter(function (x) { return inNav(x, n[0]); })[0] || ALL[0]).id }); } }; });
     nav = (function () {
       var NI = { mine: NAV_IC.mine, draft: NAV_IC.draft, review: NAV_IC.review, signed: NAV_IC.signed, all: NAV_IC.all };
-      function pred(x, k, sg) { var s = stOf(x), mine = x.by.indexOf('Mendez') >= 0 || x.by.indexOf('Watts') >= 0; return k === 'all' ? (s !== 'draft' || (!sg && x.by.indexOf('Mendez') >= 0)) : k === 'mine' ? mine : k === 'draft' ? s === 'draft' || s === 'returned' : k === 'review' ? s === 'review' : k === 'signed' ? s === 'signed' : false; }
+      function pred(x, k, sg) { var s = stOf(x), mine = isMine(x.by); return k === 'all' ? (s !== 'draft' || (!sg && isMine(x.by))) : k === 'mine' ? mine : k === 'draft' ? (s === 'draft' || s === 'returned') && mine : k === 'review' ? s === 'review' : k === 'signed' ? s === 'signed' : false; }
       function item(k, t, sg) { var n = ALL.filter(function (x) { return pred(x, k, sg); }), on = !onTypes && (sg ? (S.view === 'sgt' && S.nav === k) || (S.view === 'review' && k === 'review') : S.view === 'list' && S.nav === k), hot = sg && k === 'review' && n.length > 0;
         return { isItem: true, t: t, icon: NI[k], count: String(n.length), bg: on ? 'rgba(255,255,255,0.08)' : 'transparent', op: on ? 1 : 0, fw: on ? 600 : 400, cfw: hot ? 700 : 400, cc: hot ? c.text : c.text2,
           pick: function () { self.setState({ nav: k, view: sg ? 'sgt' : 'list', sel: (n[0] || ALL[0]).id }); } }; }
@@ -236,23 +239,31 @@ class Component extends DCLogic {
     })();
     var list = ALL.filter(function (x) { return inNav(x, S.nav); });
     if (!list.some(function (x) { return x.id === S.sel; }) && (S.view === 'list' || S.view === 'sgt')) list = [ALL.filter(function (x) { return x.id === S.sel; })[0] || ALL[0]].concat(list);
-    var rows = list.map(function (x) { var T = TYPES[x.type], L = STL[stOf(x)], on = x.id === S.sel; return { title: x.title, no: x.no, type: T[0], sub: x.sub, st: L[0], stBg: TN[L[1]][0], stFg: TN[L[1]][1], when: stOf(x) === 'review' ? 'ждёт ' + (x.wait || '') : x.upd, icon: T[3], icBg: TN[T[4]][0], icFg: TN[T[4]][1], bg: on ? 'rgba(255,255,255,0.08)' : 'transparent', op: on ? 1 : 0, pick: function () { self.setState({ sel: x.id }); } }; });
-    var LT = { mine: ['Мои отчёты', 'Carlos Mendez · 2-A-03'], draft: ['Черновики', 'не отправлены или возвращены'], review: [meIsSgt ? 'Ждут меня' : 'На утверждении', 'у ватч-командира'], signed: ['Утверждённые', 'править нельзя, только дополнять'], all: ['Все отчёты', 'по отделу'] }[S.nav];
+    var rows = list.map(function (x) { var T = TYPES[x.type], L = STL[stOf(x)], on = x.id === S.sel; return { title: x.title, no: x.no, type: T[0], sub: x.sub, st: L[0], stBg: TN[L[1]][0], stFg: TN[L[1]][1], when: stOf(x) === 'review' ? 'ждёт ' + (S.st[x.id] === 'review' && (S.updx || {})[x.id] ? 'с ' + S.updx[x.id].split(', ')[1] : (x.wait || '')) : updOf(x), icon: T[3], icBg: TN[T[4]][0], icFg: TN[T[4]][1], bg: on ? 'rgba(255,255,255,0.08)' : 'transparent', op: on ? 1 : 0, pick: function () { self.setState({ sel: x.id }); } }; });
+    var LT = { mine: ['Мои отчёты', mockProfile.name + ' · ' + mockProfile.badgeNumber], draft: ['Черновики', 'не отправлены или возвращены'], review: [meIsSgt ? 'Ждут меня' : 'На утверждении', 'у ватч-командира'], signed: ['Утверждённые', 'править нельзя, только дополнять'], all: ['Все отчёты', 'по отделу'] }[S.nav];
+    // MDT: what happened to a report in this window — timeline lines, «Изменён», extra links
+    function nowT() { var d = new Date(), p = function (x) { return String(x).padStart(2, '0'); }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + ', ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+    function backOf() { return { view: S.view, nav: S.nav, sel: S.sel, rvTab: S.rvTab }; }
+    function dropEdit(o) { if (S.editId) { var vv = Object.assign({}, S.vals); delete vv[S.nType]; o.vals = vv; o.editId = null; } return o; }
+    function updOf(x) { return (S.updx || {})[x.id] || x.upd; }
+    function tlOf(x) { var add = (S.tlx || {})[x.id] || []; if (!add.length) return x.tl; return x.tl.map(function (l) { return [l[0], l[1]]; }).concat(add.map(function (l, i) { return [l[0], l[1], i === add.length - 1]; })); }
+    function logTl(id, text, extra) { var st = self.state, t = Object.assign({}, st.tlx), u = Object.assign({}, st.updx), at = nowT(); t[id] = (t[id] || []).concat([[at, text]]); u[id] = at; return Object.assign({ tlx: t, updx: u }, extra || {}); }
     var X = ALL.filter(function (x) { return x.id === S.sel; })[0] || ALL[0];
     var sX = stOf(X), TX = TYPES[X.type], LX = STL[sX];
-    var note = X.note || (sX === 'returned' ? ['Возвращён', S.retNote || 'Добавьте время вызова и номер ордера.', 'red'] : sX === 'signed' && X.signedAt ? ['Утверждён · ' + X.signer, X.signedAt + '. Править нельзя, только дополнительным отчётом.', 'green'] : null);
-    var pri = { draft: meIsSgt ? null : ['Отправить на утверждение', 'send'], returned: meIsSgt ? null : ['Исправить и отправить', 'send'], review: meIsSgt ? ['Проверить', 'review'] : null, signed: ['Дополнительный отчёт', 'sup'] }[sX];
+    var myNote = (S.notes || {})[X.id], sgAt = X.signedAt || (S.st[X.id] === 'signed' && (S.updx || {})[X.id]);
+    var note = sX === 'returned' && myNote ? ['Возвращён сержантом', 'Ryan Nolan: ' + myNote, 'red'] : X.note && sX === X.status ? X.note : (sX === 'returned' ? ['Возвращён', 'Добавьте время вызова и номер ордера.', 'red'] : sX === 'signed' && sgAt ? ['Утверждён · ' + (X.signer || 'Ryan Nolan'), sgAt + '. Править нельзя, только дополнительным отчётом.', 'green'] : null);
+    var xMine = isMine(X.by); var pri = { draft: meIsSgt || !xMine ? null : ['Отправить на утверждение', 'send'], returned: meIsSgt || !xMine ? null : ['Исправить и отправить', 'edit'], review: meIsSgt ? ['Проверить', 'review'] : null, signed: ['Дополнительный отчёт', 'sup'] }[sX];
     var w = { no: X.no, type: TX[0], tBg: TN[TX[4]][0], tFg: TN[TX[4]][1], st: LX[0], stBg: TN[LX[1]][0], stFg: TN[LX[1]][1], title: X.title + ' · ' + X.sub,
       hasNote: !!note, nTitle: note ? note[0] : '', nText: note ? note[1] : '', nBg: note ? TN[note[2]][0] : 'transparent', nFg: note ? TN[note[2]][1] : c.text,
-      facts: [['Автор', X.by], ['Экипаж', X.unit], ['Когда', X.when], ['Где', X.where], ['Кто видит', X.vis], ['Изменён', X.upd]].map(function (f) { return { k: f[0], v: f[1] }; }),
+      facts: [['Автор', X.by], ['Экипаж', X.unit], ['Когда', X.when], ['Где', X.where], ['Кто видит', X.vis], ['Изменён', updOf(X)]].map(function (f) { return { k: f[0], v: f[1] }; }),
       sections: X.secs.map(function (s) { return { k: s[0], p: __plp(s[1]) }; }),
-      links: X.links.map(function (e) { return { k: e[0], v: e[1], href: e[2] }; }),
-      tl: X.tl.map(function (l) { return { t: l[0], text: l[1], fg: l[2] ? c.text : c.text2, fw: l[2] ? 600 : 400 }; }),
-      openDoc: function () { self.setState({ view: 'doc' }); },
+      links: X.links.concat((S.lnx || {})[X.id] || []).map(function (e) { return { k: e[0], v: e[1], href: e[2] }; }),
+      tl: tlOf(X).map(function (l) { return { t: l[0], text: l[1], fg: l[2] ? c.text : c.text2, fw: l[2] ? 600 : 400 }; }),
+      openDoc: function () { self.setState({ view: 'doc', back: backOf() }); },
       footNote: sX === 'signed' ? 'Утверждённый отчёт хранится в деле и не правится' : sX === 'draft' ? 'Черновик виден только вам' : '',
-      hasSec: sX === 'draft', secT: 'Удалить черновик', sec: function () { var g = Object.assign({}, S.gone); g[X.id] = true; var next = ALL.filter(function (x) { return x.id !== X.id && inNav(x, S.nav); })[0] || ALL.filter(function (x) { return x.id !== X.id; })[0]; self.setState({ gone: g, sel: next ? next.id : S.sel }); toast('del'); },
+      hasSec: sX === 'draft' && xMine && !meIsSgt, hasEdit: sX === 'draft' && xMine && !meIsSgt, edit: function () { openEdit(X); }, secT: 'Удалить черновик', sec: function () { var g = Object.assign({}, S.gone); g[X.id] = true; var next = ALL.filter(function (x) { return x.id !== X.id && inNav(x, S.nav); })[0] || ALL.filter(function (x) { return x.id !== X.id; })[0]; self.setState({ gone: g, undo: { id: X.id, no: X.no, nav: S.nav }, sel: next ? next.id : S.sel }); toast('del'); },
       hasPri: !!pri, priT: pri ? pri[0] : '',
-      pri: function () { if (!pri) return; if (pri[1] === 'send') { var o = Object.assign({}, self.state.st); o[X.id] = 'review'; self.setState({ st: o }); toast('sent'); } else if (pri[1] === 'review') self.setState({ view: 'review' }); else self.setState({ view: 'new', nType: 4 }); } };
+      pri: function () { if (!pri) return; if (pri[1] === 'edit') { openEdit(X); return; } if (pri[1] === 'send') { if (!X.secs.some(function (q) { return String(q[1] || '').trim() && q[1] !== '—'; })) { openEdit(X, true); return; } var o = Object.assign({}, self.state.st); o[X.id] = 'review'; self.setState(logTl(X.id, sX === 'returned' ? 'Исправлен и отправлен снова' : 'Отправлен на утверждение', { st: o })); toast('sent'); } else if (pri[1] === 'review') self.setState({ view: 'review', rvTab: 'paper', retNote: '', noteErr: false, back: backOf() }); else { /* MDT: a supplement of the same type, tied to this report */ var tk = TY[X.type] ? X.type : 'arr', all = Object.assign({}, self.state.vals); all[tk] = Object.assign({}, VAL[tk], { base: X.no + ' · ' + X.title, __l_base: true }); self.setState({ view: 'new', nType: tk, vals: all, editId: null, needK: null, back: backOf() }); } } };
     // ---- generator ----
     var BTN = function (on) { return { bg: on ? 'rgba(96,205,255,0.18)' : c.btn, fg: on ? '#99E0FF' : c.text, ring: on ? 'inset 0 0 0 1px ' + accent : 'none', fw: on ? 600 : 400 }; };
     function paper(T, V, o) {
@@ -304,23 +315,28 @@ class Component extends DCLogic {
       });
     }
     function stampOf(st) { var m = { draft: ['ЧЕРНОВИК', '#8A8A8A'], review: ['НА УТВЕРЖДЕНИИ', '#B7791F'], returned: ['ВОЗВРАЩЁН', '#B3261E'], signed: ['УТВЕРЖДЁН', '#2E7D32'] }[st]; return { stamp: true, stampT: m[0], stampC: m[1] }; }
-    var nT = TY[S.nType] ? S.nType : 'arr', TNEW = TY[nT], VNEW = S.vals[nT] || VAL[nT];
+    var nT = TY[S.nType] ? S.nType : 'arr', TNEW = TY[nT], VNEW = S.vals[nT] || blankV(nT); /* MDT: empty form */
+    function blankV(k) { var d = new Date(), p = function (x) { return String(x).padStart(2, '0'); }, me0 = { name: mockProfile.name, badge: mockProfile.employeeNo || '', mark: mockProfile.badgeNumber, date: p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear(), time: p(d.getHours()) + ':' + p(d.getMinutes()) }, o = {}; (TY[k] ? TY[k].secs : []).forEach(function (sc) { sc.f.forEach(function (f) { if (me0[f.k] !== undefined && f.kind === 'text') o[f.k] = me0[f.k]; }); }); return o; }
+    function mainKey() { var k = null; TNEW.secs.forEach(function (sc) { sc.f.forEach(function (f) { if (f.main && !k) k = f.k; }); }); return k; }
     var isTypesV = S.view === 'types' || S.view === 'builder';
     var AGX = AG[S.ag] || AG.lssd; var FNO = { AR: '05.02.00', IR: '03.01.00', UF: '15.07.00', TC: 'CHP 555' }, LEN = { AR: 'ARREST REPORT', IR: 'INVESTIGATIVE REPORT', UF: "EMPLOYEE'S REPORT · USE OF FORCE", TC: 'TRAFFIC COLLISION REPORT' };
-    function agFix(o, pre, no) { o.drNo = (no || '').replace(/^R-/, 'DR ') || 'DR _____'; o.formNo = FNO[pre] || (pre || 'XX') + '.00'; if (S.ag !== 'lspd') return o; o.blocks = JSON.parse(JSON.stringify(o.blocks).split('От помощника шерифа').join('От офицера').split('Deputy Sheriff').join('Police Officer')); return o; }
-    var pNew = Object.assign({ title: TNEW.ru, en: TNEW.en, sub: TNEW.name + ' · черновик', no: 'R-11050', date: '18.11.2026', unit: 'Mission Row Station · 2-A-03', blocks: paper(TNEW, VNEW, {}), sigs: TNEW.look === 'lssd' ? [] : sigsFor(TNEW, 'Carlos Mendez', 'draft', false), foot: 'Форма ' + TNEW.pre + ' · редакция 2026', plain: TNEW.look === 'lssd', navy: TNEW.look !== 'lssd', fr: 'Протокол был заполнен в электронном формате. Может использоваться без подписи.' }, AGX, stampOf('draft')); agFix(pNew, TNEW.pre, 'R-11050');
+    function agFix(o, pre, no) { o.agFoot = String(o.agName || '').toLowerCase().replace(/(^|\s)(\S)/g, function (m, a, b) { return a + b.toUpperCase(); }); o.drNo = (no || '').replace(/^R-/, 'DR ') || 'DR _____'; o.formNo = FNO[pre] || (pre || 'XX') + '.00'; if (S.ag !== 'lspd') return o; o.blocks = JSON.parse(JSON.stringify(o.blocks).split('От помощника шерифа').join('От офицера').split('Deputy Sheriff').join('Police Officer')); return o; }
+    var nNo = S.editId ? ((ALL.filter(function (x) { return x.id === S.editId; })[0] || {}).no || 'R-11050') : 'R-' + (11050 + (S.made || []).length);
+    var pNew = Object.assign({ title: TNEW.ru, en: TNEW.en, sub: TNEW.name + (S.editId ? ' · редактирование' : ' · черновик'), no: nNo, date: VNEW.date || '__.__.______', unit: 'Mission Row Station · 2-A-03', blocks: paper(TNEW, VNEW, {}), sigs: TNEW.look === 'lssd' ? [] : sigsFor(TNEW, mockProfile.name, 'draft', false), foot: 'Форма ' + TNEW.pre + ' · редакция 2026', plain: TNEW.look === 'lssd', navy: TNEW.look !== 'lssd', fr: 'Протокол был заполнен в электронном формате. Может использоваться без подписи.' }, AGX, stampOf('draft')); agFix(pNew, TNEW.pre, nNo);
+    var pickFns = {};
     var form = TNEW.secs.map(function (sec) {
       return { t: sec.t, fs: sec.f.filter(function (f) { return !f.showIf || (VNEW[f.showIf] && VNEW[f.showIf] !== 'Нет'); }).map(function (f) {
         var v = VNEW[f.k];
-        function setV(val) { var o = Object.assign({}, VNEW); o[f.k] = val; var all = Object.assign({}, S.vals); all[nT] = o; self.setState({ vals: all }); }
+        function setV(val) { var o = Object.assign({}, VNEW); o[f.k] = val; var all = Object.assign({}, S.vals); all[nT] = o; self.setState({ vals: all, needK: S.needK === f.k ? null : S.needK }); }
         function setMany(obj) { var o = Object.assign({}, VNEW, obj); var all = Object.assign({}, S.vals); all[nT] = o; self.setState({ vals: all }); }
-        var w = { l: f.l, col: f.w === 2 ? 'span 2' : 'span 1', isAdd: false, isText: false, isEnt: false, isPick: false, isChecks: false, isYn: false, isLong: false, isTable: false, isDiag: false, v: '', h: f.h || '' };
+        var w = { l: f.l, col: f.w === 2 ? 'span 2' : 'span 1', isAdd: false, isText: false, isEnt: false, isPick: false, isChecks: false, isYn: false, isLong: false, isTable: false, isDiag: false, v: '', h: f.h || '', err: S.needK === f.k };
         if (f.kind === 'text' || f.kind === 'dt') { w.isText = true; w.v = v || ''; w.on = function (e) { setV(e.target.value); }; }
         else if (f.kind === 'ent') { var lk = VNEW['__l_' + f.k]; var onE = lk !== undefined ? lk : (!!v && v !== '—'); w.isEnt = true; w.entOn = onE; w.entOff = !onE; w.v = onE ? v : (v === '—' ? '' : (v || '')); w.entName = ENTN[f.o] || ''; w.href = ENT[f.o] || 'Watch.dc.html';
           w.on = function (e) { setV(e.target.value); };
           w.detach = function () { var o = {}; o['__l_' + f.k] = false; o[f.k] = v === '—' ? '' : v; setMany(o); };
-          w.attach = function () { var o = {}; o[f.k] = ENTS[f.o] || 'Запись'; o['__l_' + f.k] = true; if (f.o === 'arrest' && nT === 'arr') { ['person', 'dob', 'sex', 'race', 'date', 'time', 'dist', 'street', 'chg', 'warrant', 'case', 'basis', 'brace', 'bage', 'trans', 'dest'].forEach(function (k) { o[k] = VAL.arr[k]; }); o.__l_person = true; o.__l_warrant = true; o.__l_case = true; }
-            if (f.o === 'arrest' && nT === 'force') { ['date', 'time', 'dist', 'street', 'wit', 'base', 'rel'].forEach(function (k) { o[k] = VAL.force[k]; }); o.__l_base = true; }
+          w.attach = function () { self.setState({ pick: { mode: 'ent', k: f.k, o: f.o, l: f.l } }); };
+          w.attachWith = function (val, fill) { var o = Object.assign({}, fill || {}); o[f.k] = val || ENTS[f.o] || 'Запись'; o['__l_' + f.k] = true; if (f.o === 'arrest' && nT === 'arr' && o[f.k] === ENTS.arrest) { ['person', 'dob', 'sex', 'race', 'date', 'time', 'dist', 'street', 'chg', 'warrant', 'case', 'basis', 'brace', 'bage', 'trans', 'dest'].forEach(function (k) { o[k] = VAL.arr[k]; }); o.__l_person = true; o.__l_warrant = true; o.__l_case = true; }
+            if (f.o === 'arrest' && nT === 'force' && o[f.k] === ENTS.arrest) { ['date', 'time', 'dist', 'street', 'wit', 'base', 'rel'].forEach(function (k) { o[k] = VAL.force[k]; }); o.__l_base = true; }
             setMany(o); }; }
         else if (f.kind === 'pick') { w.isPick = true; w.opts = f.o.map(function (t) { var b = BTN(v === t); return { t: t, bg: b.bg, fg: b.fg, ring: b.ring, fw: b.fw, pick: function () { setV(t); } }; }); }
         else if (f.kind === 'checks') { var cur = v || []; w.isChecks = true; w.opts = f.o.map(function (t) { var on = cur.indexOf(t) >= 0, b = BTN(on); return { t: t, mark: on ? '✓' : '+', bg: b.bg, fg: b.fg, ring: b.ring, fw: b.fw, pick: function () { setV(on ? cur.filter(function (x) { return x !== t; }) : cur.concat([t])); } }; }); }
@@ -330,24 +346,27 @@ class Component extends DCLogic {
           w.trs = rowsV.map(function (r, ri) { return { cells: f.o.map(function (_, ci) { return { t: r[ci] || '', on: function (e) { var nv = __cl(rowsV); nv[ri][ci] = e.target.value; setV(nv); } }; }), rm: function () { var nv = __cl(rowsV); nv.splice(ri, 1); setV(nv); } }; });
           w.addRow = function () { var nv = __cl(rowsV); nv.push(f.o.map(function () { return ''; })); setV(nv); }; }
         else if (f.kind === 'add') { w.isAdd = true; var addV = f.o === 'vehicle';
-          w.add = function () { var tk = addV ? 'veh' : 'wit', tb = __cl(VNEW[tk] || []), n = tb.length, SV = [['Vapid Stanier (патруль)', '2019', 'Чёрно-белый', '7LRT482', 'LSSD'], ['Vapid Dominator', '2021', 'Красный', '4XKD019', 'Jordan Pike'], ['Declasse Vigero', '2008', 'Синий', '2KTV911', 'Marcus Hale']], SP = [['Devin Lanier', '—'], ['Jordan Pike', '555-0173'], ['Marcus Hale', '555-0119']], o = {};
-            if (addV) { tb.push([String(n + 1)].concat(SV[n % 3])); var dm = __cl(VNEW.dmg || []); dm.push([String(n + 1), '', '', '', '']); o.dmg = dm; }
-            else tb.push([SP[n % 3][0], 'Водитель', String(n + 1), '', SP[n % 3][1], '']);
+          w.add = function () { self.setState({ pick: { mode: 'add', k: f.k, o: addV ? 'vehicle' : 'person', l: f.l } }); };
+          w.addWith = function (it) { var tk = addV ? 'veh' : 'wit', tb = __cl(VNEW[tk] || []), n = tb.length, SV = [['Vapid Stanier (патруль)', '2019', 'Чёрно-белый', '7LRT482', 'LSSD'], ['Vapid Dominator', '2021', 'Красный', '4XKD019', 'Jordan Pike'], ['Declasse Vigero', '2008', 'Синий', '2KTV911', 'Marcus Hale']], SP = [['Devin Lanier', '—'], ['Jordan Pike', '555-0173'], ['Marcus Hale', '555-0119']], o = {};
+            if (addV) { tb.push([String(n + 1)].concat(it && it.row ? it.row : SV[n % 3])); var dm = __cl(VNEW.dmg || []); dm.push([String(n + 1), '', '', '', '']); o.dmg = dm; }
+            else tb.push([it && it.row ? it.row[0] : SP[n % 3][0], 'Водитель', String(n + 1), '', it && it.row ? it.row[1] : SP[n % 3][1], '']);
             o[tk] = tb; setMany(o); }; }
         else if (f.kind === 'diag') { w.isDiag = true; w.hasShot = !!v; w.noShot = !v; w.shotName = VNEW['__n_' + f.k] || (v && String(v).indexOf('data:') !== 0 ? v : 'фото');
           w.onFile = function (e) { var fl = e.target.files && e.target.files[0]; if (!fl) return; var rd = new FileReader(); rd.onload = function () { var o = {}; o[f.k] = rd.result; o['__n_' + f.k] = fl.name; setMany(o); }; rd.readAsDataURL(fl); };
           w.removeShot = function () { var o = {}; o[f.k] = ''; o['__n_' + f.k] = ''; setMany(o); }; }
+        pickFns[f.k] = w;
         return w;
       }) };
     });
-    var nTypes = ORDER.map(function (k) { var T = TY[k], on = nT === k; return { t: T.name, sub: T.en, icon: T.icon, ic: TN[T.tone][1], icBg: TN[T.tone][0], bg: on ? 'rgba(255,255,255,0.08)' : c.card, ring: on ? 'inset 0 0 0 1px ' + accent : 'none', pick: function () { self.setState({ nType: k }); } }; });
+    var nTypes = ORDER.map(function (k) { var T = TY[k], on = nT === k; return { t: T.name, sub: T.en, icon: T.icon, ic: TN[T.tone][1], icBg: TN[T.tone][0], bg: on ? 'rgba(255,255,255,0.08)' : c.card, ring: on ? 'inset 0 0 0 1px ' + accent : 'none', pick: S.editId ? null : function () { self.setState({ nType: k, needK: null }); }, off: !!S.editId && !on }; });
+    function plW(n, w) { var a = n % 100, d = n % 10; return a > 10 && a < 20 ? w[2] : d === 1 ? w[0] : d > 1 && d < 5 ? w[1] : w[2]; }
     var routeChips = function (T) { return T.route.map(function (s, i) { return { t: s.r + (s.c ? ' · ' + s.c : ''), bg: i === 0 ? TN.blue[0] : c.btn, fg: i === 0 ? TN.blue[1] : c.text2 }; }); };
     var ABOUT = { inc: 'Вызов или происшествие без задержания: кто, где, что случилось и что сделали. Основа для расследования.', force: 'Любое применение силы при задержании: что применено, участники, повествование, записи с камер. Утверждает начальник смены.', arr: 'Арест человека: подозреваемый (данные, основание), обвинения, связанные отчёты, автомобиль, потерпевший, сила и медицина, изъятое с ячейкой, записи с камер, транспортировка, обработка и подпись начальника смены. Подтягивает арест, ордер и дело.', trf: 'Дорожное столкновение: условия, машины и участники, фото места, состояние водителей, виновная сторона, мед. помощь и ущерб имуществу.' };
-    var tcards = ORDER.map(function (k) { var T = TY[k]; var nC = ALL.filter(function (x) { return x.type === k; }).length; return { name: T.name, en: T.en, pre: T.pre, icon: T.icon, icBg: TN[T.tone][0], icFg: TN[T.tone][1], about: ABOUT[k], nf: T.secs.reduce(function (n, s) { return n + s.f.length; }, 0), ns: T.secs.length, cnt: nC, cntW: (function (n) { n = n % 100; var d = n % 10; return n > 10 && n < 20 ? 'отчётов' : d === 1 ? 'отчёт' : d > 1 && d < 5 ? 'отчёта' : 'отчётов'; })(nC), route: routeChips(T), make: function () { self.setState({ view: 'new', nType: k }); }, edit: function () { self.setState({ view: 'builder', bt: null, btKey: k }); } }; });
+    var tcards = ORDER.map(function (k) { var T = TY[k]; var nC = ALL.filter(function (x) { return x.type === k; }).length; return { name: T.name, en: T.en, pre: T.pre, icon: T.icon, icBg: TN[T.tone][0], icFg: TN[T.tone][1], about: ABOUT[k] || 'Тип отдела, собран в конструкторе бланков.', nf: T.secs.reduce(function (n, s) { return n + s.f.length; }, 0), ns: T.secs.length, nfW: plW(T.secs.reduce(function (n, s) { return n + s.f.length; }, 0), ['поле', 'поля', 'полей']), nsW: plW(T.secs.length, ['секция', 'секции', 'секций']), cnt: nC, cntW: (function (n) { n = n % 100; var d = n % 10; return n > 10 && n < 20 ? 'отчётов' : d === 1 ? 'отчёт' : d > 1 && d < 5 ? 'отчёта' : 'отчётов'; })(nC), route: routeChips(T), make: function () { self.setState(dropEdit({ view: 'new', nType: k, needK: null, back: backOf() })); }, edit: function () { self.setState({ view: 'builder', bt: null, btKey: k }); } }; });
     // builder
-    var BT = S.bt || (S.btKey && S.btKey !== 'new' ? __cl(TY[S.btKey]) : __cl(BLANK));
+    var BT = S.bt || (S.btKey && S.btKey !== 'new' ? __cl(TY[S.btKey]) : { name: '', en: '', ru: '', pre: '', icon: IC.fi, tone: 'green', sys: false, vis: 1, who: 1, look: 'lssd', route: [{ r: 'Автор', c: '' }, { r: 'Сержант', c: 'начальник смены' }], secs: [{ t: 'Новая секция', f: [] }] }); /* MDT: a new type starts empty */
     var btNew = !S.btKey || S.btKey === 'new';
-    function upd(fn) { var b = __cl(BT); fn(b); self.setState({ bt: b }); }
+    function upd(fn) { var b = __cl(BT); fn(b); self.setState({ bt: b, nameErr: false, discard: false }); }
     function newField(kind, b) {
       b._n = (b._n || 0) + 1; var k = 'x' + b._n, o3 = ['Вариант 1', 'Вариант 2', 'Вариант 3'];
       if (kind === 'pick') return F(k, 'Новый выбор', 'pick', 2, o3);
@@ -369,21 +388,26 @@ class Component extends DCLogic {
         return { t: sec.t, np: !!sec.np, npT: sec.np ? 'не печатается' : 'на бланке', npBg: sec.np ? c.btn : 'transparent', npFg: sec.np ? c.text : c.text2, toggleNp: function () { upd(function (b) { b.secs[si].np = !b.secs[si].np; }); }, onT: function (e) { var v = e.target.value; upd(function (b) { b.secs[si].t = v; }); }, rm: function () { upd(function (b) { b.secs.splice(si, 1); }); },
           fs: sec.f.map(function (f, fi) { return { l: f.l, kindT: KT[f.kind] + (f.kind === 'ent' ? ' · ' + ENTN[f.o] : ''), wT: f.w === 2 ? '1/1' : '1/2',
             onL: function (e) { var v = e.target.value; upd(function (b) { b.secs[si].f[fi].l = v; }); }, wide: function () { upd(function (b) { var g = b.secs[si].f[fi]; g.w = g.w === 2 ? 1 : 2; }); },
-            rm: function () { upd(function (b) { b.secs[si].f.splice(fi, 1); }); }, up: function () { upd(function (b) { swap(b.secs[si].f, fi, fi - 1); }); }, dn: function () { upd(function (b) { swap(b.secs[si].f, fi, fi + 1); }); } }; }),
+            rm: function () { upd(function (b) { b.secs[si].f.splice(fi, 1); }); }, up: fi > 0 ? function () { upd(function (b) { swap(b.secs[si].f, fi, fi - 1); }); } : null, dn: fi < sec.f.length - 1 ? function () { upd(function (b) { swap(b.secs[si].f, fi, fi + 1); }); } : null }; }),
           palette: PAL.map(function (p) { return { t: p[1], add: function () { upd(function (b) { b.secs[si].f.push(newField(p[0], b)); }); } }; }) };
       }),
       addSec: function () { upd(function (b) { b.secs.push({ t: 'Новая секция', f: [] }); }); },
-      route: BT.route.map(function (s, i) { return { n: i + 1, r: s.r, cond: s.c, onC: function (e) { var v = e.target.value; upd(function (b) { b.route[i].c = v; }); }, rm: function () { if (i > 0) upd(function (b) { b.route.splice(i, 1); }); } }; }),
-      roles: ['Сержант', 'Командир отдела', 'Командир участка', 'Внутренние расследования'].map(function (r) { return { t: r, add: function () { upd(function (b) { b.route.push({ r: r, c: '' }); }); } }; }),
+      route: BT.route.map(function (s, i) { return { n: i + 1, r: s.r, cond: s.c, onC: function (e) { var v = e.target.value; upd(function (b) { b.route[i].c = v; }); }, rm: i > 0 ? function () { upd(function (b) { b.route.splice(i, 1); }); } : null }; }),
+      roles: ['Сержант', 'Командир отдела', 'Командир участка', 'Внутренние расследования'].map(function (r) { var used = BT.route.some(function (s) { return s.r === r; }); return { t: r, used: used, add: used ? null : function () { upd(function (b) { b.route.push({ r: r, c: '' }); }); } }; }),
       who: seg2(['Все офицеры', 'Сержанты и выше', 'Командиры'], 'who'), vis: seg2(['Только я', 'Отдел', 'Командование'], 'vis'),
       foot: btNew ? 'Тип увидят все офицеры отдела. Бланк можно будет менять, старые отчёты останутся как были.' : 'Изменения коснутся только новых отчётов. Утверждённые не меняются.',
       pubT: btNew ? 'Опубликовать тип' : 'Сохранить бланк', publish: function () {
+        if (!String(BT.name || '').trim()) { self.setState({ nameErr: true }); toast('noname'); return; }
+        if (!BT.secs.some(function (s) { return s.f.length; })) { toast('nofields'); return; }
         // MDT: the type goes into the catalog (a new one is appended, an edited one replaced)
         var b = __cl(BT), k = btNew ? 'u' + (ORDER.length + 1) : S.btKey;
         if (btNew) { b.sys = false; ORDER.push(k); VAL[k] = {}; NEWT[k] = [b.name, 'новый отчёт']; }
         TY[k] = b; TYPES[k] = [b.name, b.en, b.ru, b.icon, b.tone, ''];
-        self.setState({ view: 'types', bt: null }); toast('type'); }
+        self.setState({ view: 'types', bt: null, discard: false }); toast('type'); }
     };
+    bd.nameErr = !!S.nameErr; bd.cancelT = S.discard && S.bt ? 'Выйти без сохранения' : 'Отмена'; bd.footWarn = !!(S.discard && S.bt);
+    if (bd.footWarn) bd.foot = 'Изменения не сохранены. «Выйти без сохранения» выбросит их — или продолжайте правку.';
+    bd.cancel = function () { if (S.bt && !S.discard) { self.setState({ discard: true }); return; } self.setState({ view: 'types', bt: null, discard: false, nameErr: false }); };
     var bLs = BT.look === 'lssd'; var pBld = Object.assign({ title: BT.ru || (BT.name || 'Без названия').toUpperCase(), en: BT.en || '', sub: 'Образец бланка', no: (BT.pre || 'XX') + '-_____', date: '__.__.______', unit: 'Mission Row Station', blocks: paper(BT, {}, { blank: true }), sigs: bLs ? [] : BT.route.slice(0, 3).map(function (s) { return { sig: '', who: s.r, role: s.r, note: 'не подписан' }; }), foot: 'Форма ' + (BT.pre || 'XX') + ' · редакция 2026', plain: bLs, navy: !bLs, fr: 'Протокол был заполнен в электронном формате. Может использоваться без подписи.', stamp: true, stampT: 'ОБРАЗЕЦ', stampC: '#8A8A8A' }, AGX); agFix(pBld, BT.pre, (BT.pre || 'XX') + '-_____');
     // paper (doc / review)
     var P = X, TP = TY[P.type], sP = stOf(P);
@@ -415,8 +439,32 @@ class Component extends DCLogic {
     });
     var onData = isReview && S.rvTab === 'data';
     var dcd = dv.map(function (sx) { return { t: sx.t, items: sx.items.filter(function (it) { return !it.hid; }) }; }).filter(function (sx) { return sx.items.length; });
-    var rvd = S.st[P.id];
-    var rv = { title: (P.review || {}).title || 'Проверка', checks: ((P.review || { checks: [] }).checks).map(function (k) { return { m: k[0], t: k[1], c: TN[k[2]][1] }; }), att: ((P.review || { att: [] }).att).map(function (e) { return { k: e[0], v: e[1], href: e[2] }; }), noteLabel: 'Комментарий', ph: 'Обязателен, если возвращаете на доработку', okT: (P.review || {}).okT || 'Утвердить', can: isReview && !rvd && sP === 'review', done: isReview && !!rvd, doneT: rvd === 'signed' ? 'Утверждён. Автор и дело получили уведомление.' : 'Возвращён автору с вашим комментарием.' };
+    var rvd = S.st[P.id] === 'signed' || S.st[P.id] === 'returned' ? S.st[P.id] : null; /* MDT: only a decision closes the review */
+    var rv = { title: (P.review || {}).title || 'Проверка', checks: ((P.review || { checks: [] }).checks).map(function (k) { return { m: k[0], t: k[1], c: TN[k[2]][1] }; }), att: ((P.review || { att: [] }).att).map(function (e) { return { k: e[0], v: e[1], href: e[2], isLink: !(e[2] === 'Reports.dc.html' && !/R-\d{5}/.test(e[1])) }; }), noteLabel: 'Комментарий', ph: 'Обязателен, если возвращаете на доработку', okT: (P.review || {}).okT || 'Утвердить', can: isReview && !rvd && sP === 'review', done: isReview && !!rvd, doneT: rvd === 'signed' ? 'Утверждён. Автор и дело получили уведомление.' : 'Возвращён автору с вашим комментарием.' };
+    // MDT: review header, the queue, and the decision shown after it
+    var queue = ALL.filter(function (x) { return stOf(x) === 'review' && x.id !== P.id; });
+    rv.no = P.no; rv.typeT = TP.name; rv.by = P.by;
+    rv.waitT = sP === 'review' ? 'ждёт ' + (S.st[P.id] === 'review' && (S.updx || {})[P.id] ? 'с ' + S.updx[P.id].split(', ')[1] : (P.wait || '')) : (STL[sP] || [''])[0];
+    rv.sentNote = (S.notes || {})[P.id] || ''; rv.lock = rv.done; rv.noteErr = !!S.noteErr && !rv.done;
+    if (rvd === 'returned') rv.doneT = 'Возвращён автору с комментарием ниже.'; else if (rvd === 'signed') rv.doneT = 'Утверждён. Автор и дело получили уведомление.';
+    rv.next = queue[0] ? function () { self.setState({ sel: queue[0].id, rvTab: 'paper', retNote: '', noteErr: false }); } : null;
+    rv.nextT = queue[0] ? 'Следующий в очереди · ' + queue[0].no : ''; rv.empty = !queue[0];
+    rv.back = function () { self.setState({ view: 'sgt', nav: 'review', sel: (queue[0] || P).id, retNote: '', noteErr: false, back: null }); };
+    // MDT: «Редактировать» — the form opens with the report's values
+    function valsOf(x) {
+      var T = TY[x.type]; if (!T) return {};
+      if (OV[x.id] && (S.made || []).some(function (m) { return m.id === x.id; }) || (S.ed || {})[x.id]) return __cl(OV[x.id] || {});
+      var V = Object.assign(__cl(VAL[x.type] || {}), { date: x.when.split(', ')[0] + '.2026', time: x.when.split(', ')[1], street: x.where, name: x.by, mark: x.unit }, __cl(OV[x.id] || {}));
+      var mk = null; T.secs.forEach(function (sc) { sc.f.forEach(function (f) { if (f.main && !mk) mk = f.k; }); });
+      if (mk) V[mk] = x.secs.length === 1 ? x.secs[0][1] : x.secs.map(function (q) { return q[0] + ': ' + q[1]; }).join('\n\n');
+      return V;
+    }
+    function openEdit(x, need) {
+      var all = Object.assign({}, S.vals); all[x.type] = valsOf(x); var mk = null;
+      (TY[x.type] ? TY[x.type].secs : []).forEach(function (sc) { sc.f.forEach(function (f) { if (f.main && !mk) mk = f.k; }); });
+      self.setState({ view: 'new', nType: x.type, vals: all, editId: x.id, needK: need ? mk : null, need: need ? 'Отчёт пуст — заполните его, потом отправляйте.' : '', back: backOf() });
+      if (need) toast('need');
+    }
     // MDT: a report from the «Новый отчёт» form, with the values typed in it
     function makeNew(status) {
       var made = S.made || [], n = 11050 + made.length, now = new Date(), p2 = function (x) { return String(x).padStart(2, '0'); };
@@ -424,29 +472,56 @@ class Component extends DCLogic {
       TNEW.secs.forEach(function (sc) { sc.f.forEach(function (f) { if (f.main && !mainF) mainF = f; if (f.kind === 'ent' && V[f.k] && V[f.k] !== '—' && V['__l_' + f.k] !== false) links.push([ENTN[f.o] || f.l, V[f.k], ENT[f.o] || 'Watch.dc.html']); }); });
       var day = /^\d{2}\.\d{2}/.test(V.date || '') ? V.date.slice(0, 5) : p2(now.getDate()) + '.' + p2(now.getMonth() + 1);
       var when = day + ', ' + (V.time || p2(now.getHours()) + ':' + p2(now.getMinutes()));
-      var title = (nT === 'arr' && V.person) || (NEWT[nT] || [TNEW.name])[0];
-      var rec = { id: 'r' + n, no: 'R-' + n, type: nT, title: title, sub: (NEWT[nT] || [, 'новый отчёт'])[1], status: status, by: 'Carlos Mendez', unit: V.mark || '2-A-03', when: when, where: V.street || V.dist || '—', upd: 'только что', vis: 'Отдел и командование', wait: 'только что',
+      var whr = V.street || V.dist || '', ok = function (s) { return s && s !== '—' ? s : ''; }, cut = function (s) { return String(s).split(' · ')[0]; };
+      var title = nT === 'arr' ? ok(V.person) || 'Арест без имени' : nT === 'inc' ? (ok(V.chg) || 'Происшествие') + (whr ? ', ' + whr : '') : nT === 'force' ? ((V.means && V.means.length ? V.means.join(', ') : 'Применение силы') + (whr ? ', ' + whr : '')) : nT === 'trf' ? 'ДТП' + (whr ? ', ' + whr : '') : TNEW.name || 'Отчёт';
+      var subN = ok(V.arrest) ? 'арест ' + cut(V.arrest) : ok(V.call) ? 'вызов ' + cut(V.call) : ok(V.case) ? 'дело ' + cut(V.case) : ok(V.base) ? 'к отчёту ' + cut(V.base) : 'новый отчёт';
+      var rec = { id: 'r' + n, no: 'R-' + n, type: nT, title: title, sub: subN, status: status, by: mockProfile.name, unit: V.mark || mockProfile.badgeNumber, when: when, where: V.street || V.dist || '—', upd: 'только что', vis: 'Отдел и командование', wait: 'только что',
         secs: mainF && V[mainF.k] ? [[mainF.k === 'info' ? 'Информация об аресте' : 'Повествование', V[mainF.k]]] : [['Повествование', '—']], links: links,
         tl: [['сейчас', status === 'draft' ? 'Черновик сохранён' : 'Отправлен на утверждение', true]] };
+      if (S.editId) { var eid = S.editId, prev = ALL.filter(function (x) { return x.id === eid; })[0];
+        if (prev) { OV[eid] = V; var ed = Object.assign({}, S.ed), ps = stOf(prev), st2 = Object.assign({}, S.st), vals2 = Object.assign({}, S.vals); delete vals2[nT];
+          ed[eid] = { title: title, sub: subN, unit: rec.unit, when: when, where: rec.where, secs: rec.secs, links: links };
+          st2[eid] = status === 'draft' ? (ps === 'returned' ? 'returned' : 'draft') : 'review';
+          self.setState(logTl(eid, status === 'draft' ? 'Черновик обновлён' : ps === 'returned' ? 'Исправлен и отправлен снова' : 'Отправлен на утверждение', { ed: ed, st: st2, vals: vals2, editId: null, needK: null, back: null, view: 'list', nav: status === 'draft' ? 'draft' : 'review', sel: eid })); return; } }
       OV[rec.id] = V;
       var vals = Object.assign({}, S.vals); delete vals[nT];
-      self.setState({ made: made.concat([rec]), vals: vals, view: 'list', nav: status === 'draft' ? 'draft' : 'review', sel: rec.id });
+      self.setState({ made: made.concat([rec]), vals: vals, view: 'list', nav: status === 'draft' ? 'draft' : 'review', sel: rec.id, editId: null, needK: null, back: null });
     }
-    function setSt(v, t) { var o = Object.assign({}, self.state.st); o[P.id] = v; self.setState({ st: o }); toast(t); }
+    function setSt(v, t) {
+      var cm = String(self.state.retNote || '').trim();
+      if (v === 'returned' && !cm) { self.setState({ noteErr: true }); toast('needNote'); return; }
+      var o = Object.assign({}, self.state.st); o[P.id] = v; var ex = { st: o, retNote: '' };
+      if (cm || v === 'returned') { var nn = Object.assign({}, self.state.notes); nn[P.id] = cm; ex.notes = nn; } ex.noteErr = false;
+      self.setState(logTl(P.id, v === 'signed' ? 'Утверждён · Ryan Nolan' : 'Возвращён сержантом: ' + cm, ex)); toast(t); }
+    // MDT: what is missing before a new report can be sent
+    function missNew() {
+      var mainSec = null, mainF = null, any = false;
+      TNEW.secs.forEach(function (sc) { sc.f.forEach(function (f) { if (f.main && !mainF) { mainF = f; mainSec = sc; } var v = VNEW[f.k]; if (Array.isArray(v) ? v.some(function (r) { return Array.isArray(r) ? r.some(function (t) { return t && t !== '—'; }) : !!r; }) : (typeof v === 'string' ? v.trim() && v !== '—' : v === true)) any = true; }); });
+      if (mainF && !String(VNEW[mainF.k] || '').trim()) return 'Заполните раздел «' + mainSec.t + '» — без него отчёт не уйдёт на утверждение.';
+      if (!any) return 'Бланк пуст — заполните хотя бы одно поле.';
+      return '';
+    }
     return { c: c, accent: accent, onAccent: onAccent, greenBg: TN.green[0], greenFg: TN.green[1], redBg: TN.red[0], redFg: TN.red[1],
       nav: nav, me: me, isList: S.view === 'list' || S.view === 'sgt', isNew: S.view === 'new', isTypes: S.view === 'types', isBuilder: S.view === 'builder', isPaper: S.view === 'doc' || isReview, isDocView: S.view === 'doc', isReview: isReview,
-      goNew: function () { self.setState({ view: 'new' }); }, goList: function () { self.setState({ view: 'list' }); }, goTypes: function () { self.setState({ view: 'types', bt: null }); }, goBuilderNew: function () { self.setState({ view: 'builder', bt: null, btKey: 'new' }); },
+      goNew: function () { self.setState(dropEdit({ view: 'new', needK: null, back: S.view === 'new' ? S.back : backOf() })); },
+      goList: function () { var b = S.back, o = b ? Object.assign({}, b, { back: null }) : { view: 'list' }; o.needK = null; self.setState(dropEdit(o)); },
+      newHead: S.editId ? 'Редактирование ' + nNo : 'Новый отчёт', roleT: (meIsSgt ? 'Сержант' : 'Офицер') + ' · ' + me.name,
+      pick: S.pick || null, pickClose: function () { self.setState({ pick: null }); },
+      pickApply: function (it) { var p = S.pick, w = p && pickFns[p.k]; if (!w) { self.setState({ pick: null }); return; } if (p.mode === 'ent') w.attachWith(it.v, it.fill); else w.addWith(it); self.setState({ pick: null }); }, goTypes: function () { self.setState({ view: 'types', bt: null }); }, goBuilderNew: function () { self.setState({ view: 'builder', bt: null, btKey: 'new' }); },
       listTitle: LT[0], listSub: LT[1], rows: rows, w: w,
       nTypes: nTypes, form: form, nRoute: routeChips(TNEW), nSteps: TNEW.route.map(function (st, i) { return { n: i + 1, r: st.r, c: st.c, arrow: i > 0, bg: i === 0 ? TN.blue[0] : c.btn, fg: i === 0 ? TN.blue[1] : c.text, nb: i === 0 ? TN.blue[1] : '#5A5A5A', nf: '#000000' }; }), pNew: pNew, pBld: pBld, tcards: tcards, bd: bd,
-      submitNew: function () { makeNew('review'); toast('sent'); },
+      submitNew: function () { var miss = missNew(), mk = mainKey(); if (miss) { self.setState({ need: miss, needK: mk && !String(VNEW[mk] || '').trim() ? mk : null }); toast('need'); return; } makeNew('review'); toast('sent'); },
       saveDraft: function () { makeNew('draft'); toast('draft'); },
       dv: dv, dcd: dcd, dvOn: onData, paperOn: !onData, tbP: onData ? 'transparent' : c.field, tbD: onData ? c.field : 'transparent', tabPaper: function () { self.setState({ rvTab: 'paper' }); }, tabData: function () { self.setState({ rvTab: 'data' }); },
       pp: pp, rv: rv, rvSign: function () { setSt('signed', 'signed'); }, rvReturn: function () { setSt('returned', 'returned'); },
-      printDoc: function () { toast('print'); }, pdfDoc: function () { toast('pdf'); },
-      toast: !!S.toast,
-      toastTitle: { draft: 'Черновик сохранён', sent: 'Отчёт отправлен', del: 'Черновик удалён', signed: 'Отчёт утверждён', returned: 'Отчёт возвращён', print: 'Отправлено на печать', pdf: 'PDF готов', type: btNew ? 'Тип опубликован' : 'Бланк сохранён' }[S.toast] || '',
-      toastText: { draft: 'Он в «Черновиках», виден только вам.', sent: 'Ватч-командир Ryan Nolan получил его на утверждение.', del: 'Восстановить можно в течение часа.', signed: 'Он закрыт для правок и приложен к делу.', returned: 'Автор увидит комментарий и исправит.', print: 'Принтер участка Mission Row. В игре вы получите предмет с распечаткой в инвентарь.', pdf: 'Файл приложен к делу.', type: btNew ? 'Офицеры отдела могут создавать по нему отчёты.' : 'Новые отчёты пойдут по обновлённому бланку.' }[S.toast] || '' };
+      printDoc: function () { self.setState(logTl(P.id, 'Распечатан · принтер Mission Row')); toast('print'); },
+      pdfDoc: function () { var lx = Object.assign({}, self.state.lnx), has = (lx[P.id] || []).length; if (!has) lx[P.id] = [['PDF', P.no + ' · бланк PDF', 'Reports.dc.html']]; self.setState(logTl(P.id, 'PDF бланка приложен' + (caseL ? ' к делу ' + caseL[1].split(' · ')[0] : ''), { lnx: lx })); toast('pdf'); },
+      toastUndo: S.toast === 'del' && S.undo ? function () { var u = S.undo, g = Object.assign({}, self.state.gone); delete g[u.id]; clearTimeout(self._t); self.setState({ gone: g, sel: u.id, nav: u.nav, view: 'list', undo: null, toast: null }); } : null,
+      toastClose: function () { clearTimeout(self._t); self.setState({ toast: null }); },
+      toast: !!S.toast, toastBad: S.toast === 'need' || S.toast === 'needNote' || S.toast === 'noname' || S.toast === 'nofields',
+      toastTitle: { need: 'Отчёт не отправлен', needNote: 'Нужен комментарий', noname: 'Нет названия', nofields: 'Бланк пуст', draft: 'Черновик сохранён', sent: 'Отчёт отправлен', del: 'Черновик удалён', signed: 'Отчёт утверждён', returned: 'Отчёт возвращён', print: 'Отправлено на печать', pdf: 'PDF готов', type: btNew ? 'Тип опубликован' : 'Бланк сохранён' }[S.toast] || '',
+      toastText: { need: S.need || '', needNote: 'Напишите автору, что исправить, — без комментария вернуть нельзя.', noname: 'Дайте типу название — под ним его увидят офицеры.', nofields: 'Добавьте в бланк хотя бы одно поле.', draft: 'Он в «Черновиках», виден только вам.', sent: 'Ватч-командир Ryan Nolan получил его на утверждение.', del: (S.undo ? S.undo.no + ' удалён. ' : '') + 'Пока видно это сообщение, удаление можно отменить.', signed: 'Он закрыт для правок и приложен к делу.', returned: 'Автор увидит комментарий и исправит.', print: 'Принтер участка Mission Row. В игре вы получите предмет с распечаткой в инвентарь.', pdf: caseL ? 'Файл приложен к делу ' + caseL[1].split(' · ')[0] + ' и к отчёту.' : 'Файл приложен к отчёту.', type: btNew ? 'Офицеры отдела могут создавать по нему отчёты.' : 'Новые отчёты пойдут по обновлённому бланку.' }[S.toast] || '' };
   }
 }
 
-export { Component as ReportsLogic, R as REPORTS }
+export { Component as ReportsLogic, R as REPORTS, ENTS as REPORTS_ENTS, ENTN as REPORTS_ENTN }

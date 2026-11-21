@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { MailAttachment } from '../../../types'
+import type { MailDraft } from './MailComposeWindow'
 import { MailRecipients } from './MailRecipients'
-import { resolveRecipient } from './mailDirectory'
-import { AttachIcon, CloseIcon, ImportantIcon, SentIcon } from './icons'
+import { findRecipients, resolveRecipient } from './mailDirectory'
+import { AttachIcon, CloseIcon, DraftIcon, ImportantIcon, SentIcon, TrashIcon } from './icons'
 import { FontSizeDropdown, mailTextStyle } from './mailTextSize'
 
 /** Font sizes offered in the compose bar (Outlook's list). */
@@ -12,9 +13,35 @@ const BASE_SIZE = 14
 
 interface MailComposeProps {
   initialTo: string
+  initialCc?: string
   initialSubject: string
   initialBody?: string
-  onSend: (to: string, subject: string, bodyHtml: string, attachments: MailAttachment[], important: boolean) => void
+  initialAttachments?: MailAttachment[]
+  initialImportant?: boolean
+  draftId?: string
+  onSend: (draft: MailDraft, draftId?: string) => void
+  onSaveDraft: (draft: MailDraft, draftId?: string, notify?: boolean) => string
+  onDiscard: () => void
+  /** filled by Compose: run when the window is being closed — saves unsaved
+   * changes to «Черновики» and lets the close go ahead */
+  closeGuardRef?: { current: (() => boolean) | null }
+  /** the subject as it is typed — the compose window renames itself after it */
+  onSubjectChange?: (subject: string) => void
+}
+
+/** «12D3 Thorne Watts, Lisa Brooks» → canonical directory names. */
+function splitRecipients(text: string | undefined) {
+  return (text ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => resolveRecipient(s)?.name ?? s)
+}
+
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} Б`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} КБ`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`
 }
 
 function hasVisibleHtmlText(html: string) {
@@ -27,9 +54,8 @@ function hasVisibleHtmlText(html: string) {
  * NUI is CEF, and the standalone site targets evergreen browsers), where
  * it's still fully supported and is by far the smallest way to get rich
  * text editing without a dependency. Deliberately only as rich as the
- * reference's own toolbar (Ж/К/Ч, 4 alignments, one bulleted list, emoji) —
- * no font size, color or list-style picker, since the reference doesn't
- * have them either.
+ * reference's own toolbar (font size, Ж/К/Ч, 4 alignments, one bulleted
+ * list, emoji) — no color or list-style picker.
  */
 const EMOJIS = [
   '🙂', '😀', '😅', '😡', '👍', '👎', '✅', '❌', '⚠️', '⏰',
@@ -125,13 +151,42 @@ function closestList(tag: 'UL') {
   return node as HTMLElement | null
 }
 
-export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: MailComposeProps) {
+export function MailCompose({
+  initialTo,
+  initialCc,
+  initialSubject,
+  initialBody,
+  initialAttachments,
+  initialImportant,
+  draftId: initialDraftId,
+  onSend,
+  onSaveDraft,
+  onDiscard,
+  closeGuardRef,
+  onSubjectChange,
+}: MailComposeProps) {
   // a reply / forward starts with the canonical name («12D3 Thorne Watts» → «Thorne Watts»)
-  const [toList, setToList] = useState<string[]>(() => (initialTo.trim() ? [resolveRecipient(initialTo)?.name ?? initialTo.trim()] : []))
+  const [toList, setToList] = useState<string[]>(() => splitRecipients(initialTo))
   const [toInput, setToInput] = useState('')
+  const [ccList, setCcList] = useState<string[]>(() => splitRecipients(initialCc))
+  const [ccInput, setCcInput] = useState('')
+  /** «Копия» row: shown once asked for, or when the letter already has Cc */
+  const [showCc, setShowCc] = useState(() => splitRecipients(initialCc).length > 0)
+  const [ccAutoFocus, setCcAutoFocus] = useState(false)
   const [subject, setSubject] = useState(initialSubject)
-  const [attachments, setAttachments] = useState<MailAttachment[]>([])
-  const [important, setImportant] = useState(false)
+  const subjectCb = useRef(onSubjectChange)
+  subjectCb.current = onSubjectChange
+  useEffect(() => {
+    subjectCb.current?.(subject)
+  }, [subject])
+  const [attachments, setAttachments] = useState<MailAttachment[]>(() => initialAttachments ?? [])
+  const [important, setImportant] = useState(!!initialImportant)
+  /** id of this letter in «Черновики» once saved there */
+  const [draftId, setDraftId] = useState(initialDraftId)
+  /** «Черновик сохранён в 02:14» — cleared by the next edit */
+  const [savedAt, setSavedAt] = useState<string | null>(null)
+  /** body edited since the window opened / since the last save */
+  const [bodyDirty, setBodyDirty] = useState(false)
   const [hasBody, setHasBody] = useState(() => hasVisibleHtmlText(initialBody ?? ''))
   const [active, setActive] = useState<ActiveFormats>(EMPTY_FORMATS)
   const [openEmoji, setOpenEmoji] = useState(false)
@@ -142,11 +197,52 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
 
-  const badTo = toList.filter((n) => !resolveRecipient(n))
-  const pendingTo = toInput.trim().length > 0
-  const canSend = toList.length > 0 && badTo.length === 0 && !pendingTo && subject.trim().length > 0 && hasBody
+  const badTo = [...toList, ...ccList].filter((n) => !resolveRecipient(n))
+  const pendingText = [toInput, showCc ? ccInput : ''].map((t) => t.trim()).find(Boolean) ?? ''
+  const pendingTo = pendingText.length > 0
+  // a letter may be just an attachment (e.g. a pasted screenshot)
+  const hasContent = hasBody || attachments.length > 0
+  const canSend = toList.length > 0 && badTo.length === 0 && !pendingTo && subject.trim().length > 0 && hasContent
   /** why «Отправить» is off — shown next to it */
-  const sendHint = toList.length === 0 && !pendingTo ? 'Укажите получателя' : pendingTo ? 'Выберите получателя из списка' : badTo.length ? 'Уберите неизвестных получателей' : !subject.trim() ? 'Укажите тему' : !hasBody ? 'Напишите текст письма' : ''
+  const sendHint = pendingTo
+    ? findRecipients(pendingText).length
+      ? 'Выберите получателя из списка'
+      : 'Получатель не найден'
+    : toList.length === 0
+      ? 'Укажите получателя'
+      : badTo.length
+        ? 'Уберите неизвестных получателей'
+        : !subject.trim()
+          ? 'Укажите тему'
+          : !hasContent
+            ? 'Напишите текст письма'
+            : ''
+  const canSaveDraft = toList.length > 0 || ccList.length > 0 || subject.trim().length > 0 || hasContent
+
+  // a reply / draft already has its recipient: start typing in the body, at the very top
+  useEffect(() => {
+    const ed = editorRef.current
+    if (!ed || toList.length === 0) return
+    ed.focus()
+    const range = document.createRange()
+    range.setStart(ed, 0)
+    range.collapse(true)
+    const sel = window.getSelection()
+    sel?.removeAllRanges()
+    sel?.addRange(range)
+    // mount only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // any edit makes the «saved» note stale
+  useEffect(() => {
+    setSavedAt(null)
+  }, [toList, ccList, subject, attachments, important, hasBody])
+
+  /** fields (besides the body) as last saved — anything else is unsaved work */
+  const fieldsSig = JSON.stringify([toList, ccList, subject, attachments.map((a) => a.url), important])
+  const [savedSig, setSavedSig] = useState(fieldsSig)
+  const dirty = bodyDirty || fieldsSig !== savedSig
 
   useEffect(() => {
     if (!openEmoji) return
@@ -243,23 +339,94 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
     setAttachments((prev) => prev.filter((file) => file.url !== url))
   }
 
+  function currentDraft(): MailDraft {
+    return {
+      to: toList.join(', '),
+      cc: ccList.join(', '),
+      subject: subject.trim(),
+      bodyHtml: hasVisibleText(editorRef.current) ? (editorRef.current?.innerHTML ?? '') : '',
+      attachments,
+      important,
+    }
+  }
+
   function handleSend() {
-    onSend(toList.join(', '), subject.trim(), editorRef.current?.innerHTML ?? '', attachments, important)
+    if (!canSend) return
+    onSend(currentDraft(), draftId)
+  }
+
+  function handleSaveDraft() {
+    if (!canSaveDraft) return
+    setDraftId(onSaveDraft(currentDraft(), draftId))
+    setSavedSig(fieldsSig)
+    setBodyDirty(false)
+    const now = new Date()
+    setSavedAt(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`)
+  }
+
+  // closing the window (✕, Ctrl+W, «ЗАКРЫТЬ»…) keeps unsaved work as a draft
+  if (closeGuardRef) {
+    closeGuardRef.current = () => {
+      if (dirty && canSaveDraft) onSaveDraft(currentDraft(), draftId, true)
+      return true
+    }
   }
 
   const toolBtnCls = (isActive: boolean) =>
     `flex h-[30px] w-[30px] items-center justify-center rounded-[4px] text-[14px] hover:bg-white/10 ${isActive ? 'bg-white/10 text-[#60CDFF]' : 'text-white'}`
   const noBlur = (event: { preventDefault: () => void }) => event.preventDefault()
-
   return (
-    <div className="flex h-full flex-col bg-[#1D2027] text-white">
+    <div
+      className="flex h-full flex-col bg-[#1D2027] text-white"
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault()
+          handleSend()
+        }
+      }}
+    >
       <div className="m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[8px] border border-[#3A3A3A] bg-[#272727]">
         <div className="flex min-h-[48px] items-start gap-3 border-b border-[#383838] px-5 text-[14px]">
           <label htmlFor="mail-to" className="w-14 shrink-0 pt-[9px] text-[#C8C8C8]">
             Кому
           </label>
           <MailRecipients value={toList} onChange={setToList} input={toInput} onInputChange={setToInput} />
+          {!showCc && (
+            <button
+              type="button"
+              onClick={() => {
+                setCcAutoFocus(true)
+                setShowCc(true)
+              }}
+              title="Добавить получателей копии"
+              className="mt-[9px] h-[26px] shrink-0 rounded-[4px] px-2 text-[13px] text-[#C8C8C8] hover:bg-white/10 hover:text-white"
+            >
+              Копия
+            </button>
+          )}
         </div>
+
+        {showCc && (
+          <div className="flex min-h-[48px] items-start gap-3 border-b border-[#383838] px-5 text-[14px]">
+            <label htmlFor="mail-cc" className="w-14 shrink-0 pt-[9px] text-[#C8C8C8]">
+              Копия
+            </label>
+            <MailRecipients id="mail-cc" label="Копия" autoFocus={ccAutoFocus} value={ccList} onChange={setCcList} input={ccInput} onInputChange={setCcInput} />
+            <button
+              type="button"
+              onClick={() => {
+                setShowCc(false)
+                setCcList([])
+                setCcInput('')
+              }}
+              aria-label="Убрать копию"
+              title="Убрать копию"
+              className="mt-[11px] flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[4px] text-white/60 hover:bg-white/10 hover:text-white"
+            >
+              <CloseIcon className="h-2.5 w-2.5" />
+            </button>
+          </div>
+        )}
 
         <label htmlFor="mail-subject" className="flex h-12 items-center gap-3 border-b border-[#383838] px-5 text-[14px]">
           <span className="w-14 shrink-0 text-[#C8C8C8]">Тема</span>
@@ -351,7 +518,12 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
           contentEditable
           onInput={() => {
             normalizeFonts()
-            setHasBody(hasVisibleText(editorRef.current))
+            const ed = editorRef.current
+            // emptied by the user: drop the leftover <br>/<div> so the placeholder comes back
+            if (ed && !hasVisibleText(ed) && !ed.querySelector('li, img') && ed.innerHTML !== '') ed.innerHTML = ''
+            setHasBody(hasVisibleText(ed))
+            setSavedAt(null)
+            setBodyDirty(true)
           }}
           onPaste={(event) => {
             // a pasted picture goes in as an attachment, not into the text
@@ -386,9 +558,9 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
         />
 
         {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 border-t border-[#383838] px-7 py-3">
+          <div className="scroll flex max-h-[116px] shrink-0 flex-wrap gap-2 overflow-y-auto border-t border-[#383838] px-7 py-3">
             {attachments.map((file) => (
-              <div key={file.url} className="flex items-center gap-2 rounded-[6px] border border-[#3A3A3A] bg-[#2D2D2D] px-2 py-1.5">
+              <div key={file.url} title={`${file.name} · ${formatSize(file.size)}`} className="flex items-center gap-2 rounded-[6px] border border-[#3A3A3A] bg-[#2D2D2D] px-2 py-1.5">
                 {file.type.startsWith('image/') ? (
                   <img src={file.url} alt="" className="h-8 w-8 rounded-[4px] object-cover" />
                 ) : (
@@ -396,8 +568,11 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
                     {(file.name.split('.').pop() || 'FILE').slice(0, 3).toUpperCase()}
                   </span>
                 )}
-                <span className="max-w-[120px] truncate text-[12px] text-white/80">{file.name}</span>
-                <button type="button" onClick={() => removeAttachment(file.url)} aria-label="Удалить вложение" className="text-white/50 hover:text-white">
+                <span className="flex min-w-0 flex-col leading-[15px]">
+                  <span className="max-w-[160px] truncate text-[12px] text-white/80">{file.name}</span>
+                  <span className="text-[11px] text-[#C8C8C8]">{formatSize(file.size)}</span>
+                </span>
+                <button type="button" onClick={() => removeAttachment(file.url)} aria-label={`Удалить вложение ${file.name}`} title="Удалить вложение" className="text-white/50 hover:text-white">
                   <CloseIcon className="h-2.5 w-2.5" />
                 </button>
               </div>
@@ -405,13 +580,42 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
           </div>
         )}
 
-        <div className="flex h-[60px] shrink-0 items-center gap-2 border-t border-[#383838] px-4">
-          <div className="flex-1" />
+        {!canSend && sendHint && (
+          <div role="status" className="shrink-0 border-t border-[#383838] px-4 pt-2 text-right text-[12px] text-[#C8C8C8]">
+            {sendHint}
+          </div>
+        )}
+        <div className={`flex min-h-[60px] shrink-0 flex-wrap items-center gap-2 px-4 py-3 ${!canSend && sendHint ? 'pt-2' : 'border-t border-[#383838]'}`}>
+          <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={onDiscard}
+            aria-label="Отменить"
+            title={draftId ? 'Закрыть без сохранения изменений' : 'Отменить письмо'}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] border border-[#454545] text-white/80 hover:bg-white/10 hover:text-white"
+          >
+            <TrashIcon />
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            disabled={!canSaveDraft}
+            title="Сохранить в «Черновики»"
+            className="flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-[4px] border border-[#454545] bg-[#2D2D2D] px-3.5 text-[13px] text-white enabled:hover:bg-[#333333] disabled:opacity-40"
+          >
+            <DraftIcon />
+            Сохранить черновик
+          </button>
+          {savedAt && <span className="min-w-0 truncate text-[12px] text-[#C8C8C8]">Сохранено в {savedAt}</span>}
+          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={() => setImportant((v) => !v)}
             title={important ? 'Снять пометку "Важное"' : 'Пометить как важное'}
-            className={`flex h-9 w-9 items-center justify-center rounded-[4px] border ${
+            aria-label={important ? 'Снять пометку "Важное"' : 'Пометить как важное'}
+            aria-pressed={important}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] border ${
               important ? 'border-[#C42B1C] text-[#C42B1C]' : 'border-[#454545] text-white/80 hover:text-white'
             } hover:bg-white/10`}
           >
@@ -420,21 +624,23 @@ export function MailCompose({ initialTo, initialSubject, initialBody, onSend }: 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex h-9 items-center gap-2 rounded-[4px] border border-[#454545] bg-[#2D2D2D] px-3.5 text-[13px] text-white hover:bg-[#333333]"
+            className="flex h-9 shrink-0 items-center gap-2 rounded-[4px] border border-[#454545] bg-[#2D2D2D] px-3.5 text-[13px] text-white hover:bg-[#333333]"
           >
             <AttachIcon />
             Вложить
           </button>
-          {!canSend && sendHint && <span className="text-[12px] text-[#C8C8C8]">{sendHint}</span>}
-          <button
-            type="button"
-            disabled={!canSend}
-            onClick={handleSend}
-            className="flex h-9 items-center gap-2 rounded-[4px] bg-[#60CDFF] px-5 text-[13px] font-semibold text-black enabled:hover:brightness-[1.08] disabled:opacity-40"
-          >
-            <SentIcon />
-            Отправить
-          </button>
+          <span title={canSend ? 'Отправить (Ctrl+Enter)' : sendHint} className="shrink-0">
+            <button
+              type="button"
+              disabled={!canSend}
+              onClick={handleSend}
+              className="flex h-9 shrink-0 items-center gap-2 rounded-[4px] bg-[#60CDFF] px-5 text-[13px] font-semibold text-black enabled:hover:brightness-[1.08] disabled:opacity-40"
+            >
+              <SentIcon />
+              Отправить
+            </button>
+          </span>
+          </div>
         </div>
       </div>
     </div>

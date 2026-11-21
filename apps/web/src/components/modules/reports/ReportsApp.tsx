@@ -1,12 +1,16 @@
-import { useEffect, useReducer, useRef, useState, type ChangeEvent, type MouseEvent } from 'react'
+import { useEffect, useLayoutEffect, useReducer, useRef, useState, type ChangeEvent, type MouseEvent } from 'react'
 import { apps } from '../../../data/apps'
+import { mockProfile } from '../../../lib/mockData/profile'
 import { useWindowManager } from '../../../windows/WindowManagerContext'
 import { getCases, requestOpenCase } from '../cases/casesStore'
+import { SEARCH_DB } from '../search/searchLogic'
 import type { ModuleContentProps } from '../registry'
+import { ReportsPicker } from './ReportsPicker'
 import { ReportsShell } from './ReportsShell'
 import { REPORTS, ReportsLogic } from './reportsLogic'
 import type { ReportsVals } from './reportsRuntime'
 import './reports.css'
+import { showClippedTitle } from '../shared/clippedTitle'
 
 interface ReportsLogicApi {
   state: Record<string, unknown>
@@ -32,10 +36,29 @@ const BOARD_APP: Record<string, string> = {
   FTPSign: 'ftp',
 }
 
+/** A report record as the logic keeps it (only what this shell reads). */
+interface ReportRec {
+  id: string
+  no: string
+  type: string
+  title: string
+  sub: string
+  by: string
+}
+
 const PLATE = /\b\d{1,2}[A-Z]{3}\d{3}\b/
 
-/** Blank zoom steps, 50%…300%. */
-const ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3]
+/** The reports themselves — statuses, reports made here, deletions, links,
+ * history, review notes — are one desk for every Отчёты window (and survive
+ * closing it, like casesStore): a report signed in the main window shows as
+ * signed in a «Отчёты · R-…» window at once. What each window shows (view,
+ * selection, the form being filled) stays its own. */
+const SHARED_KEYS = ['st', 'made', 'gone', 'lnx', 'tlx', 'updx', 'notes', 'ed'] as const
+const desk: { data: Record<string, unknown> | null; subs: Set<(src: ReportsLogicApi) => void> } = { data: null, subs: new Set() }
+const pickShared = (s: Record<string, unknown>) => Object.fromEntries(SHARED_KEYS.filter((k) => k in s).map((k) => [k, s[k]]))
+
+/** Blank zoom steps, 33%…300%. */
+const ZOOMS = [0.33, 0.4, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3]
 
 /**
  * Отчёты — a literal port of the reference component: `reportsLogic.ts`
@@ -44,26 +67,76 @@ const ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3]
  * the reference's board links: report links stay in this window, the rest
  * open the module window that owns the record.
  */
-export function ReportsApp(_props: ModuleContentProps) {
+export function ReportsApp({ initialParams }: ModuleContentProps) {
   const { openWindow } = useWindowManager()
   const [, rerender] = useReducer((n: number) => n + 1, 0)
   const logicRef = useRef<ReportsLogicApi | null>(null)
 
   if (!logicRef.current) {
-    const logic = new ReportsLogic({}) as unknown as ReportsLogicApi
+    // a dedicated window for one report («Отчёты · R-11034»), opened from a
+    // link in the new-report form so the form itself stays where it is
+    const peek = typeof initialParams?.peek === 'string' ? initialParams.peek : undefined
+    const logic = new ReportsLogic(peek ? { view: 'doc', sel: peek, ag: mockProfile.agency === 'lspd' ? 'lspd' : 'lssd' } : { ag: mockProfile.agency === 'lspd' ? 'lspd' : 'lssd' }) /* MDT: the blank of the active character's department */ as unknown as ReportsLogicApi
+    const rec = initialParams?.rec as { id: string } | undefined
+    if (desk.data) logic.state = { ...logic.state, ...desk.data }
+    else if (peek && rec) logic.state = { ...logic.state, made: [rec] }
+    desk.data = pickShared(logic.state)
+    // every change to the shared part reaches the other open Отчёты windows
+    const own = logic.setState.bind(logic)
+    logic.setState = (patch: Record<string, unknown>) => {
+      own(patch)
+      if (!SHARED_KEYS.some((k) => k in patch)) return
+      desk.data = pickShared(logic.state)
+      desk.subs.forEach((fn) => fn(logic))
+    }
     logic.__onChange = rerender
     logicRef.current = logic
   }
   const logic = logicRef.current
+  useEffect(() => {
+    const onShared = (src: ReportsLogicApi) => {
+      if (src === logic || !desk.data) return
+      logic.state = { ...logic.state, ...desk.data }
+      rerender()
+    }
+    desk.subs.add(onShared)
+    return () => {
+      desk.subs.delete(onShared)
+    }
+  }, [logic])
 
   // Blank zoom (MDT addition): bar under the sheet + Ctrl + mouse wheel.
+  // Each screen (new report / report blank / builder) keeps its own zoom; until
+  // the user zooms, the sheet starts fitted to the column (never above 100%).
   const rootRef = useRef<HTMLDivElement>(null)
-  const [zoom, setZoom] = useState(1)
-  const stepZoom = (dir: 1 | -1) =>
-    setZoom((z) => {
-      if (dir > 0) return ZOOMS.find((s) => s > z + 0.001) ?? z
-      return [...ZOOMS].reverse().find((s) => s < z - 0.001) ?? z
-    })
+  const [zooms, setZooms] = useState<Record<string, { mode: 'auto' | 'fit' | 'manual'; z: number }>>({})
+  const [colW, setColW] = useState(0)
+  const v = logic.renderVals()
+  const viewKey = v.isNew ? 'new' : v.isBuilder ? 'builder' : v.isPaper ? 'paper' : ''
+  useLayoutEffect(() => {
+    const col = viewKey ? rootRef.current?.querySelector<HTMLElement>('[data-paper-scroll]') : null
+    if (!col) return
+    const measure = () => setColW(col.clientWidth)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(col)
+    return () => ro.disconnect()
+  }, [viewKey])
+  // sheet is 560px wide; leave the wrapper's 24px gutters on each side
+  const fitZ = colW ? Math.min(ZOOMS[ZOOMS.length - 1], Math.max(ZOOMS[0], Math.floor(((colW - 48) / 560) * 100) / 100)) : 1
+  const zm = zooms[viewKey] ?? { mode: 'auto' as const, z: 1 }
+  const zoom = zm.mode === 'manual' ? zm.z : zm.mode === 'fit' ? fitZ : Math.min(1, fitZ)
+  const zoomRef = useRef({ zoom, viewKey })
+  zoomRef.current = { zoom, viewKey }
+  const setMode = (mode: 'auto' | 'fit' | 'manual', z = 1) => {
+    const key = zoomRef.current.viewKey
+    setZooms((prev) => ({ ...prev, [key]: { mode, z } }))
+  }
+  const stepZoom = (dir: 1 | -1) => {
+    const z = zoomRef.current.zoom
+    const next = dir > 0 ? ZOOMS.find((s) => s > z + 0.001) : [...ZOOMS].reverse().find((s) => s < z - 0.001)
+    if (next) setMode('manual', next)
+  }
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
@@ -75,35 +148,54 @@ export function ReportsApp(_props: ModuleContentProps) {
     }
     root.addEventListener('wheel', onWheel, { passive: false })
     return () => root.removeEventListener('wheel', onWheel)
+    // stepZoom reads the live zoom through zoomRef
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const v = logic.renderVals()
   v.__zoom = zoom
   v.__canIn = zoom < ZOOMS[ZOOMS.length - 1] - 0.001
   v.__canOut = zoom > ZOOMS[0] + 0.001
   v.__zoomIn = () => stepZoom(1)
   v.__zoomOut = () => stepZoom(-1)
-  v.__zoomReset = () => setZoom(1)
-  v.__zoomFit = () => {
-    const col = rootRef.current?.querySelector<HTMLElement>('[data-paper-scroll]')
-    if (!col) return
-    // sheet is 560px wide; leave the wrapper's 24px gutters on each side
-    const z = (col.clientWidth - 48) / 560
-    setZoom(Math.min(ZOOMS[ZOOMS.length - 1], Math.max(ZOOMS[0], Math.round(z * 100) / 100)))
-  }
+  v.__zoomReset = () => setMode('manual', 1)
+  v.__zoomFit = () => setMode('fit')
+
+  // reports of this window (made here, not deleted) — for the picker and links
+  const gone = (logic.state.gone as Record<string, boolean> | undefined) ?? {}
+  const made = ((logic.state.made as ReportRec[] | undefined) ?? []).filter((r) => !gone[r.id])
+  // the picker lists every report under its current title (an edited draft shows its new name)
+  const edits = (logic.state.ed as Record<string, { title?: string; sub?: string }> | undefined) ?? {}
+  const pickerReports = [...made, ...(REPORTS as ReportRec[]).filter((r) => !gone[r.id])].map((r) =>
+    edits[r.id] ? { ...r, title: edits[r.id].title || r.title, sub: edits[r.id].sub || r.sub } : r,
+  )
   // The reviewer's comment: the reference leaves the field unbound, while its
   // logic already shows `retNote` as the «Возвращён» note — bind the two.
   v.__retNote = logic.state.retNote ?? ''
-  v.__onRetNote = (event: ChangeEvent<HTMLTextAreaElement>) => logic.setState({ retNote: event.target.value })
-  v.__go =(href: string, label?: string) => (event: MouseEvent) => {
+  v.__onRetNote = (event: ChangeEvent<HTMLTextAreaElement>) => logic.setState({ retNote: event.target.value, noteErr: false })
+  v.__go = (href: string, label?: string) => (event: MouseEvent) => {
     event.preventDefault()
     const board = String(href || '').replace(/\.dc\.html$/, '')
     const text = String(label ?? '')
-    // «R-11031 · …» → that report, in this window
+    // «R-11031 · …» → that report: the reference's reports plus the ones made here
     const rid = /R-\d{5}/.exec(text)?.[0]
-    const rec = rid ? (REPORTS as { id: string; no: string }[]).find((r) => r.no === rid) : undefined
+    const rec = rid ? [...made, ...(REPORTS as ReportRec[])].find((r) => r.no === rid && !gone[r.id]) : undefined
     if (board === 'Reports' || board === 'ReportsReview') {
-      if (board === 'ReportsReview') logic.setState({ view: 'review', rvTab: 'paper', sel: rec?.id ?? 'r11034' })
+      if (!rec && board === 'Reports') return
+      const st = logic.state
+      // from the new-report form: the report opens in its own window, the form stays
+      if (st.view === 'new') {
+        const self = apps.find((a) => a.id === 'reports')
+        const target = rec ?? (REPORTS as ReportRec[]).find((r) => r.id === 'r11034')
+        if (self && target) {
+          const own = made.find((r) => r.id === target.id)
+          openWindow(self, { instanceKey: 'reports:' + target.no, initialParams: { label: target.no, peek: target.id, rec: own } })
+        }
+        return
+      }
+      const back = { view: st.view, nav: st.nav, sel: st.sel, rvTab: st.rvTab }
+      if (board === 'ReportsReview') logic.setState({ view: 'review', rvTab: 'paper', sel: rec?.id ?? 'r11034', retNote: '', noteErr: false, back })
+      // «R-… · бланк PDF» → that report's blank
+      else if (rec && /PDF/.test(text)) logic.setState({ view: 'doc', sel: rec.id, back })
       else if (rec) logic.setState({ view: 'list', sel: rec.id })
       return
     }
@@ -120,7 +212,15 @@ export function ReportsApp(_props: ModuleContentProps) {
     }
     if (app.id === 'search') {
       const q = PLATE.exec(text)?.[0] ?? text.split(' · ')[0].trim()
-      openWindow(app, q ? { initialParams: { label: q } } : undefined)
+      if (!q) {
+        openWindow(app)
+        return
+      }
+      // a window per record (same keys as «Дела» uses), so an already open
+      // Поиск doesn't just come to the front and ignore the link
+      const recs = SEARCH_DB as unknown as { id: string; title: string; plate?: string }[]
+      const hit = recs.find((r) => r.plate === q || r.title === q)
+      openWindow(app, { instanceKey: hit ? `rec:${hit.id}` : `q:${q}`, initialParams: { entityId: hit?.id, label: q } })
       return
     }
     openWindow(app)
@@ -129,6 +229,7 @@ export function ReportsApp(_props: ModuleContentProps) {
   return (
     <div
       ref={rootRef}
+      onMouseOver={showClippedTitle}
       className="reports-root"
       style={{
         position: 'relative',
@@ -145,6 +246,7 @@ export function ReportsApp(_props: ModuleContentProps) {
       }}
     >
       <ReportsShell $v={v} />
+      <ReportsPicker $v={v} made={pickerReports} />
     </div>
   )
 }

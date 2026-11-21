@@ -1,3 +1,19 @@
+import { useActiveProfile } from '../../lib/session'
+
+/** The Figma glow ellipse (bg-ellipse-1.svg), drawn inline so its colour follows the agency. */
+function Glow({ w, h, rx, ry, fill, blur }: { w: number; h: number; rx: number; ry: number; fill: string; blur: number }) {
+  return (
+    <svg preserveAspectRatio="none" overflow="visible" viewBox={`0 0 ${w} ${h}`} className="block h-full w-full max-w-none" fill="none">
+      <defs>
+        <filter id="desk-glow" x="0" y="0" width={w} height={h} filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+          <feGaussianBlur stdDeviation={blur} />
+        </filter>
+      </defs>
+      <ellipse cx={w / 2} cy={h / 2} rx={rx} ry={ry} fill={fill} fillOpacity={0.6} filter="url(#desk-glow)" style={{ transition: 'fill 400ms ease' }} />
+    </svg>
+  )
+}
+
 /**
  * Decorative backdrop behind the app grid: two rotated/skewed gradient
  * ellipses, the ghost "SALETS MDT 1.0" watermark text, and the large
@@ -11,8 +27,13 @@
  * directly under the badge). Both scale with the viewport (clamped between
  * a floor and the Figma-designed size) so they shrink on smaller screens
  * instead of overlapping the app icon grid on the left.
+ *
+ * MDT: the glow colour and the emblem follow the active character's agency
+ * (LSSD green + sheriff star, LSPD blue + LSPD badge, DAO violet + county
+ * seal, court burgundy + state seal).
  */
 export function DesktopBackground() {
+  const me = useActiveProfile()
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden bg-bg-app">
       <div
@@ -25,7 +46,7 @@ export function DesktopBackground() {
         >
           <div className="relative" style={{ width: 1421.579, height: 3432.76 }}>
             <div className="absolute" style={{ inset: '-8.74% -21.1%' }}>
-              <img src="/assets/icons/bg-ellipse-1.svg" alt="" className="block h-full w-full max-w-none" />
+              <Glow w={2021.58} h={4032.76} rx={710.789} ry={1716.38} fill={me.wallpaper || '#2753C3'} blur={150} />
             </div>
           </div>
         </div>
@@ -46,7 +67,8 @@ export function DesktopBackground() {
         </div>
       </div>
       <img
-        src="/assets/images/sheriff-badge.png"
+        key={me.id}
+        src={me.emblem || '/assets/images/sheriff-badge.png'}
         alt=""
         className="absolute top-1/2 object-contain -translate-y-1/2"
         style={{ right: 'clamp(24px, 5vw, 96px)', width: 'clamp(160px, min(26vw, 32vh), 534px)', height: 'auto' }}

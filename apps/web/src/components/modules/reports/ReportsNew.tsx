@@ -17,13 +17,13 @@ export function ReportsNew({ $v }: { $v: ReportsVals }) {
                 </svg>
               </button>
               <span style={{ fontSize: "22px", lineHeight: "30px", fontWeight: "600" }}>
-                {"Новый отчёт"}
+                {__h($v.newHead)}
               </span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "8px" }}>
               {__a($v.nTypes).map((t: any, $i0: number) => (
                 <Fragment key={$i0}>
-                  <button className="btn hv" onClick={t?.pick} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "8px", background: t?.bg, boxShadow: t?.ring }}>
+                  <button className="btn hv" onClick={t?.pick} disabled={!t?.pick} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "8px", background: t?.bg, boxShadow: t?.ring, opacity: t?.off ? 0.4 : 1, cursor: t?.pick ? "pointer" : "default" }}>
                     <span style={{ width: "32px", height: "32px", flexShrink: "0", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", background: t?.icBg, color: t?.ic }}>
                       <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d={t?.icon}></path>
@@ -55,7 +55,7 @@ export function ReportsNew({ $v }: { $v: ReportsVals }) {
                             {__h(f?.l)}
                           </span>
                           {f?.isText ? (
-                            <input value={__s(f?.v)} onChange={f?.on} style={{ boxSizing: "border-box", height: "32px", padding: "0 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "13px" }} />
+                            <input value={__s(f?.v)} onChange={f?.on} style={{ boxSizing: "border-box", height: "32px", padding: "0 10px", borderRadius: "6px", border: "0", borderBottom: f?.err ? "2px solid #FF99A4" : `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "13px" }} />
                           ) : null}
                           {f?.isEnt ? (
                             <div style={{ display: "flex", gap: "4px" }}>
@@ -117,7 +117,7 @@ export function ReportsNew({ $v }: { $v: ReportsVals }) {
                             </button>
                           ) : null}
                           {f?.isLong ? (
-                            <textarea rows={f?.rows} onChange={f?.on} style={{ resize: "none", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "13px", lineHeight: "19px" }} value={__s(f?.v)} />
+                            <textarea rows={f?.rows} onChange={f?.on} style={{ resize: "none", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: "0", borderBottom: f?.err ? "2px solid #FF99A4" : `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "13px", lineHeight: "19px" }} value={__s(f?.v)} />
                           ) : null}
                           {f?.isTable ? (
                             <div style={{ borderRadius: "6px", background: $v.c?.field, fontSize: "12.5px", lineHeight: "17px", overflow: "hidden" }}>
@@ -201,6 +201,11 @@ export function ReportsNew({ $v }: { $v: ReportsVals }) {
                               {"+ Добавить из системы"}
                             </button>
                           ) : null}
+                          {f?.err ? (
+                            <span style={{ fontSize: "11px", lineHeight: "15px", color: "#FF99A4" }}>
+                              {"Обязательно для отправки на утверждение"}
+                            </span>
+                          ) : null}
                           {f?.h ? (
                             <span style={{ fontSize: "11px", lineHeight: "15px", color: $v.c?.text2 }}>
                               {__h(f?.h)}
@@ -215,13 +220,10 @@ export function ReportsNew({ $v }: { $v: ReportsVals }) {
             ))}
           </div>
           <div style={{ flexShrink: "0", padding: "12px 22px 14px 24px", display: "flex", flexDirection: "column", gap: "10px", borderTop: `1px solid ${__s($v.c?.stroke)}` }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px 12px", borderRadius: "8px", background: $v.c?.card }}>
+            <div title="После отправки отчёт пройдёт по шагам слева направо" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px 10px", padding: "7px 12px", borderRadius: "8px", background: $v.c?.card }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: "8px", flexWrap: "wrap" }}>
                 <span style={{ fontWeight: "600", fontSize: "13px" }}>
-                  {"Маршрут отчёта"}
-                </span>
-                <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
-                  {"после отправки отчёт пройдёт по шагам слева направо"}
+                  {"Маршрут"}
                 </span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -233,12 +235,12 @@ export function ReportsNew({ $v }: { $v: ReportsVals }) {
                           <path d="M4 10h11M11 6l4 4-4 4"></path>
                         </svg>
                       ) : null}
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 12px 5px 6px", borderRadius: "18px", background: st?.bg }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "3px 10px 3px 4px", borderRadius: "14px", background: st?.bg }}>
                         <span style={{ width: "22px", height: "22px", flexShrink: "0", borderRadius: "11px", background: st?.nb, color: st?.nf, fontSize: "12px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           {__h(st?.n)}
                         </span>
-                        <span style={{ display: "flex", flexDirection: "column", lineHeight: "15px" }}>
-                          <span style={{ fontSize: "13px", fontWeight: "600", color: st?.fg }}>
+                        <span style={{ display: "flex", alignItems: "baseline", gap: "6px", lineHeight: "16px", whiteSpace: "nowrap" }}>
+                          <span style={{ fontSize: "12.5px", fontWeight: "600", color: st?.fg }}>
                             {__h(st?.r)}
                           </span>
                           {st?.c ? (
@@ -483,7 +485,7 @@ export function ReportsNew({ $v }: { $v: ReportsVals }) {
                   {__h($v.pNew?.fr)}
                 </span>
                 <span>
-                  {"Los Santos County Sheriff's Department"}
+                  {__h($v.pNew?.agFoot)}
                 </span>
                 <span>
                   {"2026"}

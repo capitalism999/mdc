@@ -13,6 +13,7 @@ import { CASE_PEOPLE } from '../../../lib/mockData/caseFiles'
 import { KindIcon, RootIcon } from './icons'
 import { LicensePlate } from '../shared/LicensePlate'
 import { findMdc } from './caseMdc'
+import { vehiclePhoto } from '../shared/vehiclePhotos'
 import { MdcEmployeeDetails, MdcHeaderFlags, MdcMissing, MdcPersonDetails, MdcVehicleDetails, VehiclePhotos } from './CaseMdcPanel'
 import { ownPhoto } from '../shared/personPhotos'
 
@@ -48,7 +49,7 @@ interface CaseInspectorProps {
   caseNo: string
   /** Open an MDC record in Поиск (by record id), or search Поиск for `label`. */
   onOpenMdc: (recordId: string | null, label: string) => void
-  onOpenBolo: () => void
+  onOpenBolo: (no?: string) => void
   onChangeItemStatus: (itemId: string, status: string, tone: CaseTone) => void
   onMoveItem: (itemId: string) => void
   onEditItemInfo: (itemId: string, key: string, newKey: string, value: string, refs: string[]) => void
@@ -228,7 +229,9 @@ export function CaseInspector({
       ...(autoLinks.bolo?.lastSeen ? [{ k: isVehicle ? 'Последний раз замечена' : 'Последний раз видели', hint: 'Последняя отметка «Замечен» в ориентировке BOLO', v: <span>{autoLinks.bolo.lastSeen}{autoLinks.bolo.lastSeenBy && <span className="block text-[12px] text-[#C2C2C2]">отметил {autoLinks.bolo.lastSeenBy}</span>}</span> }] : []),
       ...(autoLinks.bolo ? [{ k: 'Ориентировка', hint: 'Подтянуто из реестра BOLO', v: <span>{renderLinkedText(autoLinks.bolo.no)} <span className="text-[#C2C2C2]">{autoLinks.bolo.label}</span></span> }] : []),
     ]
-    const photo = isPerson ? ownPhoto(link?.rec.id, item.title) : null
+    // an organisation on the case (Поиск → «Добавить в дело»): a company card, not a mugshot
+    const isOrg = isPerson && item.info.some(([k]) => k === 'Организация')
+    const photo = isPerson && !isOrg ? ownPhoto(link?.rec.id, item.title) : null
 
     return (
       <aside aria-label="Сведения" className="scroll flex w-[340px] shrink-0 flex-col gap-4 overflow-y-auto py-2 pl-1 pr-5 pb-6">
@@ -250,7 +253,11 @@ export function CaseInspector({
                   : []
             }
           />
-          {isPerson ? (
+          {isOrg ? (
+            <div className="flex h-[96px] w-[96px] items-center justify-center rounded-[18px] text-[30px] font-bold text-white" style={{ background: item.color ?? '#5C6B70' }}>
+              {item.initials}
+            </div>
+          ) : isPerson ? (
             <div
               className="relative h-[164px] w-[132px] overflow-hidden rounded-[10px] bg-[#3A3F47]"
               style={{ backgroundImage: 'repeating-linear-gradient(to bottom, transparent 0, transparent 19px, rgba(255,255,255,0.07) 19px, rgba(255,255,255,0.07) 20px)' }}
@@ -266,7 +273,7 @@ export function CaseInspector({
               {unidentified && <span className="absolute bottom-0 left-0 right-0 flex h-[22px] items-center justify-center bg-black/55 text-[10px] font-semibold tracking-wide text-white">ЛИЧНОСТЬ НЕ УСТАНОВЛЕНА</span>}
             </div>
           ) : isVehicle ? (
-            <VehiclePhotos known={!!plate} />
+            <VehiclePhotos known={!!plate} src={vehiclePhoto(item.title, item.info.find(([k]) => /Цвет/.test(k))?.[1] || item.sub)} />
           ) : item.kind === 'place' && item.photos?.length ? (
             <PhotoCover photos={item.photos} onOpen={setViewer} />
           ) : (
@@ -352,6 +359,7 @@ export function CaseInspector({
             suggestions={FIELD_SUGGESTIONS[item.kind] ?? []}
             linkOptions={linkOptions}
             autoRows={autoRows}
+            reservedKeys={[...item.info.map(([k]) => k).filter((k) => !caseRows.some(([c]) => c === k)), ...autoRows.map((r) => r.k), ...(link ? [...MDC_OWNED_KEYS] : [])]}
           />
         </div>
 

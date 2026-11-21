@@ -11,11 +11,17 @@ export function MailRecipients({
   onChange,
   input,
   onInputChange,
+  id = 'mail-to',
+  label = 'Кому',
+  autoFocus,
 }: {
   value: string[]
   onChange: (list: string[]) => void
   input: string
   onInputChange: (v: string) => void
+  id?: string
+  label?: string
+  autoFocus?: boolean
 }) {
   const [focus, setFocus] = useState(false)
   const [hi, setHi] = useState(0)
@@ -77,8 +83,8 @@ export function MailRecipients({
           )
         })}
         <input
-          id="mail-to"
-          autoFocus={value.length === 0}
+          id={id}
+          autoFocus={autoFocus ?? value.length === 0}
           value={input}
           onChange={(e) => {
             onInputChange(e.target.value)
@@ -97,8 +103,12 @@ export function MailRecipients({
             } else if (e.key === 'ArrowUp' && matches.length) {
               e.preventDefault()
               setHi(Math.max(hiIdx - 1, 0))
-            } else if (e.key === 'Enter' || e.key === ',' || (e.key === 'Tab' && q)) {
-              if (q || e.key !== 'Tab') e.preventDefault()
+            } else if (e.key === 'Tab') {
+              // resolve what's typed (if anything) but let focus move on — an
+              // unknown name stays in the field, flagged, instead of trapping Tab
+              if (q && !e.shiftKey) commit()
+            } else if ((e.key === 'Enter' && !e.ctrlKey && !e.metaKey) || e.key === ',') {
+              e.preventDefault()
               commit()
             } else if (e.key === 'Escape') {
               onInputChange('')
@@ -107,7 +117,7 @@ export function MailRecipients({
             }
           }}
           placeholder={value.length === 0 ? 'Имя, жетон или отдел' : ''}
-          aria-label="Кому"
+          aria-label={label}
           aria-invalid={!!error}
           aria-autocomplete="list"
           className="min-w-[160px] flex-1 bg-transparent text-[14px] text-white outline-none placeholder:text-[#C8C8C8]"
@@ -115,7 +125,7 @@ export function MailRecipients({
       </div>
       {error && <span className="pt-1 text-[12px] text-[#FF99A4]">{error}</span>}
       {focus && q && matches.length > 0 && (
-        <div role="listbox" aria-label="Получатели" className="absolute left-0 top-full z-20 mt-1 w-[min(420px,100%)] rounded-[8px] border border-[#3A3A3A] bg-[#2C2C2C] p-1 shadow-[0_10px_28px_rgba(0,0,0,0.45)]">
+        <div role="listbox" aria-label={`${label}: получатели`} className="absolute left-0 top-full z-20 mt-1 w-[min(420px,100%)] rounded-[8px] border border-[#3A3A3A] bg-[#2C2C2C] p-1 shadow-[0_10px_28px_rgba(0,0,0,0.45)]">
           {matches.map((s, k) => {
             const dup = already(s.name)
             return (

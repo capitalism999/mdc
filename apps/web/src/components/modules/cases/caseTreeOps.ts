@@ -1,4 +1,5 @@
 import type { CaseLogRow, CaseTreeItem, CaseTreeNode } from '../../../types'
+import { mockProfile } from '../../../lib/mockData/profile'
 
 /** Pure, immutable edits of a case's folder tree (create / rename / delete
  * folders) plus the journal rows those edits leave behind. */
@@ -51,7 +52,7 @@ export function findLogNode(tree: CaseTreeNode): CaseTreeNode | undefined {
 }
 
 /** Prepends a journal row to the case's «Журнал действий». */
-export function appendLog(tree: CaseTreeNode, row: Omit<CaseLogRow, 'when' | 'who'>, who = 'Thorne Watts'): CaseTreeNode {
+export function appendLog(tree: CaseTreeNode, row: Omit<CaseLogRow, 'when' | 'who'>, who = mockProfile.name): CaseTreeNode {
   const log = findLogNode(tree)
   if (!log) return tree
   const now = new Date()

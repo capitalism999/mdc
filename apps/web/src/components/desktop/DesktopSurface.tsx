@@ -12,7 +12,10 @@ export function DesktopSurface() {
   const { windows, desktopRef } = useWindowManager()
 
   return (
-    <div ref={desktopRef} className="relative h-full w-full overflow-clip bg-bg-app">
+    // `isolate`: window z-indexes grow with every focus — keep them in the
+    // desktop's own stacking context so they never cover the header menus
+    // (Патчноут, account switcher, СОЗДАТЬ) or the task bar's start menu.
+    <div ref={desktopRef} className="relative isolate h-full w-full overflow-clip bg-bg-app">
       <DesktopBackground />
       <AppIconGrid />
       <PersonalizationTile />

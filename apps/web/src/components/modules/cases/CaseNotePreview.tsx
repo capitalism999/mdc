@@ -1,5 +1,5 @@
 import type { NoteBlock } from '../../../types'
-import { copyNote, isMyNote, noteAuthorName, useNotesState, useOpenNote } from '../notes/notesStore'
+import { copyNote, findMyCopy, isMyNote, noteAuthorName, useNotesState, useOpenNote } from '../notes/notesStore'
 
 /** Read-only text of a note filed into the case, with «Открыть в Заметках»
  * and — for someone else's note — «Сделать себе копию» (an editable copy of
@@ -12,6 +12,8 @@ export function CaseNotePreview({ noteId }: { noteId?: string }) {
     return <div className="rounded-[12px] bg-[#303030] px-4 py-3 text-[13px] text-[#C2C2C2]">Заметка удалена автором или недоступна.</div>
   }
   const mine = isMyNote(note)
+  // a copy made before: the button opens it instead of making another
+  const myCopy = mine ? undefined : findMyCopy(note.id)
   return (
     <div>
       <div className="mb-1.5 ml-1 flex items-center text-[13px] font-semibold text-[#C2C2C2]">
@@ -40,12 +42,12 @@ export function CaseNotePreview({ noteId }: { noteId?: string }) {
           <button
             type="button"
             onClick={() => {
-              const id = copyNote(note.id)
+              const id = myCopy?.id ?? copyNote(note.id)
               if (id) openNote(id)
             }}
             className="h-8 flex-1 rounded-[6px] bg-[#60CDFF] text-[13px] font-semibold text-[#1B1B1B] hover:brightness-110"
           >
-            Сделать себе копию
+            {myCopy ? 'Открыть мою копию' : 'Сделать себе копию'}
           </button>
         )}
       </div>

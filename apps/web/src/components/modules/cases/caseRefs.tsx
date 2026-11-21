@@ -105,7 +105,7 @@ function RefChip({ code, title, status, onClick }: { code: string; title: string
 
 /** Splits `text` into plain parts and resolved / unresolved number refs;
  * plain parts go through `renderPlain` (name/address links). */
-export function renderRefs(text: string, idx: Map<string, CaseRef>, opts: { exclude?: string; onGo: (folderId: string, itemId: string) => void; onOpenBolo: () => void; renderPlain: (t: string, key: number) => ReactNode }) {
+export function renderRefs(text: string, idx: Map<string, CaseRef>, opts: { exclude?: string; onGo: (folderId: string, itemId: string) => void; onOpenBolo: (no?: string) => void; renderPlain: (t: string, key: number) => ReactNode }) {
   const parts: ReactNode[] = []
   let last = 0
   let key = 0
@@ -120,7 +120,7 @@ export function renderRefs(text: string, idx: Map<string, CaseRef>, opts: { excl
     } else if (ref) {
       parts.push(<span key={key++}>{code}</span>)
     } else if (bolo) {
-      parts.push(<RefChip key={key++} code={code} title={`Ориентировка: ${bolo.title}`} status="BOLO" onClick={opts.onOpenBolo} />)
+      parts.push(<RefChip key={key++} code={code} title={`Ориентировка: ${bolo.title}`} status="BOLO" onClick={() => opts.onOpenBolo(bolo.no)} />)
     } else if (/^\d[A-Z]{3}\d{3}$/.test(code)) {
       parts.push(<span key={key++}>{code}</span>)
     } else {

@@ -51,6 +51,8 @@
 .search-root input { font: inherit; color: inherit }
 .search-root input::placeholder { color: inherit; opacity: .7 }
 .search-root input:focus { outline: none }
+.search-root [role="dialog"]:focus { outline: none }
+.search-root textarea:focus { outline: none }
 .search-root .scroll { scrollbar-width: thin; scrollbar-color: #4A4A4A transparent; overflow-y: auto }
 .search-root .scroll::-webkit-scrollbar { width: 10px; height: 10px }
 .search-root .scroll::-webkit-scrollbar-track { background: transparent }

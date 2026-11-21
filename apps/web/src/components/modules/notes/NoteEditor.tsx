@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ClipboardEvent as ReactClipboardEvent, KeyboardEvent as ReactKeyboardEvent } from 'react'
-import type { NoteBlock, OfficerNote } from '../../../types'
+import type { NoteBlock, NoteFolder, OfficerNote } from '../../../types'
 import { NoteCaseMenu } from './NoteCaseMenu'
+import { NoteFolderMenu } from './NoteFolderMenu'
 import { CheckIcon, CloseIcon, PanelSplitIcon, PinIcon, PrintIcon, TrashIcon } from './icons'
 import { PlateText } from './PlateText'
 
@@ -11,14 +12,17 @@ interface NoteEditorProps {
   printedTitle: string | null
   onToggleList: () => void
   onTogglePin: () => void
+  /** moves the note to another of the user's folders */
+  onMoveFolder: (folder: NoteFolder) => void
   onTitleChange: (title: string) => void
   /** whole body after an edit (typing, new line, merge, type change…) */
   onBlocksChange: (blocks: NoteBlock[]) => void
-  onBlockToggle: (blockId: string) => void
+  /** a freshly created note: the title opens selected, ready to be typed over */
+  fresh?: boolean
   /** file the note into a case folder; undefined = take it out */
   onLinkCase: (caseId: string | undefined, folderId?: string) => void
   /** another officer's note: shown read-only with «Сделать себе копию» */
-  readOnly?: { author: string; onCopy: () => void }
+  readOnly?: { author: string; onCopy: () => void; /** a copy was made before: the button opens it */ hasCopy: boolean }
   /** opens the linked case in «Дела» */
   onOpenCase: (caseId: string) => void
   onPrint: () => void
@@ -70,11 +74,13 @@ function BlockText({
   onDeactivate,
   onText,
   onKey,
+  readOnly,
 }: {
   block: NoteBlock
   active: Active | null
   className: string
   placeholder?: string
+  readOnly?: boolean
   onActivate: (caret?: number) => void
   onDeactivate: () => void
   onText: (text: string, caret: number) => void
@@ -115,6 +121,10 @@ function BlockText({
       />
     )
   }
+  // someone else's note: plain text (selectable, not an editable field)
+  if (readOnly) {
+    return <div className={`min-h-[25px] w-full whitespace-pre-wrap break-words text-left ${className}`}>{block.text ? <PlateText text={block.text} /> : null}</div>
+  }
   return (
     <div
       role="textbox"
@@ -122,6 +132,9 @@ function BlockText({
       onMouseDown={() => (mouse.current = true)}
       onMouseUp={(e) => {
         mouse.current = false
+        // a mouse selection dragged over several lines is for copying — leave it
+        const sel = window.getSelection()
+        if (sel && !sel.isCollapsed && sel.anchorNode && !e.currentTarget.contains(sel.anchorNode)) return
         // an empty line only shows its placeholder: caret at 0
         onActivate(block.text ? caretAt(e.currentTarget) : 0)
       }}
@@ -154,17 +167,18 @@ function Block({
   readOnly?: boolean
 }) {
   const done = !!block.done
-  const placeholder = block.type === 'heading' ? 'Заголовок' : block.type === 'checklist' ? 'Пункт' : block.type === 'bullet' ? 'Пункт списка' : isOnly ? 'Начните писать… «- » список, «[] » чек-лист, «# » заголовок' : ''
+  const placeholder = block.type === 'heading' ? 'Заголовок' : block.type === 'checklist' ? 'Пункт' : block.type === 'bullet' ? 'Пункт списка' : block.type === 'quote' ? 'Цитата' : isOnly ? 'Начните писать… «- » список, «[] » чек-лист, «# » заголовок, «> » цитата' : ''
   const text = (
     <BlockText
       block={block}
       active={active}
       placeholder={placeholder}
       className={`${TYPE_STYLE[block.type]} ${block.type === 'checklist' ? (done ? 'text-[#B4B4B4] line-through' : 'text-[#F2F2F2]') : ''}`}
-      onActivate={readOnly ? () => {} : onActivate}
+      onActivate={onActivate}
       onDeactivate={onDeactivate}
       onText={onText}
       onKey={onKey}
+      readOnly={readOnly}
     />
   )
   if (block.type === 'bullet') {
@@ -217,6 +231,15 @@ function ImageBlock({ block, readOnly, onRemove }: { block: NoteBlock; readOnly:
   )
 }
 
+/** «1 слово», «3 слова», «5 слов». */
+function wordsLabel(n: number) {
+  const d = n % 10
+  const dd = n % 100
+  if (d === 1 && dd !== 11) return 'слово'
+  if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return 'слова'
+  return 'слов'
+}
+
 /** One undo step: the body and where the caret was. */
 interface Snap {
   blocks: NoteBlock[]
@@ -243,10 +266,7 @@ const TYPE_BUTTONS: { type: NoteBlock['type']; label: string; glyph: string }[] 
  * Reader/editor pane: toolbar (hide-list, pin, case-link, print, delete,
  * close), the note's title and date, its typed blocks (each click-to-edit,
  * matching the reference exactly otherwise), a "Распечатано" toast, and a
- * floating word-count pill. The reference's four floating-bar formatting
- * buttons (Aa/checklist/list/photo) have no backing logic in the source —
- * omitted rather than shipped as dead UI; same for "Новая папка" in
- * `NoteList`'s flyout.
+ * floating bar (line types, «Фото», word count).
  */
 export function NoteEditor({
   note,
@@ -255,9 +275,10 @@ export function NoteEditor({
   printedTitle,
   onToggleList,
   onTogglePin,
+  onMoveFolder,
   onTitleChange,
   onBlocksChange: emitBlocks,
-  onBlockToggle,
+  fresh,
   onLinkCase,
   onOpenCase,
   onPrint,
@@ -305,7 +326,12 @@ export function NoteEditor({
     h.lastKey = ''
     emitBlocks(snap.blocks)
     if (snap.at && snap.blocks.some((b) => b.id === snap.at!.id)) focusBlock(snap.at.id, snap.at.caret)
-    else setActiveState(null)
+    else {
+      // no line to put the caret in (e.g. undoing a Ctrl+A replace): keep the
+      // keyboard in the note, so the next Ctrl+Z / Ctrl+Y still reaches it
+      setActiveState(null)
+      bodyRef.current?.focus({ preventScroll: true })
+    }
   }
   /** Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z by physical key (works in any layout). */
   function historyKey(e: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; code: string; preventDefault: () => void }) {
@@ -328,6 +354,7 @@ export function NoteEditor({
   // it; Delete / Backspace / Ctrl+X / typing / pasting replace it.
   const [selAll, setSelAll] = useState(false)
   const bodyRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => setSelAll(false), [note.id])
   useLayoutEffect(() => {
     const el = bodyRef.current
@@ -435,7 +462,24 @@ export function NoteEditor({
       return
     }
     if (e.key === 'Escape') {
-      el.blur()
+      // leave the line but keep the keyboard in the note (Ctrl+Z / Ctrl+A)
+      bodyRef.current?.focus({ preventScroll: true })
+      return
+    }
+    // quote: Enter adds a line inside it; Enter on an empty last line (or in an
+    // empty quote) leaves it for a plain line below
+    if (e.key === 'Enter' && !e.shiftKey && b.type === 'quote' && s === end && s === v.length && (v === '' || v.endsWith('\n'))) {
+      e.preventDefault()
+      if (v === '') {
+        onBlocksChange(blocks.map((x) => (x.id === b.id ? { ...x, type: 'paragraph' } : x)))
+        focusBlock(b.id, 0)
+        return
+      }
+      const nb: NoteBlock = { id: newId(), type: 'paragraph', text: '' }
+      const next = [...blocks]
+      next.splice(i, 1, { ...b, text: v.replace(/\n+$/, '') }, nb)
+      onBlocksChange(next)
+      focusBlock(nb.id, 0)
       return
     }
     if (e.key === 'Enter' && !e.shiftKey && b.type !== 'quote') {
@@ -443,6 +487,14 @@ export function NoteEditor({
       // Enter on an empty list item ends the list
       if (list && v === '') {
         onBlocksChange(blocks.map((x) => (x.id === b.id ? { ...x, type: 'paragraph', done: false } : x)))
+        focusBlock(b.id, 0)
+        return
+      }
+      // Enter at the very start of a written line: an empty line above it, the
+      // line itself (heading, list item…) stays as it is
+      if (s === 0 && end === 0 && v !== '') {
+        const above: NoteBlock = { id: newId(), type: list ? b.type : 'paragraph', text: '', ...(b.type === 'checklist' ? { done: false } : {}) }
+        onBlocksChange([...blocks.slice(0, i), above, ...blocks.slice(i)])
         focusBlock(b.id, 0)
         return
       }
@@ -569,9 +621,11 @@ export function NoteEditor({
     if (!files.length) return
     e.preventDefault()
     const ta = e.target instanceof HTMLTextAreaElement ? e.target : null
-    const curId = active?.id ?? null
-    const s = ta ? ta.selectionStart : null
-    const sEnd = ta ? ta.selectionEnd : null
+    insertImages(files, active?.id ?? null, ta ? ta.selectionStart : null, ta ? ta.selectionEnd : null)
+  }
+  /** Puts pictures in at a caret: the line `curId` is cut at `s`..`sEnd` (at
+   * the end of the note when no line is given). */
+  function insertImages(files: File[], curId: string | null, s: number | null, sEnd: number | null) {
     Promise.all(
       files.map(
         (file) =>
@@ -609,6 +663,23 @@ export function NoteEditor({
       focusBlock(tail.id, 0)
     })
   }
+  /** «Фото»: pick picture files; they go in where the caret was when the
+   * button was pressed (the file dialog takes the focus away). */
+  const fileRef = useRef<HTMLInputElement>(null)
+  const photoAt = useRef<{ id: string | null; s: number | null; e: number | null }>({ id: null, s: null, e: null })
+  function pickPhoto() {
+    const el = document.activeElement
+    const ta = active && el instanceof HTMLTextAreaElement ? el : null
+    photoAt.current = { id: active?.id ?? null, s: ta ? ta.selectionStart : null, e: ta ? ta.selectionEnd : null }
+    fileRef.current?.click()
+  }
+  function onPhotoFiles(list: FileList | null) {
+    const files = Array.from(list ?? []).filter((f) => f.type.startsWith('image/'))
+    if (fileRef.current) fileRef.current.value = ''
+    if (!files.length) return
+    const at = photoAt.current
+    insertImages(files, at.id, at.s, at.e)
+  }
   // blocks at the time the async image read finishes
   const getBlocksRef = useRef(() => blocks)
   getBlocksRef.current = () => blocks
@@ -621,18 +692,43 @@ export function NoteEditor({
     const near = body.slice(i).find((x) => x.type !== 'image') ?? body.slice(0, i).reverse().find((x) => x.type !== 'image')
     if (near) focusBlock(near.id, 0)
   }
+  /** Checklist tick — an undo step like any other edit (so a later Ctrl+Z
+   * doesn't silently un-tick it together with the typing before it). */
+  function toggleDone(id: string) {
+    if (readOnly) return
+    onBlocksChange(blocks.map((x) => (x.id === id ? { ...x, done: !x.done } : x)))
+    // the tick keeps the caret where it was; with nothing focused in the note,
+    // focus it so Ctrl+Z right after can take the tick back
+    if (!scrollRef.current?.contains(document.activeElement)) bodyRef.current?.focus({ preventScroll: true })
+  }
+
+  // a new note opens with the caret in its (empty) title
+  const titleRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (!fresh || readOnly) return
+    titleRef.current?.focus()
+    titleRef.current?.select()
+  }, [fresh, readOnly, note.id])
+  /** Enter / ↓ in the title: on to the first line of the text. */
+  function onTitleKey(e: ReactKeyboardEvent<HTMLInputElement>) {
+    if (readOnly || (e.key !== 'Enter' && e.key !== 'ArrowDown')) return
+    e.preventDefault()
+    const first = blocks.find((x) => x.type !== 'image')
+    if (first) focusBlock(first.id, 0)
+    else focusEnd()
+  }
 
   const wordCount = note.blocks.reduce((sum, b) => sum + b.text.split(/\s+/).filter(Boolean).length, 0)
 
   return (
-    <main className="relative flex min-w-0 flex-1 flex-col bg-[#1C1C1C] text-[#F2F2F2]">
-      <div className="flex h-11 shrink-0 items-center gap-0.5 px-4 text-[#B4B4B4]">
+    <main className="@container relative flex min-w-0 flex-1 flex-col bg-[#1C1C1C] text-[#F2F2F2]">
+      <div className="flex h-11 shrink-0 items-center gap-0.5 px-2 text-[#B4B4B4] @[620px]:px-4">
         <button
           type="button"
           onClick={onToggleList}
           aria-label={listHidden ? 'Показать список заметок' : 'Скрыть список заметок'}
           title={listHidden ? 'Показать список заметок' : 'Скрыть список заметок'}
-          className="flex h-9 w-9 items-center justify-center rounded-[6px] hover:bg-white/10"
+          className="flex h-9 w-8 items-center justify-center rounded-[6px] hover:bg-white/10 @[620px]:w-9"
         >
           <PanelSplitIcon />
         </button>
@@ -643,33 +739,37 @@ export function NoteEditor({
           onClick={onTogglePin}
           aria-label={note.isPinned ? 'Открепить' : 'Закрепить'}
           title={note.isPinned ? 'Открепить' : 'Закрепить'}
-          className="flex h-9 w-9 items-center justify-center rounded-[6px] hover:bg-white/10"
+          className="flex h-9 w-8 items-center justify-center rounded-[6px] hover:bg-white/10 @[620px]:w-9"
           style={{ color: note.isPinned ? '#60CDFF' : undefined }}
         >
           <PinIcon />
         </button>
+        <NoteFolderMenu folder={note.folder} onMove={onMoveFolder} />
         <NoteCaseMenu note={note} onLink={onLinkCase} onOpen={onOpenCase} />
         </>)}
         <button
           type="button"
           onClick={onPrint}
-          className="flex h-9 items-center gap-2 rounded-[6px] px-3 text-[#F2F2F2] hover:bg-white/10"
+          aria-label="Распечатать"
+          title="Распечатать"
+          className="flex h-9 items-center gap-2 rounded-[6px] px-2 text-[#F2F2F2] hover:bg-white/10 @[620px]:px-3"
         >
           <PrintIcon />
-          Распечатать
+          {/* a narrow window keeps just the icon */}
+          <span className="hidden whitespace-nowrap @[620px]:inline">Распечатать</span>
         </button>
         {!readOnly && (
-          <button type="button" onClick={onDelete} aria-label="Удалить" title="Удалить" className="flex h-9 w-9 items-center justify-center rounded-[6px] hover:bg-white/10">
+          <button type="button" onClick={onDelete} aria-label="Удалить" title="Удалить" className="flex h-9 w-8 items-center justify-center rounded-[6px] hover:bg-white/10 @[620px]:w-9">
             <TrashIcon />
           </button>
         )}
-        <span className="mx-1 h-5 w-px bg-[#363636]" />
+        <span className="mx-0.5 h-5 w-px bg-[#363636] @[620px]:mx-1" />
         <button
           type="button"
           onClick={onClose}
           aria-label="Закрыть заметку"
           title="Закрыть заметку"
-          className="flex h-9 w-9 items-center justify-center rounded-[6px] hover:bg-white/10"
+          className="flex h-9 w-8 items-center justify-center rounded-[6px] hover:bg-white/10 @[620px]:w-9"
         >
           <CloseIcon />
         </button>
@@ -686,18 +786,31 @@ export function NoteEditor({
             <span className="text-[#B4B4B4]"> · только просмотр. Редактировать может только автор.</span>
           </span>
           <button type="button" onClick={readOnly.onCopy} className="h-8 shrink-0 rounded-[6px] px-3 text-[13px] font-semibold text-[#1B1B1B] hover:brightness-110" style={{ background: ACCENT }}>
-            Сделать себе копию
+            {readOnly.hasCopy ? 'Открыть мою копию' : 'Сделать себе копию'}
           </button>
         </div>
       )}
       <div
-        className="scroll flex-1 overflow-y-auto px-12 pb-[140px] pt-2"
+        // focusable, so a click on the empty margins keeps Ctrl+Z / Ctrl+A here
+        // instead of letting them fall through to the desktop
+        ref={scrollRef}
+        tabIndex={-1}
+        className="scroll flex-1 overflow-y-auto px-6 pb-[140px] pt-2 outline-none @[620px]:px-12"
         onPaste={onPaste}
         onKeyDown={(e) => {
           if (onSelAllKey(e)) return
           // the title keeps its own (native) undo / select-all; lines handle theirs in onKey
           const t = e.target as HTMLElement
           if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return
+          // read-only: Ctrl+A just selects the note's text (for Ctrl+C), not the whole desktop
+          if (readOnly && (e.ctrlKey || e.metaKey) && e.code === 'KeyA' && bodyRef.current) {
+            e.preventDefault()
+            const r = document.createRange()
+            r.selectNodeContents(bodyRef.current)
+            window.getSelection()?.removeAllRanges()
+            window.getSelection()?.addRange(r)
+            return
+          }
           if ((e.ctrlKey || e.metaKey) && e.code === 'KeyA') {
             e.preventDefault()
             selectAll()
@@ -713,9 +826,12 @@ export function NoteEditor({
             {note.copiedFrom && <span> · копия заметки {note.copiedFrom}</span>}
           </div>
           <input
+            ref={titleRef}
             readOnly={!!readOnly}
             value={note.title}
             onChange={(e) => onTitleChange(e.target.value)}
+            onKeyDown={onTitleKey}
+            aria-label="Заголовок заметки"
             placeholder="Заголовок"
             className="bg-transparent text-[30px] font-bold leading-[38px] tracking-[-0.2px] text-[#F2F2F2] outline-none placeholder:text-[#B4B4B4]"
           />
@@ -733,7 +849,7 @@ export function NoteEditor({
               onDeactivate={() => setActiveState((a) => (a?.id === block.id ? null : a))}
               onText={(t, c) => setText(block.id, t, c)}
               onKey={(e) => onKey(e, block)}
-              onToggle={() => onBlockToggle(block.id)}
+              onToggle={() => toggleDone(block.id)}
               readOnly={!!readOnly}
             />
             ),
@@ -746,14 +862,14 @@ export function NoteEditor({
       {printedTitle && (
         <div
           role="status"
-          className="absolute bottom-[88px] right-6 flex w-[340px] gap-3 rounded-[8px] border border-[#363636] bg-[#2C2C2C] py-3.5 pl-4 pr-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.4)]"
+          className="absolute bottom-[88px] right-6 flex w-[min(340px,calc(100%-48px))] gap-3 rounded-[8px] border border-[#363636] bg-[#2C2C2C] py-3.5 pl-4 pr-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.4)]"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px]" style={{ background: ACCENT, color: '#1B1B1B' }}>
             <PrintIcon />
           </span>
           <span className="min-w-0 flex-1">
-            <div className="font-semibold">Распечатано</div>
-            <div className="text-[13px] text-[#B4B4B4]">Лист «{printedTitle}» забран из принтера.</div>
+            <div className="font-semibold">Отправлено на печать</div>
+            <div className="text-[13px] text-[#B4B4B4]">Лист «{printedTitle}» отправлен на принтер участка.</div>
           </span>
           <button
             type="button"
@@ -785,9 +901,30 @@ export function NoteEditor({
               </svg>
             </button>
           ))}
-          {!readOnly && <span className="mx-1 h-5 w-px bg-[#363636]" />}
-          {!readOnly && <span className="px-1 text-[11px] text-[#8A8A8A]">Ctrl+V — вставить картинку</span>}
-          <span className="px-2 text-[12px] text-[#B4B4B4]">{wordCount} слов</span>
+          {!readOnly && (
+            <>
+              <button
+                type="button"
+                title="Фото — вставить картинку из файла"
+                aria-label="Фото"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={pickPhoto}
+                className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[#B4B4B4] hover:bg-white/10 hover:text-white"
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="2.5" y="4" width="15" height="12" rx="2" />
+                  <circle cx="7" cy="8.5" r="1.5" />
+                  <path d="M17.5 13.5l-4-4-7.5 6.5" />
+                </svg>
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => onPhotoFiles(e.target.files)} />
+            </>
+          )}
+          {!readOnly && <span className="mx-1 hidden h-5 w-px bg-[#363636] @[640px]:block" />}
+          {!readOnly && <span className="hidden whitespace-nowrap px-1 text-[11px] text-[#8A8A8A] @[640px]:inline">Ctrl+V — вставить картинку</span>}
+          <span className={`whitespace-nowrap px-2 text-[12px] text-[#B4B4B4] ${readOnly ? '' : 'hidden @[360px]:inline'}`}>
+            {wordCount} {wordsLabel(wordCount)}
+          </span>
         </div>
       </div>
     </main>

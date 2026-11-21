@@ -236,7 +236,7 @@ export function ReportsPaper({ $v }: { $v: ReportsVals }) {
                     {__h($v.pp?.fr)}
                   </span>
                   <span>
-                    {"Los Santos County Sheriff's Department"}
+                    {__h($v.pp?.agFoot)}
                   </span>
                   <span>
                     {"2026"}
@@ -319,6 +319,25 @@ export function ReportsPaper({ $v }: { $v: ReportsVals }) {
         </div>
         <div style={{ width: "340px", flexShrink: "0", display: "flex", flexDirection: "column", borderLeft: `1px solid ${__s($v.c?.stroke)}`, background: $v.c?.rail }}>
           <div className="scroll" style={{ flex: "1", minHeight: "0", padding: "58px 18px 16px 18px", display: "flex", flexDirection: "column", gap: "14px" }}>
+            {/* MDT: review header — back to the queue, what is being reviewed */}
+            {$v.isReview ? (
+              <>
+              <button className="btn hv" onClick={$v.rv?.back} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: $v.c?.link }}>
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12.5 4.5L7 10l5.5 5.5"></path>
+                </svg>
+                {"К очереди"}
+              </button>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px", paddingBottom: "4px", borderBottom: `1px solid ${__s($v.c?.stroke)}` }}>
+                <span style={{ fontSize: "16px", lineHeight: "22px", fontWeight: "600" }}>
+                  <span className="num">{__h($v.rv?.no)}</span>{" · "}{__h($v.rv?.typeT)}
+                </span>
+                <span style={{ fontSize: "12.5px", color: $v.c?.text2 }}>
+                  {__h($v.rv?.by)}{" · "}{__h($v.rv?.waitT)}
+                </span>
+              </div>
+              </>
+            ) : null}
             {$v.isDocView ? (
               <>
               <button className="btn hv" onClick={$v.goList} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: $v.c?.link }}>
@@ -354,11 +373,11 @@ export function ReportsPaper({ $v }: { $v: ReportsVals }) {
               </span>
               {__a($v.rv?.att).map((e: any, $i0: number) => (
                 <Fragment key={$i0}>
-                  <a href="#" onClick={$v.__go(e?.href, e?.v)} className="hv" style={{ display: "flex", gap: "10px", padding: "5px 8px", margin: "0 -8px", borderRadius: "6px", textDecoration: "none", color: $v.c?.text, fontSize: "13px", lineHeight: "18px" }}>
+                  <a href={e?.isLink ? "#" : undefined} onClick={e?.isLink ? $v.__go(e?.href, e?.v) : undefined} className={e?.isLink ? "hv" : undefined} style={{ display: "flex", gap: "10px", padding: "5px 8px", margin: "0 -8px", borderRadius: "6px", textDecoration: "none", color: $v.c?.text, fontSize: "13px", lineHeight: "18px" }}>
                     <span style={{ width: "78px", flexShrink: "0", color: $v.c?.text2 }}>
                       {__h(e?.k)}
                     </span>
-                    <span className="ell" style={{ flex: "1", color: $v.c?.link }}>
+                    <span className="ell" style={{ flex: "1", color: e?.isLink ? $v.c?.link : $v.c?.text }}>
                       {__h(e?.v)}
                     </span>
                   </a>
@@ -368,7 +387,7 @@ export function ReportsPaper({ $v }: { $v: ReportsVals }) {
                 <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
                   {__h($v.rv?.noteLabel)}
                 </span>
-                <textarea rows={3} value={__s($v.__retNote)} onChange={$v.__onRetNote} placeholder={$v.rv?.ph} style={{ resize: "none", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "13px", lineHeight: "19px" }} />
+                <textarea rows={3} value={$v.rv?.lock ? __s($v.rv?.sentNote) : __s($v.__retNote)} readOnly={!!$v.rv?.lock} onChange={$v.__onRetNote} placeholder={$v.rv?.lock ? "Без комментария" : $v.rv?.ph} style={{ resize: "none", boxSizing: "border-box", padding: "8px 10px", borderRadius: "6px", border: "0", opacity: $v.rv?.lock ? 0.75 : 1, borderBottom: $v.rv?.noteErr ? "2px solid #FF99A4" : `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "13px", lineHeight: "19px" }} />
               </label>
               </>
             ) : null}
@@ -398,6 +417,17 @@ export function ReportsPaper({ $v }: { $v: ReportsVals }) {
               <span style={{ fontSize: "13px", color: $v.c?.text2, textAlign: "center" }}>
                 {__h($v.rv?.doneT)}
               </span>
+            ) : null}
+            {/* MDT: after the decision — on to the next report in the queue */}
+            {$v.rv?.done && $v.rv?.next ? (
+              <button className="btn acc" onClick={$v.rv?.next} style={{ height: "36px", borderRadius: "6px", background: $v.accent, color: $v.onAccent, fontWeight: "600", textAlign: "center" }}>
+                {__h($v.rv?.nextT)}
+              </button>
+            ) : null}
+            {$v.rv?.done && $v.rv?.empty ? (
+              <button className="btn hv" onClick={$v.rv?.back} style={{ height: "34px", borderRadius: "6px", background: $v.c?.btn, textAlign: "center" }}>
+                {"Очередь пуста · к списку"}
+              </button>
             ) : null}
           </div>
         </div>

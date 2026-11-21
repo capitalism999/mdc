@@ -5,8 +5,10 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 const ACCENT = '#60CDFF'
 
-function useDismiss(open: boolean, close: () => void) {
-  const ref = useRef<HTMLDivElement>(null)
+/** Closes a popup on an outside press or Escape (Escape is swallowed, so a
+ * dialog underneath stays open). */
+export function useDismiss<T extends HTMLElement = HTMLDivElement>(open: boolean, close: () => void) {
+  const ref = useRef<T>(null)
   useEffect(() => {
     if (!open) return
     const down = (e: MouseEvent) => {

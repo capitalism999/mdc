@@ -26,7 +26,7 @@ export function SystemTray() {
         <span className="icon-font flex w-3.5 items-center justify-center overflow-hidden text-[13px]">{'\uE701'}</span>
         <span className="icon-font flex w-3.5 items-center justify-center overflow-hidden text-[13px]">{'\uE15D'}</span>
       </div>
-      <div className="flex flex-col items-end gap-0 leading-tight">
+      <div className="flex flex-col items-end gap-0 leading-tight" title={now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}>
         <span className="text-[11px]">{formatTime(now)}</span>
         <span className="text-[11px] text-ink/70">{formatDate(now)}</span>
       </div>

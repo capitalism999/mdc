@@ -1,6 +1,7 @@
 /* Generated 1:1 from the design reference (project/Search.dc.html) — markup, styles and copy are a literal port. */
 import { Fragment } from 'react'
 import { __a, __h, __s, type SearchVals } from './searchRuntime'
+import { SearchSelect } from './SearchSelect'
 
 export function SearchHome({ $v }: { $v: SearchVals }) {
   if (!$v.noQ) return null
@@ -27,31 +28,77 @@ export function SearchHome({ $v }: { $v: SearchVals }) {
               </div>
             </div>
           ) : null}
-          {$v.showPicker ? (
+          {$v.showForm ? (
             <div style={{ display: "flex", alignItems: "center", gap: "20px", padding: "8px 4px 0 4px" }}>
-              <img src="/assets/search/016e1809dc2a45dae6794f16c160dc5e.png" alt="Печать штата Сан-Андреас" width="84" height="84" style={{ width: "84px", height: "84px", flexShrink: "0", display: "block" }} />
+              {$v.isPersonForm ? (
+                <img src="/assets/search/016e1809dc2a45dae6794f16c160dc5e.png" alt="Печать штата Сан-Андреас" width="84" height="84" style={{ width: "84px", height: "84px", flexShrink: "0", display: "block" }} />
+              ) : null}
+              {$v.isOtherForm ? (
+                <span style={{ width: "84px", height: "84px", borderRadius: "22px", background: $v.hi?.color, color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {$v.hi?.iPerson ? (
+                    <svg width="40" height="40" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                      <circle cx="10" cy="7" r="3.2"></circle>
+                      <path d="M3.5 17a6.5 6.5 0 0113 0"></path>
+                    </svg>
+                  ) : null}
+                  {$v.hi?.iVehicle ? (
+                    <svg width="40" height="40" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+                      <path d="M3 13.5V10l1.8-4.2A1.5 1.5 0 016.2 5h7.6a1.5 1.5 0 011.4.8L17 10v3.5"></path>
+                      <path d="M2.5 13.5h15v2h-15z"></path>
+                      <circle cx="6" cy="15.5" r="1.3"></circle>
+                      <circle cx="14" cy="15.5" r="1.3"></circle>
+                    </svg>
+                  ) : null}
+                  {$v.hi?.iWeapon ? (
+                    <svg width="40" height="40" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+                      <path d="M2.5 6.5h13l1.5 2.5h-6l-1 2h-2.5l-1.5 4.5H3l1.5-5.5H2.5z"></path>
+                    </svg>
+                  ) : null}
+                  {$v.hi?.iOrg ? (
+                    <svg width="40" height="40" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+                      <circle cx="7.5" cy="7" r="2.6"></circle>
+                      <circle cx="13.5" cy="7.5" r="2.2"></circle>
+                      <path d="M2.5 16a5 5 0 0110 0M12.5 12.2a4 4 0 015 3.8"></path>
+                    </svg>
+                  ) : null}
+                  {$v.hi?.iPlace ? (
+                    <svg width="40" height="40" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+                      <path d="M3 9l7-5.5L17 9v8H3z"></path>
+                      <path d="M8 17v-5h4v5"></path>
+                    </svg>
+                  ) : null}
+                  {$v.hi?.iLaw ? (
+                    <svg width="40" height="40" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+                      <path d="M10 3v14M6.5 17h7M4 6h12"></path>
+                      <path d="M6 6l-2.5 5.5a2.5 2.5 0 005 0zM14 6l-2.5 5.5a2.5 2.5 0 005 0z"></path>
+                    </svg>
+                  ) : null}
+                </span>
+              ) : null}
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <h1 style={{ margin: "0", fontSize: "36px", lineHeight: "44px", fontWeight: "700", letterSpacing: "-0.4px", whiteSpace: "nowrap" }}>
-                  {"Поиск личности"}
+                  {__h($v.formTitle)}
                 </h1>
                 <div style={{ color: $v.c?.text2 }}>
-                  {"Реестр жителей и иностранных граждан штата Сан-Андреас"}
+                  {__h($v.formSub)}
                 </div>
               </div>
             </div>
           ) : null}
-          {$v.showPicker ? (
+          {$v.showForm ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "20px", borderRadius: "14px", background: $v.c?.card, boxShadow: `inset 0 0 0 1px ${__s($v.c?.stroke)}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div style={{ display: "flex", padding: "3px", borderRadius: "10px", background: $v.c?.mica, boxShadow: `inset 0 0 0 1px ${__s($v.c?.stroke)}` }}>
-                  {__a($v.pmOpts).map((o: any, $i0: number) => (
-                    <Fragment key={$i0}>
-                      <button className="btn pb" onClick={o?.pick} style={{ height: "36px", padding: "0 28px", borderRadius: "8px", fontSize: "14px", fontWeight: o?.fw, background: o?.bg, color: o?.fg, whiteSpace: "nowrap" }}>
-                        {__h(o?.name)}
-                      </button>
-                    </Fragment>
-                  ))}
-                </div>
+                {$v.showSeg ? (
+                  <div style={{ display: "flex", padding: "3px", borderRadius: "10px", background: $v.c?.mica, boxShadow: `inset 0 0 0 1px ${__s($v.c?.stroke)}` }}>
+                    {__a($v.pmOpts).map((o: any, $i0: number) => (
+                      <Fragment key={$i0}>
+                        <button className="btn pb" onClick={o?.pick} style={{ height: "36px", padding: "0 28px", borderRadius: "8px", fontSize: "14px", fontWeight: o?.fw, background: o?.bg, color: o?.fg, whiteSpace: "nowrap" }}>
+                          {__h(o?.name)}
+                        </button>
+                      </Fragment>
+                    ))}
+                  </div>
+                ) : null}
                 <div style={{ fontSize: "13px", color: $v.c?.text2 }}>
                   {__h($v.pmHint)}
                 </div>
@@ -66,7 +113,12 @@ export function SearchHome({ $v }: { $v: SearchVals }) {
                       <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2, whiteSpace: "nowrap" }}>
                         {__h(f?.name)}
                       </span>
-                      <input type="text" value={__s(f?.val)} onChange={f?.set} placeholder={f?.hint} aria-label={f?.name} style={{ height: "40px", boxSizing: "border-box", padding: "0 12px", borderRadius: "8px", border: "0", background: $v.c?.search, boxShadow: `inset 0 0 0 1px ${__s(f?.ring)}`, fontSize: "14px", color: $v.c?.text }} />
+                      {f?.isSel ? (
+                        <SearchSelect $v={$v} f={f} />
+                      ) : null}
+                      {f?.isInp ? (
+                        <input type="text" value={__s(f?.val)} onChange={f?.set} placeholder={f?.hint} aria-label={f?.name} style={{ height: "40px", boxSizing: "border-box", padding: "0 12px", borderRadius: "8px", border: "0", background: $v.c?.search, boxShadow: `inset 0 0 0 1px ${__s(f?.ring)}`, fontSize: "14px", color: $v.c?.text }} />
+                      ) : null}
                     </label>
                   </Fragment>
                 ))}
@@ -82,6 +134,39 @@ export function SearchHome({ $v }: { $v: SearchVals }) {
                 <button className="btn" onClick={$v.doFind} style={{ height: "36px", padding: "0 24px", borderRadius: "8px", background: $v.accent, color: "#FFFFFF", fontSize: "14px", fontWeight: "600", whiteSpace: "nowrap" }}>
                   {"Найти"}
                 </button>
+              </div>
+            </div>
+          ) : null}
+          {$v.showBrowse ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
+                <span style={{ fontSize: "13px", fontWeight: "600", color: $v.c?.text2 }}>
+                  {__h($v.browseTitle)}
+                </span>
+                <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
+                  {__h($v.browseHint)}
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px" }}>
+                {__a($v.browse).map((bw: any, $i0: number) => (
+                  <Fragment key={$i0}>
+                    <button className="btn hv" onClick={bw?.pick} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", borderRadius: "10px", background: $v.c?.card, boxShadow: `inset 0 0 0 1px ${__s($v.c?.stroke)}`, minWidth: "0" }}>
+                      <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span className="ell" style={{ fontSize: "14px", fontWeight: "600" }}>
+                          {__h(bw?.title)}
+                        </span>
+                        <span className="ell" style={{ fontSize: "12px", color: $v.c?.text2 }}>
+                          {__h(bw?.sub)}
+                        </span>
+                      </span>
+                      {bw?.hasBadge ? (
+                        <span style={{ flexShrink: "0", padding: "2px 8px", borderRadius: "10px", fontSize: "11px", fontWeight: "600", background: bw?.bBg, color: bw?.bFg, whiteSpace: "nowrap" }}>
+                          {__h(bw?.badge)}
+                        </span>
+                      ) : null}
+                    </button>
+                  </Fragment>
+                ))}
               </div>
             </div>
           ) : null}

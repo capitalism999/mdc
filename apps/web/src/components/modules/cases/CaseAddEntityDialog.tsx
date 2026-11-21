@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { CaseTone, CaseTreeItem, CaseTreeNode } from '../../../types'
+import type { CaseTreeItem, CaseTreeNode } from '../../../types'
 import { SEARCH_DB } from '../search/searchLogic'
 import { LicensePlate } from '../shared/LicensePlate'
 import { ownPhoto } from '../shared/personPhotos'
 import { SingleDropdown } from './CaseDropdown'
+import { ITEM_STATUSES, StatusMenu, type StatusOption } from './caseStatus'
+import { mockProfile } from '../../../lib/mockData/profile'
 
 /** «Добавить участника» / «Добавить транспорт» for a case: find the person or
  * vehicle in the MDC database (or enter one that isn't there), pick the
@@ -25,28 +27,12 @@ interface DbRec {
   f?: Record<string, string>
 }
 
-const STATUSES: Record<Kind, [string, CaseTone][]> = {
-  person: [
-    ['Проверяется', 'blue'],
-    ['Розыск', 'amber'],
-    ['Под стражей', 'red'],
-    ['Показания даны', 'green'],
-    ['Добавлен', 'grey'],
-  ],
-  vehicle: [
-    ['Проверяется', 'blue'],
-    ['Розыск', 'amber'],
-    ['Найдено', 'green'],
-    ['Изъято', 'grey'],
-  ],
-}
-
-const TONE: Record<CaseTone, { bg: string; fg: string }> = {
-  red: { bg: 'rgba(232,17,35,0.2)', fg: '#FF99A4' },
-  amber: { bg: 'rgba(255,185,0,0.16)', fg: '#FCE100' },
-  green: { bg: 'rgba(16,124,16,0.28)', fg: '#6CCB5F' },
-  grey: { bg: 'rgba(255,255,255,0.08)', fg: '#C8C8C8' },
-  blue: { bg: 'rgba(0,120,212,0.25)', fg: '#99D9FF' },
+/** The status a new record gets in a folder: witnesses / victims start
+ * «Не опрошен», staff «Помогает», everyone / everything else «Проверяется». */
+function defaultStatus(kind: Kind, folderLabel: string): StatusOption {
+  const want = kind === 'person' && /Свидетел|Потерпевш/.test(folderLabel) ? 'Не опрошен' : kind === 'person' && /Сотрудник/.test(folderLabel) ? 'Помогает' : 'Проверяется'
+  const list = ITEM_STATUSES[kind] ?? []
+  return list.find((o) => o.status === want) ?? list[0] ?? { status: 'Добавлен', tone: 'grey' }
 }
 
 function initialsOf(name: string) {
@@ -87,7 +73,6 @@ export function CaseAddEntityDialog({ kind, tree, section, startFolderId, accent
   const [manual, setManual] = useState(false)
   const [mName, setMName] = useState('')
   const [mExtra, setMExtra] = useState('')
-  const [status, setStatus] = useState(0)
   const [note, setNote] = useState('')
 
   // Folder choices: the section and every folder inside it.
@@ -101,7 +86,15 @@ export function CaseAddEntityDialog({ kind, tree, section, startFolderId, accent
     walk(section, [])
     return out
   }, [section])
-  const [folderId, setFolderId] = useState(folders.some((f) => f.id === startFolderId) ? startFolderId : (section.children?.[0]?.id ?? section.id))
+  const [folderId, setFolderIdState] = useState(folders.some((f) => f.id === startFolderId) ? startFolderId : (section.children?.[0]?.id ?? section.id))
+  const labelOf = (id: string) => folders.find((f) => f.id === id)?.label ?? ''
+  const [status, setStatus] = useState<StatusOption>(() => defaultStatus(kind, labelOf(folderId)))
+  /** once a status is picked by hand, changing the folder no longer resets it */
+  const [statusPicked, setStatusPicked] = useState(false)
+  const setFolderId = (id: string) => {
+    setFolderIdState(id)
+    if (!statusPicked) setStatus(defaultStatus(kind, labelOf(id)))
+  }
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => {
@@ -129,8 +122,11 @@ export function CaseAddEntityDialog({ kind, tree, section, startFolderId, accent
     return pool.filter((r) => `${r.title} ${r.code ?? ''} ${r.plate ?? ''} ${r.sub ?? ''} ${r.keys ?? ''} ${r.f?.phone ?? ''}`.toLowerCase().includes(s)).slice(0, 12)
   }, [q, kind])
 
-  const [stLabel, stTone] = STATUSES[kind][status]
-  const canAdd = manual ? (kind === 'person' ? true : !!(mName.trim() || mExtra.trim())) : !!picked
+  const { status: stLabel, tone: stTone } = status
+  // a hand-entered name / plate that is already in the case
+  const manualKey = kind === 'person' ? mName.trim() : mName.trim().toUpperCase()
+  const manualDup = manual && !!manualKey && inCase.has(manualKey)
+  const canAdd = manual ? !manualDup && (kind === 'person' ? true : !!(mName.trim() || mExtra.trim())) : !!picked
 
   function submit() {
     if (!canAdd) return
@@ -145,10 +141,10 @@ export function CaseAddEntityDialog({ kind, tree, section, startFolderId, accent
           initials: picked.initials ?? initialsOf(picked.title),
           color: picked.color ?? '#5C6B70',
           sub: picked.sub ?? '',
-          info: [...(employee ? [] : ([['Запись MDC', picked.code ?? '']] as [string, string][])), ['Добавил', 'Thorne Watts']],
+          info: [...(employee ? [] : ([['Запись MDC', picked.code ?? '']] as [string, string][])), ['Добавил', mockProfile.name]],
         }
       } else {
-        item = { ...base, title: `${picked.plate} · ${picked.title}`, sub: picked.sub ?? '', info: [['Номер', picked.plate ?? ''], ['Добавил', 'Thorne Watts']] }
+        item = { ...base, title: `${picked.plate} · ${picked.title}`, sub: picked.sub ?? '', info: [['Номер', picked.plate ?? ''], ['Добавил', mockProfile.name]] }
       }
     } else if (kind === 'person') {
       const name = mName.trim()
@@ -158,12 +154,12 @@ export function CaseAddEntityDialog({ kind, tree, section, startFolderId, accent
         initials: name ? initialsOf(name) : '?',
         color: '#5C6B70',
         sub: mExtra.trim() || 'Нет в MDC',
-        info: [...(mExtra.trim() ? ([['Приметы', mExtra.trim()]] as [string, string][]) : []), ['Добавил', 'Thorne Watts']],
+        info: [...(mExtra.trim() ? ([['Приметы', mExtra.trim()]] as [string, string][]) : []), ['Добавил', mockProfile.name]],
       }
     } else {
       const plate = mName.trim().toUpperCase()
       const model = mExtra.trim()
-      item = { ...base, title: `${plate || 'Без номеров'} · ${model || 'Неизвестное ТС'}`, sub: 'Нет в MDC', info: [['Номер', plate || 'Не установлен'], ['Добавил', 'Thorne Watts']] }
+      item = { ...base, title: `${plate || 'Без номеров'} · ${model || 'Неизвестное ТС'}`, sub: 'Нет в MDC', info: [['Номер', plate || 'Не установлен'], ['Добавил', mockProfile.name]] }
     }
     onAdd(folderId, item)
   }
@@ -190,6 +186,29 @@ export function CaseAddEntityDialog({ kind, tree, section, startFolderId, accent
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pb-4 pt-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex min-w-0 flex-col gap-1 text-[12px] font-semibold text-[#C2C2C2]">
+              Папка
+              <span className="font-normal">
+                <SingleDropdown label="Папка" options={folders.map((f) => ({ value: f.id, label: f.label }))} value={folderId} onChange={setFolderId} wide />
+              </span>
+            </div>
+            <div className="flex min-w-0 flex-col items-start gap-1 text-[12px] font-semibold text-[#C2C2C2]">
+              Статус в деле
+              <span className="flex h-8 items-center font-normal">
+                <StatusMenu
+                  status={status.status}
+                  tone={status.tone}
+                  options={ITEM_STATUSES[kind] ?? []}
+                  onChange={(st, tone) => {
+                    setStatus({ status: st, tone })
+                    setStatusPicked(true)
+                  }}
+                  label="Статус в деле"
+                />
+              </span>
+            </div>
+          </div>
           {!manual ? (
             <div className="flex flex-col gap-2">
               <label className="flex h-9 items-center gap-2 rounded-[8px] bg-[#3A3A3A] px-2.5 text-[#C2C2C2]" style={{ boxShadow: `inset 0 0 0 1.5px ${accent}` }}>
@@ -269,31 +288,6 @@ export function CaseAddEntityDialog({ kind, tree, section, startFolderId, accent
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1 text-[12px] font-semibold text-[#C2C2C2]">
-              Папка
-              <span className="font-normal">
-                <SingleDropdown label="Папка" options={folders.map((f) => ({ value: f.id, label: f.label }))} value={folderId} onChange={setFolderId} wide />
-              </span>
-            </div>
-            <div className="flex flex-col gap-1 text-[12px] font-semibold text-[#C2C2C2]">
-              Статус в деле
-              <div className="flex flex-wrap gap-1">
-                {STATUSES[kind].map(([label, tone], i) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => setStatus(i)}
-                    className="h-[26px] rounded-[13px] px-2.5 text-[12px] font-semibold hover:brightness-125"
-                    style={{ background: TONE[tone].bg, color: TONE[tone].fg, boxShadow: status === i ? `0 0 0 1.5px ${TONE[tone].fg}` : 'none', opacity: status === i ? 1 : 0.6 }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
           <label className="flex flex-col gap-1 text-[12px] font-semibold text-[#C2C2C2]">
             Заметка (необязательно)
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={kind === 'person' ? 'Почему проходит по делу, что известно' : 'Где замечено, как связано с делом'} className="resize-none rounded-[6px] bg-[#3A3A3A] px-2.5 py-2 text-[13px] font-normal leading-5 text-white outline-none" />
@@ -301,7 +295,7 @@ export function CaseAddEntityDialog({ kind, tree, section, startFolderId, accent
         </div>
 
         <div className="flex shrink-0 items-center gap-2.5 border-t border-[#3A3A3A] px-5 py-3.5">
-          <span className="min-w-0 flex-1 truncate text-[12px] text-[#C2C2C2]">{manual ? 'Запись появится без связи с MDC — её можно связать позже' : picked ? `Будет добавлен: ${picked.title}` : 'Выберите запись из списка'}</span>
+          <span className={`min-w-0 flex-1 truncate text-[12px] ${manualDup ? 'text-[#FF99A4]' : 'text-[#C2C2C2]'}`}>{manualDup ? (kind === 'person' ? `${manualKey} уже проходит по делу` : `Номер ${manualKey} уже есть в деле`) : manual ? 'Запись появится без связи с MDC — её можно связать позже' : picked ? `Будет добавлен: ${picked.title}` : 'Выберите запись из списка'}</span>
           <button type="button" onClick={onClose} className="h-[34px] rounded-[8px] bg-[#3A3A3A] px-4 text-[13px] hover:brightness-125">
             Отмена
           </button>

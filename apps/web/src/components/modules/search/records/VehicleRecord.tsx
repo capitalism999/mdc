@@ -1,6 +1,7 @@
 /* Generated 1:1 from the design reference (project/Search.dc.html) — markup, styles and copy are a literal port. */
 import { Fragment } from 'react'
 import { personPhoto } from '../../shared/personPhotos'
+import { RecordMoreMenu } from './RecordMoreMenu'
 import { __a, __h, __s, type SearchVals } from '../searchRuntime'
 
 export function VehicleRecord({ $v }: { $v: SearchVals }) {
@@ -9,10 +10,10 @@ export function VehicleRecord({ $v }: { $v: SearchVals }) {
     <>
       {" "}
       <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "1180px" }}>
-        <div style={{ display: "flex", gap: "20px", alignItems: "flex-end" }}>
-          <div style={{ position: "relative", width: "248px", height: "150px", flexShrink: "0", borderRadius: "12px", overflow: "hidden", background: `linear-gradient(180deg, ${__s($v.c?.photoSky)} 0%, ${__s($v.c?.photoSky)} 62%, ${__s($v.c?.photoGround)} 62%, ${__s($v.c?.photoGround)} 100%)` }}>
+        <div style={{ display: "flex", gap: "20px", alignItems: "stretch" }}>
+          <div style={{ position: "relative", width: "248px", minHeight: "150px", flexShrink: "0", borderRadius: "12px", overflow: "hidden", background: `linear-gradient(180deg, ${__s($v.c?.photoSky)} 0%, ${__s($v.c?.photoSky)} 62%, ${__s($v.c?.photoGround)} 62%, ${__s($v.c?.photoGround)} 100%)` }}>
             {" "}
-            <img src="/assets/search/9c4359f8cb243131e90b0261de58cce8.png" alt="Фото" width="210" height="126" style={{ position: "absolute", left: "19px", top: "6px", objectFit: "contain", display: "block", width: "210px", height: "126px" }} />
+            <img src={$v.rec?.carImg} alt="Фото" width="228" height="93" style={{ position: "absolute", left: "10px", top: "calc(62% - 74px)", objectFit: "contain", display: "block", width: "228px", height: "93px" }} />
             {" "}
           </div>
           <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "6px", paddingBottom: "2px" }}>
@@ -92,11 +93,6 @@ export function VehicleRecord({ $v }: { $v: SearchVals }) {
               <button className="btn lnk" onClick={$v.tg?.add} style={{ fontSize: "12px", color: $v.c?.link }}>
                 {__h($v.tg?.addLabel)}
               </button>
-              {$v.tg?.canEdit ? (
-                <button className="btn lnk" onClick={$v.tg?.edit} style={{ fontSize: "12px", color: $v.c?.link }}>
-                  {"Изменить данные"}
-                </button>
-              ) : null}
             </div>
           </div>
         </div>
@@ -129,9 +125,7 @@ export function VehicleRecord({ $v }: { $v: SearchVals }) {
             </svg>
             {"Поделиться"}
           </button>
-          <span style={{ alignSelf: "center", fontSize: "12px", color: $v.c?.text2 }}>
-            {"Действия записываются от вашего имени, быть на смене не нужно."}
-          </span>
+          <RecordMoreMenu $v={$v} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.75fr) minmax(0, 1fr)", gap: "20px", alignItems: "start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "20px", minWidth: "0" }}>
@@ -159,9 +153,13 @@ export function VehicleRecord({ $v }: { $v: SearchVals }) {
                         {__h($v.v?.wantedBy)}
                       </button>
                       {" · "}
-                      <button onClick={$v.v?.wantedDeptGo} className="btn lnk" style={{ font: "inherit", color: $v.c?.link }}>
-                        {__h($v.v?.wantedDept)}
-                      </button>
+                      {$v.v?.wantedDeptLink ? (
+                        <button onClick={$v.v?.wantedDeptGo} className="btn lnk" style={{ font: "inherit", color: $v.c?.link }}>
+                          {__h($v.v?.wantedDept)}
+                        </button>
+                      ) : (
+                        <span>{__h($v.v?.wantedDept)}</span>
+                      )}
                       {" · "}{__h($v.v?.wantedDate)}
                     </span>
                   </span>
@@ -178,7 +176,7 @@ export function VehicleRecord({ $v }: { $v: SearchVals }) {
                         </>
                       ) : null}
                       {$v.bolo?.restricted ? (
-                        <a href="#" onClick={$v.__go("MailList")} className="hv" style={{ flexShrink: "0", height: "32px", padding: "0 12px", borderRadius: "6px", display: "flex", alignItems: "center", background: $v.c?.btn, color: $v.c?.text, fontSize: "13px", textDecoration: "none", whiteSpace: "nowrap" }}>
+                        <a href="#" onClick={$v.__go("MailBolo")} className="hv" style={{ flexShrink: "0", height: "32px", padding: "0 12px", borderRadius: "6px", display: "flex", alignItems: "center", background: $v.c?.btn, color: $v.c?.text, fontSize: "13px", textDecoration: "none", whiteSpace: "nowrap" }}>
                           {"Написать "}{__h($v.bolo?.ctShort)}
                         </a>
                       ) : null}
@@ -312,6 +310,7 @@ export function VehicleRecord({ $v }: { $v: SearchVals }) {
                     <div style={{ display: "flex", gap: "14px", padding: "0 16px" }}>
                       <span style={{ width: "64px", flexShrink: "0", paddingTop: "13px", fontSize: "12px", lineHeight: "17px" }}>
                         {__h(fn?.date)}
+                        {fn?.time ? <span style={{ display: "block", color: $v.c?.text2 }}>{__h(fn?.time)}</span> : null}
                       </span>
                       <span style={{ flex: "1", minWidth: "0", display: "flex", alignItems: "center", gap: "12px", padding: "12px 0", borderBottom: `1px solid ${__s(fn?.sep)}` }}>
                         <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px", lineHeight: "19px" }}>
@@ -383,7 +382,7 @@ export function VehicleRecord({ $v }: { $v: SearchVals }) {
                             {__h(cm?.when)}
                           </span>
                         </span>
-                        <span style={{ fontSize: "13px" }}>
+                        <span style={{ fontSize: "13px", overflowWrap: "anywhere" }}>
                           {__a(cm?.textP).map((qp: any, $i1: number) => (
                             <Fragment key={$i1}>
                               {qp?.a ? (
@@ -577,7 +576,7 @@ export function VehicleRecord({ $v }: { $v: SearchVals }) {
                 {__a($v.v?.cases).map((cs: any, $i0: number) => (
                   <Fragment key={$i0}>
                     {" "}
-                    <a href="#" onClick={$v.__go("Cases")} className="hv" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", textDecoration: "none", color: $v.c?.text }}>
+                    <a href="#" onClick={$v.__case(cs?.no)} className="hv" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", textDecoration: "none", color: $v.c?.text }}>
                       <span style={{ width: "32px", height: "32px", flexShrink: "0", borderRadius: "8px", background: "#3A4E72", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
                           <rect x="2.5" y="6" width="15" height="10.5" rx="2"></rect>
@@ -591,6 +590,12 @@ export function VehicleRecord({ $v }: { $v: SearchVals }) {
                         <span className="ell" style={{ fontSize: "12px", color: $v.c?.text2 }}>
                           {__h(cs?.role)}
                         </span>
+                        {$v.__caseWhere?.(cs?.no) ? (
+                          <span className="ell" title={$v.__caseWhere(cs?.no)} style={{ fontSize: "12px", color: $v.c?.text2, display: "flex", alignItems: "center", gap: "4px" }}>
+                            <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M5 3v8a3 3 0 003 3h8M12.5 10.5L16 14l-3.5 3.5" /></svg>
+                            {__h($v.__caseWhere(cs?.no))}
+                          </span>
+                        ) : null}
                       </span>
                     </a>
                     {" "}

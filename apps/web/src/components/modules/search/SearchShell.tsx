@@ -69,7 +69,7 @@ export function SearchShell({ $v }: { $v: SearchVals }) {
         <SearchHome $v={$v} />
         <SearchResults $v={$v} />
         {$v.recMode ? (
-          <main className="scroll" style={{ flex: "1", minHeight: "0", boxSizing: "border-box", padding: "0 24px 28px 24px", borderTop: `1px solid ${__s($v.c?.stroke)}` }}>
+          <main key={__s($v.rec?.id) /* MDT: a newly opened record starts at the top */} className="scroll" style={{ flex: "1", minHeight: "0", boxSizing: "border-box", padding: "0 24px 28px 24px", borderTop: `1px solid ${__s($v.c?.stroke)}` }}>
             {" "}
             <div style={{ display: "flex", alignItems: "center", gap: "6px", height: "44px" }}>
               <button className="btn hv" onClick={$v.backToList} style={{ height: "30px", padding: "0 10px 0 6px", borderRadius: "6px", display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", color: $v.c?.text2 }}>

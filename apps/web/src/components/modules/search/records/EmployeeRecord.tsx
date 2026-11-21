@@ -10,7 +10,7 @@ export function EmployeeRecord({ $v }: { $v: SearchVals }) {
       {" "}
       <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "1180px" }}>
         <div style={{ display: "flex", gap: "20px", alignItems: "stretch" }}>
-          <div style={{ position: "relative", alignSelf: "flex-start", width: "170px", height: "170px", flexShrink: "0", borderRadius: "12px", overflow: "hidden", backgroundColor: $v.c?.mug, backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent 17px, ${__s($v.c?.mugLine)} 17px, ${__s($v.c?.mugLine)} 18px)` }}>
+          <div style={{ position: "relative", width: "170px", minHeight: "170px", flexShrink: "0", borderRadius: "12px", overflow: "hidden", backgroundColor: $v.c?.mug, backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent 17px, ${__s($v.c?.mugLine)} 17px, ${__s($v.c?.mugLine)} 18px)` }}>
             {" "}
             <img src={personPhoto($v.rec?.id)} alt="Фото" style={{ position: "absolute", left: "0", top: "0", width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 12%", display: "block" }} />
             {" "}
@@ -48,11 +48,6 @@ export function EmployeeRecord({ $v }: { $v: SearchVals }) {
               <button className="btn lnk" onClick={$v.tg?.add} style={{ fontSize: "12px", color: $v.c?.link }}>
                 {__h($v.tg?.addLabel)}
               </button>
-              {$v.tg?.canEdit ? (
-                <button className="btn lnk" onClick={$v.tg?.edit} style={{ fontSize: "12px", color: $v.c?.link }}>
-                  {"Изменить данные"}
-                </button>
-              ) : null}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               {__a($v.p?.orgLinks).map((ol: any, $i0: number) => (
@@ -99,7 +94,7 @@ export function EmployeeRecord({ $v }: { $v: SearchVals }) {
                 </svg>
                 {"Позвонить · "}{__h($v.p?.phone)}
               </button>
-              <a href="#" onClick={$v.__go("MailList")} className="hv" style={{ height: "34px", padding: "0 14px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", background: $v.c?.btn, textDecoration: "none", color: "inherit" }}>
+              <a href="#" onClick={$v.__go("MailEmp")} className="hv" style={{ height: "34px", padding: "0 14px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", background: $v.c?.btn, textDecoration: "none", color: "inherit" }}>
                 <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
                   <rect x="2.5" y="4.5" width="15" height="11" rx="2"></rect>
                   <path d="M3 6l7 5 7-5"></path>
@@ -135,6 +130,16 @@ export function EmployeeRecord({ $v }: { $v: SearchVals }) {
                       </svg>
                       {"Распечатать личное дело"}
                     </button>
+                    {$v.tg?.canEdit ? (
+                    <>
+                    <button className="btn hv" onClick={$v.tg?.edit} style={{ height: "36px", padding: "0 12px", borderRadius: "6px", width: "100%", boxSizing: "border-box", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", textAlign: "left", color: "inherit" }}>
+                      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" style={{ flexShrink: "0", marginRight: "10px" }}>
+                        <path d="M3 17l1-4L14 3l3 3L7 16zM12 5l3 3"></path>
+                      </svg>
+                      {"Изменить данные"}
+                    </button>
+                    </>
+                    ) : null}
                     <button className="btn hv" onClick={$v.dl?.showHist} style={{ height: "36px", padding: "0 12px", borderRadius: "6px", width: "100%", boxSizing: "border-box", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", textAlign: "left", color: "inherit" }}>
                       <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
                         <circle cx="10" cy="10" r="7"></circle>
@@ -561,8 +566,9 @@ export function EmployeeRecord({ $v }: { $v: SearchVals }) {
                     <div style={{ display: "flex", gap: "12px", padding: "10px 0", borderBottom: `1px solid ${__s($v.c?.stroke)}`, fontSize: "13px" }}>
                       <span style={{ flex: "1", minWidth: "0", color: $v.c?.text2 }}>
                         {__h(cs?.role)}
+                        {$v.__caseWhere?.(cs?.no) ? <span className="ell" title={$v.__caseWhere(cs?.no)} style={{ display: "block", fontSize: "12px" }}>{"↳ " + $v.__caseWhere(cs?.no)}</span> : null}
                       </span>
-                      <a href="#" onClick={$v.__go("Cases")} className="lnk" style={{ fontSize: "13px", color: $v.c?.link }}>
+                      <a href="#" onClick={$v.__case(cs?.no)} className="lnk" style={{ fontSize: "13px", color: $v.c?.link }}>
                         {__h(cs?.no)}
                       </a>
                     </div>
@@ -627,7 +633,7 @@ export function EmployeeRecord({ $v }: { $v: SearchVals }) {
                             {__h(nt?.when)}
                           </span>
                         </span>
-                        <span style={{ fontSize: "13px" }}>
+                        <span style={{ fontSize: "13px", overflowWrap: "anywhere" }}>
                           {__a(nt?.textP).map((qp: any, $i1: number) => (
                             <Fragment key={$i1}>
                               {qp?.a ? (

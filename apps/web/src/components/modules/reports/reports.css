@@ -46,3 +46,7 @@
 .reports-root .num { font-variant-numeric: tabular-nums }
 .reports-root .chip { height: 22px; padding: 0 9px; border-radius: 11px; display: inline-flex; align-items: center; white-space: nowrap; flex-shrink: 0; font-size: 12px; font-weight: 600 }
 .reports-root .lpi { display: inline-block; padding: 0 .32em; margin: 0 .05em; border-radius: 3px; background: #FFFFFF; color: #2C307E; box-shadow: inset 0 0 0 1px #B8BEC8; font-family: 'Dealerplate California', 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 400; font-size: 1.12em; line-height: 1.3; letter-spacing: .04em; white-space: nowrap }
+/* MDT: a visible focus line under text fields (the reference only removes the outline) */
+.reports-root input:not([type="file"]):focus-visible,
+.reports-root textarea:focus-visible { box-shadow: inset 0 -2px 0 #60CDFF }
+.reports-root textarea[readonly]:focus-visible { box-shadow: none }

@@ -65,7 +65,7 @@ interface CaseMapProps {
   /** BOLO sighting whose card is open */
   activeBolo: string | null
   onActiveBolo: (key: string | null) => void
-  onOpenBolo: () => void
+  onOpenBolo: (no?: string) => void
   focus: MapFocus | null
 }
 
@@ -568,7 +568,7 @@ export function CaseMap(props: CaseMapProps) {
               </div>
               <div className="mt-1 leading-[17px]">{bolo.text}</div>
               <div className="mt-1 text-[#C2C2C2]">Отметил {bolo.who}</div>
-              <button type="button" onClick={onOpenBolo} className="mt-2 h-7 w-full rounded-[6px] bg-[#3A3A3A] text-[12px] hover:brightness-125">
+              <button type="button" onClick={() => onOpenBolo(bolo.boloNo)} className="mt-2 h-7 w-full rounded-[6px] bg-[#3A3A3A] text-[12px] hover:brightness-125">
                 Открыть ориентировку
               </button>
             </div>

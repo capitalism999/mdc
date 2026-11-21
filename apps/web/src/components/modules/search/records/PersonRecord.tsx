@@ -63,7 +63,7 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
               </span>
             </span>
             <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", flexShrink: "0" }}>
-              <button className="btn lnk" onClick={$v.__go("MailList")} style={{ fontSize: "12px", color: $v.c?.link }}>
+              <button className="btn lnk" onClick={$v.__go("MailCurator")} style={{ fontSize: "12px", color: $v.c?.link }}>
                 {"Связаться с куратором"}
               </button>
               <button className="btn lnk" onClick={$v.dl?.showHist} style={{ fontSize: "12px", color: $v.c?.link }}>
@@ -76,7 +76,7 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
           </div>
         ) : null}
         <div style={{ display: "flex", gap: "20px", alignItems: "stretch" }}>
-          <div style={{ position: "relative", alignSelf: "flex-start", width: "170px", height: "170px", flexShrink: "0", borderRadius: "12px", overflow: "hidden", backgroundColor: $v.c?.mug, backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent 17px, ${__s($v.c?.mugLine)} 17px, ${__s($v.c?.mugLine)} 18px)` }}>
+          <div style={{ position: "relative", width: "170px", minHeight: "170px", flexShrink: "0", borderRadius: "12px", overflow: "hidden", backgroundColor: $v.c?.mug, backgroundImage: `repeating-linear-gradient(to bottom, transparent 0, transparent 17px, ${__s($v.c?.mugLine)} 17px, ${__s($v.c?.mugLine)} 18px)` }}>
             {" "}
             <img src={personPhoto($v.rec?.id)} alt="Фото" style={{ position: "absolute", left: "0", top: "0", width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 12%", display: "block" }} />
             {" "}
@@ -178,7 +178,7 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
                 ))}
               </div>
             ) : null}
-            <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", paddingTop: "8px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-start", paddingTop: "8px" }}>
               <button className="btn hv" onClick={$v.dl?.call} style={{ height: "34px", padding: "0 14px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", background: $v.c?.btn }}>
                 <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
                   <path d="M4 3.5h3l1.5 4-2 1.5a10 10 0 005 5l1.5-2 4 1.5v3a1.5 1.5 0 01-1.5 1.5A14 14 0 012.5 5 1.5 1.5 0 014 3.5z"></path>
@@ -190,7 +190,7 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
                   <path d="M10 3l8 14H2z"></path>
                   <path d="M10 8.5v3.5M10 14.5v.2"></path>
                 </svg>
-                {"Объявить в розыск"}
+                {__h($v.__wantedLabel ?? "Объявить в розыск")}
               </a>
               <a href="#" onClick={$v.__toCase} className="hv" style={{ height: "34px", padding: "0 14px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", textDecoration: "none", background: $v.c?.btn }}>
                 <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
@@ -332,7 +332,7 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
               </>
             ) : null}
             {$v.bolo?.restricted ? (
-              <a href="#" onClick={$v.__go("MailList")} className="hv" style={{ flexShrink: "0", height: "32px", padding: "0 12px", borderRadius: "6px", display: "flex", alignItems: "center", background: $v.c?.btn, color: $v.c?.text, fontSize: "13px", textDecoration: "none", whiteSpace: "nowrap" }}>
+              <a href="#" onClick={$v.__go("MailBolo")} className="hv" style={{ flexShrink: "0", height: "32px", padding: "0 12px", borderRadius: "6px", display: "flex", alignItems: "center", background: $v.c?.btn, color: $v.c?.text, fontSize: "13px", textDecoration: "none", whiteSpace: "nowrap" }}>
                 {"Написать "}{__h($v.bolo?.ctShort)}
               </a>
             ) : null}
@@ -412,9 +412,13 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
                               </>
                             ) : null}
                             {" · "}
-                            <button onClick={cr?.deptGo} className="btn lnk" style={{ font: "inherit", color: $v.c?.link, textAlign: "inherit" }}>
-                              {__h(cr?.dept)}
-                            </button>
+                            {cr?.deptLink ? (
+                              <button onClick={cr?.deptGo} className="btn lnk" style={{ font: "inherit", color: $v.c?.link, textAlign: "inherit" }}>
+                                {__h(cr?.dept)}
+                              </button>
+                            ) : (
+                              <span>{__h(cr?.dept)}</span>
+                            )}
                           </span>
                         </span>
                         <span style={{ flexShrink: "0" }}>
@@ -464,6 +468,7 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
                     <div style={{ display: "flex", gap: "14px", padding: "0 16px" }}>
                       <span style={{ width: "64px", flexShrink: "0", paddingTop: "13px", fontSize: "12px", lineHeight: "17px" }}>
                         {__h(fn?.date)}
+                        {fn?.time ? <span style={{ display: "block", color: $v.c?.text2 }}>{__h(fn?.time)}</span> : null}
                       </span>
                       <span style={{ flex: "1", minWidth: "0", display: "flex", alignItems: "center", gap: "12px", padding: "12px 0", borderBottom: `1px solid ${__s(fn?.sep)}` }}>
                         <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px", lineHeight: "19px" }}>
@@ -592,6 +597,11 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
                             {"Изъять"}
                           </button>
                         ) : null}
+                        {dc?.canRest ? (
+                          <button className="btn hv" onClick={dc?.rest} style={{ height: "28px", padding: "0 10px", borderRadius: "6px", fontSize: "12px", background: $v.c?.btn }}>
+                            {__h(dc?.restLabel)}
+                          </button>
+                        ) : null}
                       </span>
                     </div>
                     {" "}
@@ -649,7 +659,7 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
                             {__h(nt?.when)}
                           </span>
                         </span>
-                        <span style={{ fontSize: "13px" }}>
+                        <span style={{ fontSize: "13px", overflowWrap: "anywhere" }}>
                           {__a(nt?.textP).map((qp: any, $i1: number) => (
                             <Fragment key={$i1}>
                               {qp?.a ? (
@@ -806,10 +816,10 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
                   <span style={{ width: "118px", flexShrink: "0", color: $v.c?.text2 }}>
                     {"SAN GANG"}
                   </span>
-                  <span style={{ flex: "1", minWidth: "0", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px", whiteSpace: "nowrap" }}>
+                  <span style={{ flex: "1", minWidth: "0", display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: "2px 10px", textAlign: "right" }}>
                     {$v.p?.inGang ? (
                       <>
-                      <button onClick={$v.p?.gangGo} className="btn lnk" style={{ font: "inherit", color: $v.c?.link, textAlign: "inherit" }}>
+                      <button onClick={$v.p?.gangGo} className="btn lnk" style={{ font: "inherit", color: $v.c?.link, textAlign: "inherit", whiteSpace: "nowrap" }}>
                         {__h($v.p?.gang)}
                       </button>
                       <span style={{ color: $v.c?.text2 }}>
@@ -819,8 +829,8 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
                     ) : null}
                     {$v.p?.noGang ? (
                       <>
-                      <span style={{ color: $v.c?.text2 }}>
-                        {"Не внесён"}
+                      <span style={{ color: $v.c?.text2, whiteSpace: "nowrap" }}>
+                        {__h($v.p?.noGangText)}
                       </span>
                       <button className="btn hv" onClick={$v.dl?.gang} style={{ height: "26px", padding: "0 12px", borderRadius: "13px", background: $v.c?.btn, fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap" }}>
                         {"Внести в SAN GANG"}
@@ -852,9 +862,16 @@ export function PersonRecord({ $v }: { $v: SearchVals }) {
                         </svg>
                       </span>
                       <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", lineHeight: "18px", padding: "10px 0", borderBottom: `1px solid ${__s(pr?.sep)}` }}>
-                        <button onClick={pr?.go} className="btn lnk ell" style={{ fontSize: "13px", color: $v.c?.link, textAlign: "left" }}>
-                          {__h(pr?.addr)}
-                        </button>
+                        {pr?.isLink ? (
+                          <button onClick={pr?.go} className="btn lnk ell" style={{ fontSize: "13px", color: $v.c?.link, textAlign: "left" }}>
+                            {__h(pr?.addr)}
+                          </button>
+                        ) : null}
+                        {pr?.plain ? (
+                          <span className="ell" style={{ fontSize: "13px" }}>
+                            {__h(pr?.addr)}
+                          </span>
+                        ) : null}
                         <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
                           {__h(pr?.role)}
                         </span>

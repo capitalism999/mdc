@@ -1,4 +1,7 @@
 // @ts-nocheck
+import { vehiclePhoto } from '../shared/vehiclePhotos'
+import { mockProfile } from '../../../lib/mockData/profile'
+import { activeInitials } from '../../../lib/session'
 /* Verbatim port of the design reference's component logic (project/Search.dc.html,
  * <script data-dc-script>): all records, derivations and handlers are unchanged so
  * every screen state renders exactly as in the reference. Only the DCLogic base
@@ -17,9 +20,17 @@ class DCLogic {
 }
 
 // k, v, link: ['rec', id] | ['case'] | null, dot tone
+// MDT: today and now (fines, journal, notes were dated a fixed «20.11.2026»)
+function pad2(n) { return ('0' + n).slice(-2); }
+function todayRu() { var d = new Date(); return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear(); }
+function dayRu() { var d = new Date(); return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1); }
+function yearAheadRu() { var d = new Date(); return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + (d.getFullYear() + 1); }
+function plusDaysRu(n) { var d = new Date(); d.setDate(d.getDate() + n); return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear(); }
+function ruNum(s) { var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(String(s || '')); return m ? +(m[3] + m[2] + m[1]) : 0; }
+function nowHM() { var d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
 function R(k, v, link, dot) { return { k: k, v: v, link: link || null, dot: dot || null }; }
 var DB = [
-  { id: 'p_tate', type: 'person', f: { name: 'marcus tate маркус тейт', phone: '555-0177', doc: 'cit-55120', plate: '4fjt118', addr: 'forum dr 14, strawberry', weapon: 'sn-51208', bio: 'fp-55120', biz: 'go postal' }, title: 'Marcus Tate', initials: 'MT', color: '#A4262C', code: 'CIT-55120', res: 'res', sub: 'Мужчина · 12.03.1997 · 29 лет', keys: 'cit-55120 marcus tate тейт forum dr 14 гараж 7 grove street 555-0177 forum drive boys',
+  { id: 'p_tate', type: 'person', f: { name: 'marcus tate', phone: '555-0177', doc: 'cit-55120', plate: '4fjt118', addr: 'forum dr 14, strawberry', weapon: 'sn-51208', bio: 'fp-55120', biz: 'go postal' }, title: 'Marcus Tate', initials: 'MT', color: '#A4262C', code: 'CIT-55120', res: 'res', sub: 'Мужчина · 12.03.1997 · 29 лет', keys: 'cit-55120 marcus tate forum dr 14 гараж 7 grove street 555-0177 forum drive boys',
     alert: 'Под стражей с 08.11 · изолятор Mission Row', alertTone: 'red', badges: [['Резидент', 'grey'], ['Под стражей', 'red'], ['2 судимости', 'amber'], ['Права действуют', 'green']],
     sections: [
       ['Сведения', [R('Статус', 'Резидент'), R('Номер записи', 'CIT-55120'), R('Адрес', 'Forum Dr 14, Strawberry'), R('Телефон', '555-0177'), R('Рост и приметы', '183 см, татуировка на шее')]],
@@ -29,7 +40,7 @@ var DB = [
       ['Судимости', [R('2024', 'Хранение наркотиков · 6 мес.'), R('2023', 'Кража из автомобиля · штраф')]],
       ['Упоминания в делах', [R('LS-2026-0893', 'Подозреваемый', ['case']), R('LS-2026-0911', 'Возможная связь', ['case'])]]
     ] },
-  { id: 'p_webb', type: 'person', f: { name: 'tyrone webb тайрон уэбб', phone: '555-0133', doc: 'cit-48812', plate: '87pln903', addr: '1207 grove street', weapon: 'sn-30471', bio: 'fp-48812', biz: '' }, title: 'Tyrone Webb', initials: 'TW', color: '#7A57B0', code: 'CIT-48812', res: 'res', sub: 'Мужчина · 04.07.1991 · 35 лет', keys: 'cit-48812 1207 grove street 555-0133 forum drive boys tyrone webb уэбб',
+  { id: 'p_webb', type: 'person', f: { name: 'tyrone webb', phone: '555-0133', doc: 'cit-48812', plate: '87pln903', addr: '1207 grove street', weapon: 'sn-30471', bio: 'fp-48812', biz: '' }, title: 'Tyrone Webb', initials: 'TW', color: '#7A57B0', code: 'CIT-48812', res: 'res', sub: 'Мужчина · 04.07.1991 · 35 лет', keys: 'cit-48812 1207 grove street 555-0133 forum drive boys tyrone webb',
     alert: 'Действует ордер на обыск SW-2611 до 18.11, 14:00', alertTone: 'amber', badges: [['Резидент', 'grey'], ['Ордер на обыск', 'amber'], ['Лицензия на оружие отозвана', 'red']],
     sections: [
       ['Сведения', [R('Статус', 'Резидент'), R('Номер записи', 'CIT-48812'), R('Адрес', '1207 Grove Street'), R('Телефон', '555-0133')]],
@@ -39,21 +50,21 @@ var DB = [
       ['Судимости', [R('2022', 'Нападение · 1 год')]],
       ['Упоминания в делах', [R('SW-2611', 'Подозреваемый', ['case'])]]
     ] },
-  { id: 'p_kwebb', type: 'person', f: { name: 'karina webb карина уэбб', phone: '555-0134', doc: 'cit-48813', plate: '', addr: '1207 grove street', weapon: '', bio: 'fp-48813', biz: '' }, title: 'Karina Webb', initials: 'KW', color: '#8764B8', code: 'CIT-48813', res: 'res', sub: 'Женщина · 1993 · 33 года', keys: 'cit-48813 karina webb уэбб карина 555-0134',
+  { id: 'p_kwebb', type: 'person', f: { name: 'karina webb', phone: '555-0134', doc: 'cit-48813', plate: '', addr: '1207 grove street', weapon: '', bio: 'fp-48813', biz: '' }, title: 'Karina Webb', initials: 'KW', color: '#8764B8', code: 'CIT-48813', res: 'res', sub: 'Женщина · 1993 · 33 года', keys: 'cit-48813 karina webb 555-0134',
     alert: '', badges: [['Резидент', 'grey']],
     sections: [
       ['Сведения', [R('Статус', 'Резидент'), R('Номер записи', 'CIT-48813'), R('Адрес', '1207 Grove Street'), R('Телефон', '555-0134')]],
       ['Лицензии', [R('Водительские', 'Действуют до 03.2028', null, 'green'), R('Оружие', 'Нет')]],
       ['Связи', [R('Супруг', 'Tyrone Webb', ['rec', 'p_webb'])]]
     ] },
-  { id: 'p_holt', type: 'person', f: { name: 'derek holt дерек холт', phone: '555-0188', doc: 'cit-52207', plate: '', addr: 'davis ave 140', weapon: '', bio: 'fp-52207', biz: '' }, title: 'Derek Holt', initials: 'DH', color: '#B26A00', code: 'CIT-52207', res: 'res', sub: 'Мужчина · 1994 · 32 года', keys: 'cit-52207 derek holt холт дерек 555-0188',
+  { id: 'p_holt', type: 'person', f: { name: 'derek holt', phone: '555-0188', doc: 'cit-52207', plate: '', addr: 'davis ave 140', weapon: '', bio: 'fp-52207', biz: '' }, title: 'Derek Holt', initials: 'DH', color: '#B26A00', code: 'CIT-52207', res: 'res', sub: 'Мужчина · 1994 · 32 года', keys: 'cit-52207 derek holt 555-0188',
     alert: '', badges: [['Резидент', 'grey'], ['Forum Drive Boys', 'red']],
     sections: [
       ['Сведения', [R('Статус', 'Резидент'), R('Номер записи', 'CIT-52207'), R('Адрес', 'Davis Ave 140, кв. 9'), R('Телефон', '555-0188')]],
       ['Лицензии', [R('Водительские', 'Действуют до 01.2028', null, 'green'), R('Оружие', 'Нет')]],
       ['Связи', [R('Банда', 'Forum Drive Boys', ['rec', 'o_fdb'])]]
     ] },
-  { id: 'p_reyes', type: 'person', f: { name: 'daniel reyes даниэль рейес', phone: '555-0119', doc: 'ps-mx-7731204', plate: '46eek572', addr: 'davis ave 88', weapon: '', bio: 'fp-60214', biz: 'fleeca bank ern-1187', visa: 'wv-2027-00418', entry: 'ent-26-03118' }, title: 'Daniel Reyes', initials: 'DR', color: '#0063B1', code: 'CIT-60214', res: 'mig', sub: 'Мужчина · 1998 · 28 лет', keys: 'cit-60214 daniel reyes рейес 555-0119',
+  { id: 'p_reyes', type: 'person', f: { name: 'daniel reyes', phone: '555-0119', doc: 'ps-mx-7731204', plate: '46eek572', addr: 'davis ave 88', weapon: '', bio: 'fp-60214', biz: 'fleeca bank ern-1187', visa: 'wv-2027-00418', entry: 'ent-26-03118' }, title: 'Daniel Reyes', initials: 'DR', color: '#0063B1', code: 'CIT-60214', res: 'mig', sub: 'Мужчина · 1998 · 28 лет', keys: 'cit-60214 daniel reyes 555-0119',
     alert: '', badges: [['Мигрант', 'blue'], ['Неоплаченный штраф', 'amber']],
     sections: [
       ['Сведения', [R('Статус', 'Мигрант'), R('Основание', 'Рабочая виза до 08.2027'), R('Номер записи', 'CIT-60214'), R('Адрес', 'Davis Ave 88'), R('Телефон', '555-0119')]],
@@ -61,7 +72,7 @@ var DB = [
       ['Транспорт', [R('46EEK572', 'Bravado Buffalo', ['rec', 'v_buffalo'])]],
       ['Штрафы', [R('14.11', 'Превышение скорости · $250', null, 'amber')]]
     ] },
-  { id: 'v_premier', type: 'vehicle', plate: '4FJT118', title: 'Declasse Premier', sub: 'Седан · белый · 2019', keys: '4fjt118 vin 1dcp19 tate тейт',
+  { id: 'v_premier', type: 'vehicle', plate: '4FJT118', title: 'Declasse Premier', sub: 'Седан · белый · 2019', keys: '4fjt118 vin 1dcp19 tate',
     alert: 'Изъята 10.11 при обыске · штрафстоянка Mission Row, место 14', alertTone: 'amber', badges: [['Штрафстоянка', 'grey'], ['Страховка действует', 'green']],
     sections: [
       ['Регистрация', [R('Номер', '4FJT118'), R('VIN', '1DCP19W0KX554120'), R('Цвет', 'Белый'), R('Регистрация до', '05.2027')]],
@@ -69,7 +80,7 @@ var DB = [
       ['Страховка', [R('Компания', 'Mors Mutual'), R('До', '09.2026', null, 'green')]],
       ['Упоминания в делах', [R('LS-2026-0893', 'Изъята при обыске', ['case'])]]
     ] },
-  { id: 'v_bison', type: 'vehicle', plate: '87PLN903', title: 'Bravado Bison', sub: 'Пикап · чёрный · 2016', keys: '87pln903 webb уэбб grove',
+  { id: 'v_bison', type: 'vehicle', plate: '87PLN903', title: 'Bravado Bison', sub: 'Пикап · чёрный · 2016', keys: '87pln903 webb grove',
     alert: '', badges: [['Под наблюдением', 'amber']],
     sections: [
       ['Регистрация', [R('Номер', '87PLN903'), R('VIN', '1BRB16P4GZ300871'), R('Цвет', 'Чёрный'), R('Регистрация до', '01.2027')]],
@@ -77,7 +88,7 @@ var DB = [
       ['Страховка', [R('Компания', 'Mors Mutual'), R('До', '12.2026', null, 'green')]],
       ['Упоминания в делах', [R('SW-2611', 'Стоит у дома подозреваемого', ['case'])]]
     ] },
-  { id: 'v_buffalo', type: 'vehicle', plate: '46EEK572', title: 'Bravado Buffalo', sub: 'Седан · синий · 2020', keys: '46eek572 reyes рейес',
+  { id: 'v_buffalo', type: 'vehicle', plate: '46EEK572', title: 'Bravado Buffalo', sub: 'Седан · синий · 2020', keys: '46eek572 reyes',
     alert: '', badges: [['Страховка просрочена', 'red']],
     sections: [
       ['Регистрация', [R('Номер', '46EEK572'), R('Цвет', 'Синий'), R('Регистрация до', '03.2027')]],
@@ -92,13 +103,13 @@ var DB = [
       ['Экспертизы', [R('BAL-311', 'Совпадение с гильзами', null, 'green'), R('FP-208', 'Отпечатки: Marcus Tate', ['rec', 'p_tate'])]],
       ['Упоминания в делах', [R('LS-2026-0893', 'Орудие ограбления', ['case'])]]
     ] },
-  { id: 'w_ct', type: 'weapon', title: 'Vom Feuer Combat Pistol', serial: 'SN-51208', sub: 'Серийный номер SN-51208', keys: 'sn-51208 vom feuer combat tate тейт',
+  { id: 'w_ct', type: 'weapon', title: 'Vom Feuer Combat Pistol', serial: 'SN-51208', sub: 'Серийный номер SN-51208', keys: 'sn-51208 vom feuer combat tate',
     alert: '', badges: [['Лицензия владельца действует', 'green']],
     sections: [
       ['Регистрация', [R('Серийный номер', 'SN-51208'), R('Владелец', 'Marcus Tate', ['rec', 'p_tate']), R('Куплен', '09.2024, Ammu-Nation')]],
       ['Статус', [R('Лицензия владельца', 'Действует до 09.2027', null, 'green'), R('На руках', 'Изъято при аресте 08.11, место хранения: оружейная Mission Row', null, 'amber')]]
     ] },
-  { id: 'w_ap', type: 'weapon', title: 'Vom Feuer AP Pistol', serial: 'SN-30471', sub: 'Серийный номер SN-30471', keys: 'sn-30471 vom feuer webb уэбб',
+  { id: 'w_ap', type: 'weapon', title: 'Vom Feuer AP Pistol', serial: 'SN-30471', sub: 'Серийный номер SN-30471', keys: 'sn-30471 vom feuer webb',
     alert: '', badges: [['Лицензия владельца отозвана', 'red']],
     sections: [
       ['Регистрация', [R('Серийный номер', 'SN-30471'), R('Владелец', 'Tyrone Webb', ['rec', 'p_webb']), R('Куплен', '06.2020, Ammu-Nation')]],
@@ -128,7 +139,7 @@ var RICH = {
       { date: '20.09.2026', code: 'PC 23123', name: 'Телефон за рулём', receipt: 'TVF0931', vehicle: 'Vapid Dominator 8KLM330', who: 'Andrew Koval', init: 'AK', color: '#1F4E79', dept: 'Департамент полиции Лос-Сантоса', sum: 150, st: 'paid' }
     ],
     property: [['Forum Dr 14, Strawberry', 'Арендатор'], ['Гараж 7, Grove Street', 'Владелец']],
-    vehicles: [['4FJT118', 'Declasse Premier', '1DCP19W0KX554120', 'ИЗЪЯТ', '#5C6B70', 'v_premier'], ['8KLM330', 'Vapid Dominator', '1VDM20H8LB771305', '', '', '']],
+    vehicles: [['4FJT118', 'Declasse Premier', '1DCP19W0KX554120', 'ИЗЪЯТ', '#5C6B70', 'v_premier'], ['8KLM330', 'Vapid Dominator', '1VDM20H8LB771305', '', '', 'v_dominator'] /* MDT: link the record */],
     weapons: [['Vom Feuer Combat Pistol', 'SN-51208', 'ЛИЦЕНЗИЯ ДЕЙСТВУЕТ', 'w_ct']],
     docs: [
       { kind: 'DRIVER LICENSE', bg: '#E9DFC6', ink: '#7A1F1F', line: '#B89A5C', fields: [['DL', 'D5512078'], ['EXP', '03/2028'], ['LN', 'TATE'], ['FN', 'MARCUS'], ['DOB', '12/03/1997']], canSuspend: true },
@@ -255,7 +266,7 @@ var MARK_FORMS = [
   [{ k: 'type', label: 'Тип награды', t: 'chips', o: ['Медаль', 'Планка'] },
    { k: 'aw', label: 'Награда из списка', t: 'award', req: true },
    { k: 'desc', label: 'За что', t: 'area', hint: 'Заслуга, дело или событие', req: true },
-   { k: 'date', label: 'Дата вручения', t: 'text', mask: 'date', hint: 'дд.мм.гггг', def: '20.11.2026', req: true },
+   { k: 'date', label: 'Дата вручения', t: 'text', mask: 'date', hint: 'дд.мм.гггг', def: todayRu(), req: true },
    { k: 'who', label: 'Представил', t: 'person', def: 'me', req: true }],
   [{ k: 'period', label: 'Период', t: 'text', hint: 'Например: 01.2026 – 11.2026' },
    { k: 'desc', label: 'Текст характеристики', t: 'area', hint: 'Сильные стороны, замечания, рекомендации', req: true },
@@ -263,12 +274,12 @@ var MARK_FORMS = [
    { k: 'who', label: 'Составил', t: 'person', def: 'me', req: true }],
   [{ k: 'kind', label: 'Результат', t: 'chips', o: ['Пройдено', 'В процессе', 'Не пройдено'] },
    { k: 'course', label: 'Курс или программа', t: 'text', hint: 'Например: Metro Basic School', req: true },
-   { k: 'date', label: 'Дата', t: 'text', mask: 'date', hint: 'дд.мм.гггг', def: '20.11.2026', req: true },
+   { k: 'date', label: 'Дата', t: 'text', mask: 'date', hint: 'дд.мм.гггг', def: todayRu(), req: true },
    { k: 'desc', label: 'Описание', t: 'area', hint: 'Что пройдено, замечания инструктора' },
    { k: 'who', label: 'Инструктор', t: 'person', def: 'me', req: true }],
   [{ k: 'title', label: 'Заголовок', t: 'text', hint: 'О чём запись', req: true },
    { k: 'desc', label: 'Описание', t: 'area', hint: 'Свободный текст', req: true },
-   { k: 'date', label: 'Дата записи', t: 'text', mask: 'date', hint: 'дд.мм.гггг', def: '20.11.2026', req: true },
+   { k: 'date', label: 'Дата записи', t: 'text', mask: 'date', hint: 'дд.мм.гггг', def: todayRu(), req: true },
    { k: 'per', label: 'Период', t: 'toggle' },
    { k: 'rng', label: 'Срок', t: 'range', showIf: 'per' },
    { k: 'vis', label: 'Видимость', t: 'toggle' },
@@ -287,12 +298,116 @@ var TAG_CAT = {
 var TAG_TONE = { 'Опасен': 'red', 'Вооружён': 'red', 'Склонен к насилию': 'red', 'Склонен к побегу': 'amber', 'Требует осторожности': 'amber', 'Используется в преступлениях': 'red', 'Опасен при погоне': 'amber', 'Использовалось в преступлении': 'red', 'Связана с бандой': 'red', 'Опасна': 'red', 'Опасный адрес': 'red', 'Возможна засада': 'red', 'Склад или притон': 'amber', 'Информатор': 'blue', 'Свидетель': 'blue', 'Под наблюдением': 'blue', 'Модифицирован': 'grey', 'Модифицировано': 'grey' };
 var TAG_COL = { red: ['rgba(196,43,28,0.28)', '#FF99A4'], amber: ['rgba(255,185,0,0.16)', '#FFD36B'], blue: ['rgba(96,205,255,0.14)', '#8FD8FF'], grey: ['#3A3A3A', '#D0D0D0'] };
 var TAG_SEED = { p_tate: [{ n: 'Опасен', a: 0, by: 'Вы', d: '14.11.2026', note: '' }, { n: 'Вооружён', a: 1, by: 'Вы', d: '14.11.2026', note: '' }], p_reyes: [{ n: 'Склонен к побегу', a: 0, by: 'Вы', d: '08.11.2026', note: '' }], v_buffalo: [{ n: 'Используется в преступлениях', a: 0, by: 'Вы', d: '12.11.2026', note: '' }], w_hl: [{ n: 'Использовалось в преступлении', a: 1, by: 'Вы', d: '10.11.2026', note: '' }] };
-var GEDIT_F = { p: ['Телефон', 'Адрес', 'Занятость'], o: ['Название', 'Адрес', 'Телефон', 'Вид деятельности'], a: ['Адрес', 'Тип объекта', 'Статус'], w: ['Владелец', 'Место хранения', 'Статус'], v: ['Владелец', 'Статус', 'Место стоянки'] };
+var GEDIT_F = { p: ['Телефон', 'Адрес', 'Занятость'], o: ['Название', 'Адрес', 'Телефон', 'Вид деятельности'], a: ['Адрес', 'Тип объекта', 'Площадь'], w: ['Статус'] /* MDT: weapons — see wTabs */, v: [] }; /* MDT: the fields each card really shows; a vehicle's owner, colour, insurance change in the game itself, not in MDC */
+// MDT: read / write one field of a record where its card takes it from (a card updates as soon as it is written)
+function gField(r, lab) {
+  var none = { get: function () { return ''; }, set: function () { return false; }, ok: function () { return true; } };
+  if (!r) return none;
+  var Y = RICHV[r.id], W = RICHW[r.id], O = RICHO[r.id], P = RICHP[r.id], X = RICH[r.id];
+  function rows(title, v) { (r.sections || []).forEach(function (sec) { (sec[1] || []).forEach(function (row) { if (row.k === title) row.v = v; }); }); }
+  function info(title) { return X && X.info ? X.info.filter(function (i) { return i[0] === title; })[0] : null; }
+  function byName(n) { n = String(n || '').trim().toLowerCase(); return DB.filter(function (x) { return (x.type === 'person' || x.type === 'org') && !x.nosearch && x.title.toLowerCase() === n; })[0]; }
+  function nameOf(id) { var x = DB.filter(function (d) { return d.id === id; })[0]; return x ? x.title : ''; }
+  function month() { var d = new Date(); return ('0' + (d.getMonth() + 1)).slice(-2) + '.' + d.getFullYear(); }
+  function subPart(i, v) { var p = String(r.sub || '').split(' · '); p[i] = v; r.sub = p.join(' · '); }
+  function owner(R) { return { get: function () { return nameOf(R.owner); }, ok: function (v) { return !!byName(v); }, set: function (v) { var o = byName(v); if (!o) return false; if (R.owners && R.owners[0]) R.owners[0][2] = month(); if (R.owners) R.owners.unshift([o.title, month(), 'сейчас', 'Перерегистрация в MDC']); R.owner = o.id; rows('Сейчас', o.title); rows('Владелец', o.title); return true; } }; }
+  function plain(get, set) { return { get: get, ok: function () { return true; }, set: function (v) { set(v); return true; } }; }
+  if (lab === 'Владелец' && Y) return owner(Y);
+  if (lab === 'Владелец' && W) return owner(W);
+  if (lab === 'Цвет' && Y) return plain(function () { return Y.color[0]; }, function (v) { var was = Y.color[0]; Y.color = [v, Y.color[1]]; rows('Цвет', v); r.sub = String(r.sub || '').replace(was.toLowerCase(), v.toLowerCase()); });
+  if (lab === 'Страховка' && Y) return plain(function () { return Y.insurance; }, function (v) { Y.insurance = v; });
+  if (lab === 'Постановка на учёт' && W) return plain(function () { return W.reg; }, function (v) { W.reg = v; });
+  if (lab === 'Лицензия владельца' && W) return plain(function () { return W.lic; }, function (v) { W.lic = v; });
+  if (lab === 'Название' && O) return plain(function () { return r.title; }, function (v) { r.title = v; r.keys = (r.keys || '') + ' ' + v.toLowerCase(); });
+  if (lab === 'Адрес' && O) return plain(function () { return O.addr; }, function (v) { O.addr = v; rows('Адрес', v); r.keys = (r.keys || '') + ' ' + v.toLowerCase(); });
+  if (lab === 'Телефон' && O) return plain(function () { return O.phone; }, function (v) { O.phone = v; rows('Телефон', v); });
+  if (lab === 'Вид деятельности' && O) return plain(function () { return O.kind; }, function (v) { O.kind = v; subPart(0, v); });
+  if (lab === 'Адрес' && P) return plain(function () { return P.addr || r.title; }, function (v) { P.addr = v; r.title = v; r.keys = (r.keys || '') + ' ' + v.toLowerCase(); });
+  if (lab === 'Тип объекта' && P) return plain(function () { return P.kind; }, function (v) { P.kind = v; subPart(0, v); });
+  if (lab === 'Площадь' && P) return plain(function () { return P.area; }, function (v) { P.area = v; });
+  if (lab === 'Телефон' && X) return plain(function () { return X.phone || ''; }, function (v) { X.phone = v; rows('Телефон', v); if (r.f) r.f.phone = v; });
+  if (lab === 'Адрес' && X) return plain(function () { var i = info('Собственность'); return i ? i[1] : ''; }, function (v) { var i = info('Собственность'); if (i) i[1] = v; rows('Адрес', v); if (r.f) r.f.addr = v.toLowerCase(); });
+  if (lab === 'Занятость' && X) return plain(function () { var i = info('Занятость'); return i ? i[1] : ''; }, function (v) { var i = info('Занятость'); if (i) i[1] = v; });
+  return none;
+}
+/* MDT: weapons — what an officer changes in MDC: the status, who it was found with (owner unknown), where it is stored.
+   Owner, registration and licence change in the game (Ammu-Nation sale, licence office), not here. */
+var WST = { owner: 'У владельца', stolen: 'Украдено', lost: 'Утеряно', found: 'Найдено', seized: 'Изъято', returned: 'Возвращено владельцу', destroyed: 'Уничтожено', cleared: 'Снять отметку о краже' };
+var WSTORE = ['Оружейная Mission Row', "Оружейная Davis Sheriff's Station", 'Лаборатория LSPD', 'Лаборатория LSSD'];
+function wState(W) { if (!W.st) W.st = W.status.some(function (s) { return s[0] === 'Украден' || s[0] === 'Украдено'; }) ? 'stolen' : W.status.some(function (s) { return s[0] === 'Изъято'; }) ? 'seized' : 'owner'; return W.st; }
+function wKey(label) { for (var k in WST) if (WST[k] === label) return k; return ''; }
+function wNext(W) {
+  var own = !!W.owner, st = wState(W);
+  var M = { owner: ['stolen', 'lost', 'seized'], returned: ['stolen', 'lost', 'seized'], stolen: ['found', 'seized'].concat(own ? ['returned'] : []).concat(['cleared']), lost: ['found', 'seized'].concat(own ? ['returned'] : []).concat(['cleared']), found: ['seized'].concat(own ? ['returned'] : []), seized: (own ? ['returned'] : []).concat(['destroyed']), destroyed: [] };
+  return (M[st] || []).map(function (k) { return WST[k]; });
+}
+function wTabs(r) { var W = r && RICHW[r.id]; if (!W) return []; var t = ['Статус']; if (!W.owner) t.push('У кого найдено'); if (W.storage && wState(W) !== 'destroyed') t.push('Хранение'); return t; }
+function wEv(W) { var m = W.storage ? /E-\d+/.exec(W.storage[1] || '') : null; return m ? m[0] : ''; }
+function wNow(r, tab) {
+  var W = RICHW[r.id], st = wState(W);
+  if (tab === 'Статус') { var t = WST[st] || ''; if (st === 'stolen' && W.storage) t += ' · сейчас улика ' + (wEv(W) || '') + ', ' + W.storage[0]; else if (W.storage && st !== 'destroyed') t += ' · ' + W.storage[0]; return t; }
+  if (tab === 'У кого найдено') return W.found ? W.found[0] + ' · ' + W.found[2] + ', ' + W.found[3] : 'не указано';
+  if (tab === 'Хранение') return W.storage ? W.storage[0] + ' · ' + W.storage[1] : '';
+  return '';
+}
+function wForm(r, tab, mf, cur) {
+  var W = RICHW[r.id], desc = { k: 'desc', label: 'Комментарий', t: 'area', hint: 'Основание. Попадёт в журнал оружия и историю изменений', req: true };
+  var date = function (label) { return { k: 'date', label: label, t: 'text', mask: 'date', hint: 'дд.мм.гггг', def: todayRu(), req: true }; };
+  var who = function (req) { return { k: 'who', label: 'У кого найдено', t: 'person', pool: 'people', req: req }; };
+  if (tab === 'Статус') {
+    var next = wNext(W), f = [{ k: 'st', label: next.length ? 'Новый статус' : 'Оружие уничтожено — статус больше не меняется', t: 'chips', o: next, nodef: true, req: true }];
+    var ch = wKey(mf[cur + '.st'] || '');
+    if (ch === 'stolen') f.push(date('Дата кражи'), { k: 'where', label: 'Откуда украдено', t: 'text', hint: 'Адрес или место' });
+    if (ch === 'lost') f.push(date('Дата утери'), { k: 'where', label: 'Где утеряно', t: 'text', hint: 'Адрес или место' });
+    if (ch === 'found') f.push(who(!W.owner), { k: 'where', label: 'Где найдено', t: 'text', hint: 'Адрес или место', req: true }, date('Дата'));
+    if (ch === 'seized') f.push({ k: 'store', label: 'Место хранения', t: 'chips', o: WSTORE }, { k: 'ev', label: 'Номер улики', t: 'text', hint: 'Например, E-4480 — если оружие проходит уликой по делу' }, date('Дата изъятия'));
+    if (ch === 'returned') { var on = DB.filter(function (x) { return x.id === W.owner; })[0]; f.push(date('Дата возврата' + (on ? ' · ' + on.title : ''))); }
+    if (ch === 'destroyed') f.push({ k: 'act', label: 'Номер акта уничтожения', t: 'text', hint: 'Например, АУ-2026-118', req: true }, date('Дата'));
+    return ch || !next.length ? f.concat([desc]) : f;
+  }
+  if (tab === 'У кого найдено') return [who(true), { k: 'where', label: 'Где найдено', t: 'text', hint: 'Адрес или место', req: true, def: W.found ? W.found[2] : '' }, date('Дата'), desc];
+  if (tab === 'Хранение') {
+    var curStore = W.storage ? W.storage[0] : '', list = [curStore].concat(WSTORE.filter(function (x) { return x !== curStore; })).filter(Boolean);
+    return [{ k: 'store', label: 'Место хранения', t: 'chips', o: list }, { k: 'ev', label: 'Номер улики', t: 'text', hint: 'Если оружие проходит уликой по делу', def: wEv(W) }, desc];
+  }
+  return [];
+}
+function wPerson(v) { if (!v) return ['', null]; if (String(v).indexOf('free:') === 0) return [String(v).slice(5), null]; var x = DB.filter(function (d) { return d.id === v; })[0]; return [x ? x.title : String(v), x ? x.id : null]; }
+/* applies a weapon change; returns the history line */
+function wApply(r, tab, val) {
+  var W = RICHW[r.id], d = val('date') || todayRu(), desc = val('desc'), lic = W.status.filter(function (s) { return /^Лицензия/.test(s[0]); });
+  function jr(text, tone) { W.jr.unshift([d, text + (desc ? ' · ' + desc : ''), tone]); }
+  if (tab === 'Статус') {
+    var k = wKey(val('st')), where = val('where'), p = wPerson(val('who')), ev = val('ev'), store = val('store') || WSTORE[0];
+    if (k === 'stolen') { W.st = 'stolen'; W.status = lic.concat([['Украдено', 'red']]); W.storage = null; W.alert = ['Числится украденным', 'Кража заявлена ' + d + (where ? ' (' + where + ')' : '') + '. ' + desc, 'red']; W.wanted = 'Отметить найденным'; jr('Заявлена кража' + (where ? ': ' + where : ''), 'red'); }
+    if (k === 'lost') { W.st = 'lost'; W.status = lic.concat([['Утеряно', 'amber']]); W.storage = null; W.alert = ['Числится утерянным', 'Утеря заявлена ' + d + (where ? ' (' + where + ')' : '') + '. ' + desc, 'amber']; W.wanted = 'Отметить найденным'; jr('Заявлена утеря' + (where ? ': ' + where : ''), 'amber'); }
+    if (k === 'found') { W.st = 'found'; W.status = lic.concat([['Найдено', 'green']]); if (p[0]) W.found = [p[0], p[1], where, d]; W.alert = ['Найдено', 'Найдено ' + d + ' — ' + where + (p[0] ? ', у ' + p[0] : '') + '. ' + desc, 'amber']; W.wanted = 'Объявить в розыск'; jr('Найдено: ' + where + (p[0] ? ', у ' + p[0] : ''), 'blue'); }
+    if (k === 'seized') { W.st = 'seized'; W.status = lic.concat([['Изъято', 'amber']]).concat(ev ? [['Улика ' + ev, 'blue']] : []); W.storage = [store, (ev ? 'Улика ' + ev : 'Изъято') + ' · с ' + d]; W.alert = ['Изъято', 'Изъято ' + d + '. Хранение: ' + store + (ev ? ', улика ' + ev : '') + '. ' + desc, 'amber']; W.wanted = 'Объявить в розыск'; jr('Изъято, хранение: ' + store + (ev ? ' (' + ev + ')' : ''), 'amber'); }
+    if (k === 'returned') { W.st = 'returned'; W.status = lic.concat([['У владельца', 'green']]); W.storage = null; W.alert = null; W.wanted = 'Объявить в розыск'; var on = DB.filter(function (x) { return x.id === W.owner; })[0]; jr('Возвращено владельцу' + (on ? ': ' + on.title : ''), 'green'); }
+    if (k === 'destroyed') { W.st = 'destroyed'; W.status = [['Уничтожено', 'grey']]; W.storage = ['Уничтожено', 'Акт ' + val('act') + ' · ' + d]; W.alert = ['Оружие уничтожено', 'Акт ' + val('act') + ' от ' + d + '. ' + desc, 'grey']; W.wanted = 'Объявить в розыск'; jr('Уничтожено, акт ' + val('act'), 'grey'); }
+    if (k === 'cleared') {
+      if (W.storage) { var e0 = wEv(W); W.st = 'seized'; W.status = lic.concat([['Изъято', 'amber']]).concat(e0 ? [['Улика ' + e0, 'blue']] : []); W.alert = ['Изъято', 'Отметка о краже снята ' + d + '. Хранение: ' + W.storage[0] + '. ' + desc, 'amber']; }
+      else { W.st = 'owner'; W.status = lic.concat([[W.owner ? 'У владельца' : 'Без отметок', W.owner ? 'green' : 'grey']]); W.alert = null; }
+      W.wanted = 'Объявить в розыск'; jr('Отметка о краже снята', 'green');
+    }
+    return 'Статус оружия: ' + val('st') + (desc ? ' · ' + desc : '');
+  }
+  if (tab === 'У кого найдено') { var pp = wPerson(val('who')), wh = val('where'); W.found = [pp[0], pp[1], wh, d]; jr('Найдено у ' + pp[0] + (wh ? ' (' + wh + ')' : ''), 'blue'); return 'У кого найдено: ' + pp[0] + (wh ? ', ' + wh : '') + (desc ? ' · ' + desc : ''); }
+  if (tab === 'Хранение') {
+    var old = W.storage ? W.storage[0] : '—', st2 = val('store') || old, ev2 = val('ev'), since = W.storage && /с [\d.]+/.exec(W.storage[1] || '') ? /с [\d.]+/.exec(W.storage[1])[0] : 'с ' + todayRu();
+    W.storage = [st2, (ev2 ? 'Улика ' + ev2 : 'Изъято') + ' · ' + since];
+    W.status = W.status.filter(function (s) { return !/^Улика /.test(s[0]); }).concat(ev2 ? [['Улика ' + ev2, 'blue']] : []);
+    jr('Место хранения: ' + old + ' → ' + st2 + (ev2 ? ' (' + ev2 + ')' : ''), 'blue');
+    return 'Хранение: ' + old + ' → ' + st2 + (desc ? ' · ' + desc : '');
+  }
+  return '';
+}
 var TAG_RANK = { red: 0, amber: 1, blue: 2, grey: 3 };
-function geditForm() { return [{ k: 'val', label: 'Новое значение', t: 'text', hint: 'Как должно быть записано', req: true }, { k: 'desc', label: 'Причина', t: 'area', hint: 'Основание изменения. Попадёт в журнал', req: true }]; }
+function docForm(kind) { return [{ k: 'until', label: kind === 'dsus' ? 'Приостановить до' : 'Изъять до', t: 'text', mask: 'date', hint: 'дд.мм.гггг', def: plusDaysRu(kind === 'dsus' ? 30 : 90), req: true }, { k: 'desc', label: 'Причина', t: 'area', hint: 'Основание. Попадёт в журнал, владелец получит уведомление', req: true }]; }
+function geditForm(r, i) { var lab = (GEDIT_F[tgKind(r && r.id)] || GEDIT_F.p)[i || 0]; return [{ k: 'val', label: lab === 'Владелец' ? 'Новое значение — имя из базы MDC' : 'Новое значение', t: 'text', hint: lab === 'Владелец' ? 'Например: Marcus Tate или Go Postal' : 'Как должно быть записано', req: true, def: gField(r, lab).get() }, { k: 'desc', label: 'Причина', t: 'area', hint: 'Основание изменения. Попадёт в журнал', req: true }]; }
 function tgKind(id) { var k = String(id || '').charAt(0); return k === 'e' ? 'p' : k; }
 function tagForm(kind, cur, have) {
-  var f = [{ k: 'tag', label: 'Тег', t: 'chips', o: (TAG_CAT[kind] || TAG_CAT.p).filter(function (n) { return (have || []).map(function (h) { return h.n; }).indexOf(n) < 0; }) },
+  var f = [{ k: 'tag', label: 'Тег', t: 'chips', req: true, nodef: true /* MDT: no preselected tag */, o: (TAG_CAT[kind] || TAG_CAT.p).filter(function (n) { return (have || []).map(function (h) { return h.n; }).indexOf(n) < 0; }) },
     { k: 'desc', label: 'Комментарий', t: 'area', hint: 'Почему повешен тег (необязательно)' },
     { k: 'per', label: 'Срок', t: 'toggle', tl: 'Тег действует ограниченное время', tn1: 'Укажите даты ниже. После окончания тег снимется сам.', tn0: 'Тег висит, пока его не снимут вручную.' },
     { k: 'rng', label: 'Действует', t: 'range', showIf: 'per' }];
@@ -308,7 +423,7 @@ var EMPX = {
     certs: [['AR-15', 'до 05.2028', 'green', 'Raul Moreno', '12.05.2026'], ['Metro Basic School', 'пройдена', 'green', 'Devin Lanier', '14.03.2024']],
     gear: [['Служебный автомобиль', 'Vapid Stanier · 41KFT208'], ['Бодикамера', '№ 2741']],
     hist: [['19.11.2026', 'Добавлена заметка · Raul Moreno'], ['08.11.2026', 'Благодарность внесена в личное дело'], ['01.07.2025', 'Ранг изменён: Officer I → Officer II']] },
-  e_watts: { full: 'Thorne Watts', badge: '12D3', unit: 'Патрульное управление · Mission Row', rank: 'FTP Trainee', pos: 'Deputy Sheriff', radio: '2-A-14', phone: '555-0173', since: '03.11.2026', now: 'на смене с 18:10', ftp: 'Стажёр FTP · день 18 из 40',
+  e_watts: { full: 'Thorne Watts', badge: '12D3', unit: "Davis Sheriff's Station · патруль", rank: 'Deputy Sheriff (Bonus I)', pos: 'Patrol Deputy', radio: '12D3', phone: '555-0173', since: '03.11.2026', now: 'на смене с 18:10', ftp: 'Стажёр FTP · день 18 из 40',
     stats: { '7': ['27 ч', 19, 2, 11, 7], '30': ['64 ч', 46, 5, 23, 15] },
     duty: [['19.11', 'Патруль 2-A-14 · стажёр', '17:30 – 22:30', '5 ч 00 мин', 1], ['18.11', 'Патруль 2-A-14 · стажёр', '15:00 – 20:10', '5 ч 10 мин', 2], ['17.11', 'Патруль 2-A-14 · стажёр', '15:40 – 21:00', '5 ч 20 мин', 3], ['14.11', 'Патруль 2-A-14 · стажёр', '18:30 – 23:50', '5 ч 20 мин', 6], ['13.11', 'Патруль 2-A-14 · стажёр', '15:30 – 20:40', '5 ч 10 мин', 7], ['08.11', 'Патруль 2-A-14 · стажёр', '18:30 – 00:30', '6 ч 00 мин', 12], ['07.11', 'Патруль 2-A-14 · стажёр', '16:00 – 21:30', '5 ч 30 мин', 13], ['05.11', 'Патруль 2-A-14 · стажёр', '19:20 – 01:00', '5 ч 40 мин', 15], ['04.11', 'Патруль 2-A-14 · стажёр', '16:00 – 21:40', '5 ч 40 мин', 16], ['03.11', 'Патруль 2-A-14 · стажёр', '16:40 – 21:50', '5 ч 10 мин', 17], ['21.10', 'Патруль 2-A-14 · стажёр', '17:00 – 22:30', '5 ч 30 мин', 30]],
     journal: [['03.11.2026', 'train', 'Принят в программу FTP', 'Срок обучения 40 дней. Наставник сменяется по ротации.', 'Andrew Koval']],
@@ -343,7 +458,7 @@ function LAW(code, name, cat, pen) { return { id: 'l_' + code.replace(/\D/g, '')
 function EMP(id, title, init, color, code, role, crew, extra) { return { id: id, type: 'person', title: title, initials: init, color: color, code: code, sub: role, keys: title.toLowerCase() + ' ' + code.toLowerCase(), alert: '', badges: [['На службе', 'green']],
   sections: [['Служба', [R('Департамент', 'Департамент полиции Лос-Сантоса', ['rec', 'o_lspd']), R('Участок', 'Mission Row'), R('Экипаж', crew)]]].concat(extra || []) }; }
 DB = DB.concat([
-  { id: 'v_dominator', type: 'vehicle', plate: '8KLM330', title: 'Vapid Dominator', sub: 'Купе · жёлтый · 2018', keys: '8klm330 dominator tate тейт', alert: '', badges: [['Страховка действует', 'green']],
+  { id: 'v_dominator', type: 'vehicle', plate: '8KLM330', title: 'Vapid Dominator', sub: 'Купе · жёлтый · 2018', keys: '8klm330 dominator tate', alert: '', badges: [['Страховка действует', 'green']],
     sections: [['Регистрация', [R('Номер', '8KLM330'), R('VIN', '1VDM20H8LB771305'), R('Цвет', 'Жёлтый')]], ['Владелец', [R('Сейчас', 'Marcus Tate', ['rec', 'p_tate'])]]] },
   { id: 'o_fdb', type: 'org', nosearch: true, title: 'Forum Drive Boys', sub: 'Уличная банда · Strawberry, Forum Drive', keys: 'forum drive boys банда strawberry', alert: '', badges: [['В базе SAN GANG', 'red'], ['Активна', 'amber']],
     sections: [['Сведения', [R('Тип', 'Уличная банда'), R('Район', 'Strawberry, Forum Drive'), R('Цвета', 'Красный'), R('Досье', 'Полное досье в приложении SAN GANG')]], ['Участники', [R('Лидер', 'Tyrone Webb', ['rec', 'p_webb']), R('Участник', 'Marcus Tate', ['rec', 'p_tate']), R('Участник', 'Derek Holt', ['rec', 'p_holt'])]],
@@ -363,7 +478,7 @@ DB = DB.concat([
   { id: 'a_grove1207', type: 'place', title: '1207 Grove Street', sub: 'Частный дом', keys: '1207 grove street адрес', alert: 'Действует ордер на обыск SW-2611 до 18.11, 14:00', alertTone: 'amber', badges: [['Ордер на обыск', 'amber']],
     sections: [['Владелец', [R('Сейчас', 'Tyrone Webb', ['rec', 'p_webb'])]], ['Связи', [R('Банда', 'Forum Drive Boys', ['rec', 'o_fdb']), R('Машина у дома', 'Bravado Bison', ['rec', 'v_bison'])]], ['Упоминания в делах', [R('SW-2611', 'Обыск 15.11, 20:00', ['case'])]]] },
   EMP('e_koval', 'Andrew Koval', 'AK', '#1F4E79', 'LSPD-2741', 'Патрульный · жетон 2741', '2-A-14', [['Упоминания в делах', [R('LS-2026-0893', 'Задержание', ['case'])]]]),
-  EMP('e_watts', 'Thorne Watts', 'TW', '#3F7104', 'LSPD-12D3', 'Deputy Sheriff · 12D3', '2-A-14'),
+  EMP('e_watts', 'Thorne Watts', 'TW', '#3F7104', 'LSSD-12D3', 'Deputy Sheriff (Bonus I) · 12D3', '12D3'),
   EMP('e_moreno', 'Raul Moreno', 'RM', '#7A57B0', 'LSPD-0412', 'Отдел расследований', '—', [['Ведёт дела', [R('LS-2026-0893', 'Ведущий', ['case']), R('SW-2611', 'Ведущий', ['case'])]]]),
   EMP('e_ortiz', 'Miguel Ortiz', 'MO', '#5C6B70', 'LSPD-0520', 'Отдел расследований', '—'),
   EMP('e_lanier', 'Devin Lanier', 'DL', '#5C6B70', 'LSPD-3310', 'Патрульный', '2-A-09'),
@@ -383,6 +498,9 @@ DB = DB.concat([
   };
   Object.keys(EMPX).forEach(function (id) {
     var E = EMPX[id], d = P[id]; if (!d) return;
+    // MDT: an employee is a resident too — the «Поиск личности» form finds them by name, phone, licence, address, prints
+    var er = DB.filter(function (x) { return x.id === id; })[0];
+    if (er && !er.f) er.f = { name: E.full.toLowerCase(), phone: E.phone, doc: d.doc.toLowerCase() + ' ' + String(er.code || '').toLowerCase(), plate: '', addr: d.addr.toLowerCase(), weapon: '', bio: d.fp.toLowerCase(), biz: '' };
     var nm = E.full.split(' '), ln = nm[1].toUpperCase(), fn = nm[0].toUpperCase();
     var dobP = d.dob.split(' ');
     RICH[id] = {
@@ -482,6 +600,16 @@ RICH.p_holt = {
   docs: [{ kind: 'DRIVER LICENSE', bg: '#E9DFC6', ink: '#7A1F1F', line: '#B89A5C', fields: [['DL', 'D5530917'], ['EXP', '01/2028'], ['LN', 'HOLT'], ['FN', 'DEREK'], ['DOB', '--/--/1994']], canSuspend: true }], docArchive: 1,
   fp: '20 H5 33', fpNote: 'Карта CDL, 09.2024', dna: 'Нет в базе', notes: []
 };
+/* MDT: a clean record — the full dossier with every section present but empty */
+RICH.p_kwebb = {
+  banner: null, orgs: [], phone: '555-0134',
+  info: [['ID документ', 'Водительская лицензия (DL)', '', 'D4418821'], ['Дата рождения', '17 июня 1993 (33 года)', '', ''], ['Правовой статус', 'Резидент штата', '', ''], ['Пол', 'Женщина', '', ''],
+    ['Занятость', 'Не трудоустроена', '', ''], ['Собственность', '1207 Grove Street', '', 'Проживает'], ['Банковские счета', 'Нет данных', '', ''], ['Семья', 'Tyrone Webb', '', 'Супруг']],
+  gang: null, strikes: 0,
+  crimes: [], fines: [], property: [['1207 Grove Street', 'Проживает']], vehicles: [], weapons: [],
+  docs: [{ kind: 'DRIVER LICENSE', bg: '#E9DFC6', ink: '#7A1F1F', line: '#B89A5C', fields: [['DL', 'D4418821'], ['EXP', '03/2028'], ['LN', 'WEBB'], ['FN', 'KARINA'], ['DOB', '17/06/1993']], canSuspend: true }], docArchive: 0,
+  fp: 'Нет в базе', fpNote: '', dna: 'Нет в базе', notes: []
+};
 var UC = {
   p_holt: { legend: true, other: ['e_lanier', 'Devin Lanier'] },
   e_lanier: { legend: false, other: ['p_holt', 'Derek Holt'] }
@@ -492,6 +620,14 @@ var NAME2ID = { 'Derek Holt': 'p_holt', 'Daniel Reyes': 'p_reyes', 'Ammu-Nation,
   'Forum Drive Boys': 'o_fdb', 'Go Postal · курьер': 'o_gopostal', 'Go Postal': 'o_gopostal', 'Департамент полиции Лос-Сантоса': 'o_lspd', 'Суд округа Лос-Сантос': 'o_court', 'Fleeca Bank': 'o_fleeca', 'Maze Bank': 'o_maze', 'DMV': 'o_dmv',
   'Forum Dr 14, Strawberry': 'a_forum14', 'Гараж 7, Grove Street': 'a_garage7', '1207 Grove Street': 'a_grove1207',
   'Declasse Premier 4FJT118': 'v_premier', 'Vapid Dominator 8KLM330': 'v_dominator', 'Bravado Bison 87PLN903': 'v_bison', 'Marcus Tate': 'p_tate', 'Tyrone Webb': 'p_webb' };
+/* MDT: Thorne Watts serves at the sheriff's Davis station */
+(function () { var w = DB.filter(function (r) { return r.id === 'e_watts'; })[0]; if (!w) return; (w.sections || []).forEach(function (sec) { (sec[1] || []).forEach(function (row) { if (row.k === 'Департамент') { row.v = 'Департамент шерифа округа Лос-Сантос'; row.link = null; } if (row.k === 'Участок') row.v = "Davis Sheriff's Station"; }); }); })();
+/* MDT: law-enforcement and state agencies (police, sheriff, fire department, SADOCR, court, DMV) are not in Поиск — only civil
+ * organisations (banks, companies, shops): no records, and every mention of an agency is plain text, not a link */
+var AGENCY_IDS = ['o_lspd', 'o_lssd', 'o_lsfd', 'o_sadocr', 'o_court', 'o_dmv'];
+DB = DB.filter(function (r) { return AGENCY_IDS.indexOf(r.id) < 0; });
+DB.forEach(function (r) { (r.sections || []).forEach(function (sec) { (sec[1] || []).forEach(function (row) { if (row.link && row.link[0] === 'rec' && AGENCY_IDS.indexOf(row.link[1]) >= 0) row.link = null; }); }); });
+Object.keys(NAME2ID).forEach(function (k) { if (AGENCY_IDS.indexOf(NAME2ID[k]) >= 0) delete NAME2ID[k]; });
 function lawId(code) { return 'l_' + code.replace(/\D/g, ''); }
 var RICHV = {
   v_bison: { owner: 'p_webb', biz: null, type: 'Пикап', make: 'Bravado', model: 'Bison', color: ['Чёрный', '#1E1E1E'], insurance: 'Mors Mutual · до 12.2026',
@@ -520,6 +656,14 @@ var GROUP = { person: 'Люди', vehicle: 'Транспорт', weapon: 'Ору
 var __PLRE = /\b\d{1,2}[A-Z]{3}\d{3}\b/g;
 function __plp(s) { var out = [], last = 0, m; __PLRE.lastIndex = 0; while ((m = __PLRE.exec(s))) { if (m.index > last) out.push({ t: s.slice(last, m.index), a: true, b: false }); out.push({ t: m[0], a: false, b: true }); last = m.index + m[0].length; } if (last < s.length || !out.length) out.push({ t: s.slice(last), a: true, b: false }); return out; }
 function __pl(o, K) { var seen = new Set(); (function w(x, d) { if (!x || typeof x !== 'object' || d > 9 || seen.has(x)) return; seen.add(x); if (Array.isArray(x)) { x.forEach(function (y) { w(y, d + 1); }); return; } Object.keys(x).forEach(function (k) { var v = x[k]; if (typeof v === 'string' && K[k]) x[k + 'P'] = __plp(v); else if (v && typeof v === 'object' && typeof v !== 'function') w(v, d + 1); }); })(o, 0); return o; }
+/* MDT: «Недавние запросы» — the reference's four samples, then real queries
+ * (a record opened from them, or Enter in the search box), newest first,
+ * shared by every Поиск window. */
+var RECENT_Q = ['Tate', '87PLN903', 'HL-882107', 'Grove Street'];
+function rememberQuery(q) {
+  q = String(q || '').trim(); if (!q || q.length > 60) return;
+  RECENT_Q = [q].concat(RECENT_Q.filter(function (x) { return x.toLowerCase() !== q.toLowerCase(); })).slice(0, 4);
+}
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -530,11 +674,14 @@ class Component extends DCLogic {
     var me = this;
     this.setState = function (p) {
       var nav = p && p.__nav; if (nav) { p = Object.assign({}, p); delete p.__nav; }
+      /* MDT: drafts, open menu, expanded rows and the toast belong to the record they were made on */
+      if (p && Object.prototype.hasOwnProperty.call(p, 'sel') && p.sel !== me.state.sel) p = Object.assign({ na: false, nd: '', qa: false, qn: '', qm: '', cmDraft: '', mn: false, ex: {}, tst: '', crimF: 'all', fineF: 'all' }, p);
       me._cur = Object.assign({}, me._cur, p);
       if (!nav) {
         var s = snap(me._cur), last = me._h[me._i];
         if (JSON.stringify(s) !== JSON.stringify(last)) { me._h = me._h.slice(0, me._i + 1); me._h.push(s); me._i = me._h.length - 1; }
       }
+      if (me._cur.open && !me._cur.fm && p && (p.open || p.sel)) rememberQuery(me._cur.q); /* MDT */
       _o(Object.assign({}, p, { hi: me._i }));
     };
     this._go = function (d) { var n = me._i + d; if (n < 0 || n >= me._h.length) return; me._i = n; me.setState(Object.assign({ __nav: true }, me._h[n])); };
@@ -550,19 +697,60 @@ class Component extends DCLogic {
     var AGENCY = false;
     var q = (S.q || '').trim().toLowerCase();
         var RES_ROWS = [['name','Имя фамилия','Marcus Tate'],['phone','Номер телефона','555-0177'],['doc','Номер ID-карты','CIT-55120'],['plate','Номер транспорта','4FJT118'],['addr','Адрес проживания','Forum Dr 14'],['bio','Биометрический идентификатор','FP-55120']], MIG_ROWS = [['name','Имя фамилия','Daniel Reyes'],['phone','Номер телефона','555-0119'],['doc','Номер иностранного паспорта','PS-MX-7731204'],['visa','Номер визы или разрешения','WV-2027-00418'],['plate','Номер транспорта','46EEK572'],['addr','Адрес проживания','Davis Ave 88'],['entry','Номер миграционной карты','ENT-26-03118'],['bio','Биометрический идентификатор','FP-60214']];
-function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.title).toLowerCase(); if (S.fm && S.type === 'person') { var fv = S.fv || {}; return r.type === 'person' && !!r.f && (r.res || 'res') === S.pm && Object.keys(fv).every(function (k) { var v = String(fv[k] || '').trim().toLowerCase(); return !v || String(r.f[k] || '').indexOf(v) >= 0; }); } return (r.title + ' ' + (r.plate || '') + ' ' + (r.serial || '') + ' ' + (r.code || '') + ' ' + r.keys).toLowerCase().indexOf(q) >= 0; }
+/* MDT: «Tate Marcus», «87 PLN 903», «5550177», VIN, addresses and document numbers find the record too */
+function cmp(s) { return String(s || '').toLowerCase().replace(/[\s\-–—.,·«»"'№#]/g, ''); }
+var qWords = q.split(/\s+/).filter(Boolean), qC = cmp(q);
+function hayOf(r) {
+  var parts = [r.title, r.plate || '', r.serial || '', r.code || '', r.keys || ''];
+  if (r.f) ['name', 'phone', 'doc', 'addr', 'bio', 'visa', 'entry'].forEach(function (k) { if (r.f[k]) parts.push(r.f[k]); });
+  (r.sections || []).forEach(function (sec) { sec[1].forEach(function (rw) { if (!rw.link && /адрес|телефон|vin|номер|паспорт|виза|документ|лиценз|права|id/i.test(rw.k)) parts.push(rw.v); }); });
+  var X = RICH[r.id];
+  if (X) {
+    (X.docs || []).forEach(function (d) { d.fields.forEach(function (f) { if (!/^(EXP|LN|FN|DOB|SEX)$/.test(f[0])) parts.push(f[1], f[0] + '-' + f[1]); }); });
+    (X.info || []).forEach(function (f) { if (/ID документ|Основание|Собственность|Банковские/.test(f[0])) parts.push(f[1], f[3]); });
+    parts.push(X.phone || '');
+  }
+  var P = RICHP[r.id] || RICHO[r.id];
+  if (P) parts.push(P.addr || '', P.cad || '', P.regno || '', P.phone || '');
+  return parts.join(' ').toLowerCase();
+}
+function qMatch(h) { var hc = cmp(h); if (h.indexOf(q) >= 0 || (qC.length >= 3 && hc.indexOf(qC) >= 0)) return true; return qWords.length > 1 && qWords.every(function (w) { return new RegExp('(^|[^a-zа-яё0-9])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(h); }); /* each word at a word start, any order */ }
+function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.title).toLowerCase(); if (S.fm && S.type !== 'person' && S.type !== 'all') { var fv2 = S.fv || {}; var H = hay(r), HC = cmp(H); return r.type === S.type && !r.nosearch && segOk(r, H) && Object.keys(fv2).every(function (k) { var v = String(fv2[k] || '').trim().toLowerCase(); return !v || H.indexOf(v) >= 0 || (cmp(v).length > 0 && HC.indexOf(cmp(v)) >= 0); }); } if (S.fm && S.type === 'person') { var fv = S.fv || {}; return r.type === 'person' && !!r.f && (r.res || 'res') === S.pm && Object.keys(fv).every(function (k) { var v = String(fv[k] || '').trim().toLowerCase(); return !v || String(r.f[k] || '').indexOf(v) >= 0 || (cmp(v).length > 0 && cmp(r.f[k]).indexOf(cmp(v)) >= 0); }); } return qMatch(hayOf(r)); }
+    var SEGS = { place: [['all', 'Все', ''], ['home', 'Жильё', 'дом|квартир|жиль'], ['garage', 'Гаражи', 'гараж']] };
+    function hay(r) { var t = [r.title, r.sub, r.plate, r.serial, r.code, r.keys, r.alert]; (r.badges || []).forEach(function (b) { t.push(b[0]); }); (r.sections || []).forEach(function (sec) { t.push(sec[0]); (sec[1] || []).forEach(function (row) { t.push(row.k, row.v); }); }); var rv = (typeof RICHV !== 'undefined' && RICHV[r.id]) || null; if (rv && rv.owner) { var ow = DB.filter(function (x) { return x.id === rv.owner; })[0]; if (ow) t.push(ow.title); } return t.filter(Boolean).join(' ').toLowerCase(); }
+    function segOk(r, H) { var sg = (SEGS[S.type] || []).filter(function (e) { return e[0] === (S.sg || 'all'); })[0]; return !sg || !sg[2] || new RegExp(sg[2]).test(H); }
+    var FCS = {
+      all: { title: '', sub: '', color: '#444', hint: '', rows: [] },
+      person: { title: 'Люди', sub: '', color: '#A4262C', hint: '', rows: [] },
+      vehicle: { title: 'Транспорт', sub: 'Владелец, регистрация, страховка, розыск.', color: '#3E8EDE', hint: 'Автомобили, мотоциклы и лодки, зарегистрированные в штате.', rows: [['plate', 'Номер', '87PLN903'], ['model', 'Марка и модель', 'Bravado Bison'], ['color', 'Цвет', 'Чёрный'], ['vin', 'VIN', '1BRB16P4GZ300871'], ['owner', 'Владелец', 'Marcus Tate'], ['year', 'Год выпуска', '2016']] },
+      weapon: { title: 'Оружие', sub: 'Серийный номер, владелец, история и статус.', color: '#6B4E2E', hint: 'Зарегистрированное оружие и оружие из дел.', rows: [['serial', 'Серийный номер', 'HL-882107'], ['model', 'Модель', 'Hawk & Little'], ['cal', 'Калибр', '9 мм'], ['owner', 'Владелец', 'Marcus Tate'], ['case', 'Номер дела', 'LS-2026-0893']] },
+      org: { title: 'Организации', sub: 'Бизнесы: владелец, сотрудники, адрес.', color: '#8A3B5C', hint: 'Бизнесы, зарегистрированные в штате.', rows: [['name', 'Название', 'Go Postal'], ['addr', 'Адрес', 'Strawberry'], ['head', 'Руководитель', 'Имя Фамилия'], ['kind', 'Вид деятельности', '', 'sel']] },
+      place: { title: 'Недвижимость', sub: 'Дома, квартиры и гаражи: владельцы и ордера.', color: '#2F6F73', hint: 'Адреса, зарегистрированные в штате.', rows: [['addr', 'Адрес', 'Grove Street'], ['num', 'Номер дома', '1207'], ['kind', 'Тип', 'Гараж'], ['owner', 'Владелец / жилец', 'Marcus Tate']] }
+    };
+    var FC = FCS[S.type] || FCS.all;
+    // MDT: Недвижимость — the kind is the switch above (no «Тип» field); a garage has its own number, not a house number
+    var PLACE_ROWS = {
+      all: [['addr', 'Адрес', 'Grove Street'], ['num', 'Номер дома или гаража', '1207'], ['owner', 'Владелец / жилец', 'Marcus Tate']],
+      home: [['addr', 'Улица', 'Grove Street'], ['num', 'Номер дома', '1207'], ['apt', 'Квартира', '9'], ['owner', 'Владелец / жилец', 'Marcus Tate']],
+      garage: [['addr', 'Улица', 'Grove Street'], ['num', 'Номер гаража', '7'], ['owner', 'Владелец', 'Marcus Tate']]
+    };
+    if (S.type === 'place') FC = Object.assign({}, FC, { rows: PLACE_ROWS[S.sg || 'all'] || PLACE_ROWS.all });
+    var isForm = S.type !== 'all' && !S.fm && !S.q;
+    var browseList = DB.filter(function (r) { return r.type === S.type && !r.nosearch && (S.type !== 'place' || segOk(r, hay(r))) && (S.type !== 'person' || (!!r.f && (r.res || 'res') === S.pm)); /* MDT: people too — residents or migrants, as the form */ }).slice(0, 6).map(function (r) { var b = (r.badges || []).filter(function (x) { return !(r.type === 'person' && /^(Резидент|Мигрант)$/.test(x[0])); })[0]; /* MDT: the status already shows in the switch above */ return { title: r.title, sub: r.type === 'person' && r.code ? r.code + ' · ' + r.sub : r.sub, hasBadge: !!b, badge: b ? b[0] : '', bBg: b ? TONES[b[1]][0] : 'transparent', bFg: b ? TONES[b[1]][1] : c.text, pick: function () { self.setState({ q: String(r.plate || r.serial || r.title).toLowerCase(), sel: r.id, open: true, fm: false }); } }; });
     var found = q ? DB.filter(hit) : [];
     var shown = found.filter(function (r) { return (S.type === 'all' || r.type === S.type) && (r.type !== 'person' || S.resF === 'all' || (r.res || 'res') === S.resF); });
     var sel = shown.filter(function (r) { return r.id === S.sel; })[0] || shown[0] || null;
     var EXTRA = { 'Go Postal': [['Weazel Bar', 'Официант, подработка с 02.02.2026']], 'Forum Dr 14, Strawberry': [['Гараж 7, Grove Street', 'Арендатор']], '118900245': [['118900311', 'Fleeca Bank · накопительный']] };
     var AG_LOGO = { o_lspd: '/assets/search/45c489eca07290dce77f5ba9125d4868.png', o_lssd: '/assets/search/bce88aa0f0b36efc819d63ae60d246eb.png' };
     function agencyOf(r) {
+      return []; /* MDT: no agency links in Поиск */
       var out = [];
       (r.sections || []).forEach(function (sec) { sec[1].forEach(function (row) { if (row.k === 'Департамент' && row.link && row.link[0] === 'rec') out.push({ name: row.v, color: ({ o_lspd: '#1F4E9C', o_lssd: '#7A5A16', o_lsfd: '#B3261E' })[row.link[1]] || '#3A5F8F', hasLogo: !!AG_LOGO[row.link[1]], logo: AG_LOGO[row.link[1]] || '', go: function () { open(row.link[1]); } }); }); });
       return out;
     }
     function open(id) {
       var r = DB.filter(function (x) { return x.id === id; })[0];
+      if (!r) return; /* MDT: e.g. an agency — not a Поиск record */
       var vis = shown.some(function (x) { return x.id === id; });
       if (vis) self.setState({ sel: id, open: true, mn: false });
       else self.setState({ q: r.plate || r.serial || r.title, type: 'all', sel: id, open: true, mn: false });
@@ -635,15 +823,16 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
       veh: { title: 'Служебный автомобиль', text: 'Введите ID машины и выберите её из списка или снимите закрепление. Машины, закреплённые за другими, не показываются.', veh: true, primary: 'Сохранить', done: function (l) { return l === 'Без закрепления' ? 'Закрепление снято' : 'Транспорт закреплён: ' + l; } },
       cam: { title: 'Бодикамера', text: function (p) { return 'Чатлог бодикамеры: действия и реплики сотрудника и людей в поле зрения.'; }, cam: true, primary: 'Закрыть', noCancel: true },
       wanted: { title: 'Объявить в розыск', text: 'Выберите вид ориентировки. Черновик откроется в BOLO, смена получит уведомление после публикации.', choices: [['Особый розыск', 'Ориентировка с фото и приметами'], ['Розыск', 'Обычная ориентировка'], ['Проверка и опрос', 'Найти и опросить, без задержания']], reason: true, primary: 'Создать черновик', done: 'Черновик ориентировки создан в BOLO' },
-      tocase: { title: 'Добавить в дело', text: 'Карточка привяжется к делу и появится в его хронологии. Доступ к делу у вас должен быть.', choices: (self.props.caseChoices ? self.props.caseChoices() : [['LS-2026-0893', 'Открытое дело'], ['Новое дело', 'Создать дело и привязать карточку']]) /* MDT: the user's real cases */, primary: 'Добавить', done: 'Карточка добавлена в дело' },
+      tocase: { title: 'Добавить в дело', text: 'Карточка привяжется к делу и появится в его хронологии. Доступ к делу у вас должен быть.', choices: (self.props.caseChoices ? self.props.caseChoices() : [['LS-2026-0893', 'Открытое дело'], ['Новое дело', 'Создать дело и привязать карточку']]) /* MDT: the user's real cases */, primary: 'Добавить', done: 'Дело открыто в «Делах»' },
       warr: { title: 'Запросить ордер', text: 'Выберите вид ордера. Запрос уйдёт судье с основанием из карточки.', choices: [['Ордер на обыск', ''], ['Ордер на арест', ''], ['Ордер на изъятие', '']], reason: true, primary: 'Отправить судье', done: 'Запрос отправлен судье' },
-      seen: { title: 'Отметить «Замечен»', text: 'Отметка попадёт на карту BOLO и в журнал карточки.', choices: [['Моя текущая позиция', 'Координаты возьмутся из игры'], ['Указать на карте', 'Откроется карта BOLO']], reason: true, primary: 'Отметить', done: 'Отметка отправлена, все на смене увидят её' },
+      seen: { title: 'Отметить «Замечен»', text: 'Отметка попадёт на карту BOLO и в журнал карточки.', choices: [['Моя текущая позиция', 'Координаты возьмутся из игры'], ['Указать на карте', 'Откроется карта BOLO']], note: 'Что видели: направление, одежда, с кем (необязательно)', primary: 'Отметить', done: 'Отметка отправлена, все на смене увидят её' },
       share: { title: 'Поделиться карточкой', text: 'Коллега получит ссылку на карточку. Доступ к закрытым данным у него останется прежним.', choices: [['Отправить в Почту', 'Письмо со ссылкой на карточку'], ['На рацию смены', 'Короткое сообщение с номером записи'], ['Скопировать ссылку', '']], primary: 'Поделиться', done: 'Ссылка отправлена' },
       vfine: { title: 'Выписать штраф', text: 'Штраф владельцу машины. Найдите статью, затем укажите сумму в пределах, которые задаёт кодекс.', finePick: true, primary: 'Выписать', done: 'Штраф выписан, квитанция создана' },
       gang: { title: 'Внести в SAN GANG', text: 'Выберите группировку. Запись появится в SAN GANG и в карточке, действие попадёт в журнал.', choices: [['Forum Drive Boys', 'Уже есть в SAN GANG'], ['Другая группировка', 'Выбрать или создать в SAN GANG']], reason: true, primary: 'Внести', done: 'Внесён в SAN GANG' },
-      dsus: { title: 'Приостановить документ', text: 'Приостановка попадёт в журнал, владелец получит уведомление. Укажите причину.', reason: true, primary: 'Приостановить', done: 'Документ приостановлен' },
-      dsei: { title: 'Изъять документ', text: 'Изъятие попадёт в журнал, документ перестанет действовать. Укажите причину.', reason: true, danger: true, primary: 'Изъять', done: 'Документ изъят' },
-      gedit: { title: 'Изменить данные', text: 'Выберите поле и укажите новое значение с причиной. Изменение уйдёт заявкой и попадёт в журнал.', form: true, primary: 'Отправить заявку', done: 'Заявка на изменение отправлена' },
+      dsus: { title: 'Приостановить документ', text: 'До указанной даты документ не действует, потом снова начнёт действовать сам. Приостановка попадёт в журнал, владелец получит уведомление.', form: true, primary: 'Приостановить', done: 'Документ приостановлен' },
+      dsei: { title: 'Изъять документ', text: 'Документ изымается до указанной даты. Изъятие попадёт в журнал, владелец получит уведомление.', form: true, danger: true, primary: 'Изъять', done: 'Документ изъят' },
+      drest: { title: 'Вернуть документ', text: 'Документ снова начнёт действовать. Отмена попадёт в журнал, владелец получит уведомление. Укажите причину.', reason: true, primary: 'Вернуть', done: 'Документ снова действует' },
+      gedit: { title: 'Изменить данные', text: 'Выберите поле — в нём текущее значение. Исправьте его и укажите причину: карточка обновится сразу, изменение попадёт в историю.', form: true, primary: 'Сохранить', done: 'Данные изменены' },
       tag: { title: 'Повесить тег', text: 'Выберите тег. Вкладки сверху: кто увидит тег — все, агентство или группа доступа. Тег появится в шапке карточки и в журнале.', form: true, primary: 'Повесить тег', done: 'Тег добавлен' },
       tagacc: { title: 'Тег', text: 'Измените, кто видит тег, или снимите его. Изменение попадёт в журнал доступа.', choices: [['Видят все', 'Все, у кого есть доступ к картотеке'], ['Только агентство', 'Сотрудники вашего агентства'], ['Группа доступа', 'Участники группы; остальные тега не видят'], ['Снять тег', 'Тег пропадёт из карточки у всех']], reason: true, primary: 'Применить', done: 'Тег обновлён' },
       hist: { title: 'История изменений', text: 'Последние действия с этой записью.', hist: [['19.11.2026', 'Добавлена заметка · Raul Moreno'], ['14.11.2026', 'Выписан штраф PC 22350 · камера Del Perro Fwy'], ['08.11.2026', 'Внесён арест A-2026-1187 · Andrew Koval'], ['08.11.2026', 'Статус изменён: под стражей']], primary: 'Закрыть', noCancel: true }
@@ -653,31 +842,46 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
       var cfg = DL[S.dl], ch = [];
       var cur = S.dc || 0;
       if (cfg) {
-        var list = cfg.jrn && sel ? jrOf(sel.id).map(function (j) { return [j[2], j[0] + ' · ' + (JKL[j[1]] || '')]; }) : cfg.finePick ? FINE_LIST() :  cfg.fields ? EDIT_FIELDS(PX) : cfg.choices ? cfg.choices.map(function (x) { return [x[0], x[1]]; }) : cfg.fines ? (PX.fines || []).map(function (x) { return [x.code + ' ' + x.name, '$' + x.sum]; }) : cfg.crimes ? (PX.crimes || []).map(function (x) { return [x.tag.charAt(0) + x.tag.slice(1).toLowerCase() + ' · ' + x.date, '']; }) : [];
+        var list = cfg.jrn && sel ? jrOf(sel.id).map(function (j) { return [j[2], j[0] + ' · ' + (JKL[j[1]] || '')]; }) : cfg.finePick ? FINE_LIST() :  cfg.fields ? EDIT_FIELDS(PX) : cfg.choices ? cfg.choices.map(function (x) { return [x[0], x[1]]; }) : cfg.fines ? (PX.fines || []).filter(function (x) { return x.st !== 'paid'; }).map(function (x) { return [x.code + ' ' + x.name, '$' + x.sum]; }) : cfg.crimes ? (PX.crimes || []).filter(function (x) { return !x.voided; }).map(function (x) { return [x.tag.charAt(0) + x.tag.slice(1).toLowerCase() + ' · ' + x.date, '']; }) : [];
         ch = list.map(function (x, i) { var on = i === cur; return { label: x[0], note: x[1], bg: on ? 'rgba(96,205,255,0.08)' : 'transparent', ring: on ? '#60CDFF' : c.stroke, rb: on ? '1px solid #60CDFF' : '1px solid #9A9A9A', rbg: on ? '#60CDFF' : 'transparent', dsz: on ? '8px' : '0px', dc: on ? '#0B2B3A' : 'transparent', pick: function () { self.setState({ dc: i, dv: '', fa: '' }); } }; });
       }
-      var fl = cfg && cfg.finePick ? FINE_LIST() : null, frange = fl && fl[cur] ? fl[cur] : null, famt = S.fa || (frange ? String(frange[2]) : '');
+      var needPick = !!(cfg && !cfg.form && !cfg.fields && !cfg.veh && (cfg.choices || cfg.finePick || cfg.fines || cfg.crimes || cfg.jrn) && cur < 0); /* MDT: nothing preselected */
+      var histList = cfg && cfg.hist ? ((S.hl || {})[sel && sel.id] || []).concat(PX.hist || (sel && sel.id === 'p_tate' ? cfg.hist : [])) : []; /* MDT: per record */
+      var emptyPick = !!(cfg && (cfg.fines || cfg.crimes || cfg.jrn) && ch.length === 0); /* MDT: nothing to cancel / annul */
+      var fl = cfg && cfg.finePick ? FINE_LIST() : null, frange = fl && fl[cur] ? fl[cur] : null, famt = S.fa || '' /* MDT: the amount is typed, not preset */;
       var aerr = cfg && cfg.finePick ? amtCheck(frange, famt) : '';
-      function FORMS() { return S.dl === 'tag' ? tagForm(tgKind(sel && sel.id), cur, tagsOf(sel && sel.id)) : S.dl === 'gedit' ? geditForm() : MARK_FORMS[cur]; }
-      function formVal(k) { var f = FORMS().filter(function (x) { return x.k === k; })[0]; if (!f) return ''; var v = (S.mf || {})[cur + '.' + k]; if (f.t === 'award') { var tp = ((S.mf || {})['1.type'] || 'Медаль') === 'Медаль' ? 'medal' : 'ribbon'; var lst = AWC.filter(function (a) { return a.k === tp; }); return lst.some(function (a) { return a.id === v; }) ? v : lst[0].id; } if (f.t === 'toggle') return v === '1' ? '1' : '0'; return String(v != null ? v : (f.t === 'chips' ? f.o[0] : (f.def || ''))).trim(); }
-      function rangeBad(f) { var mf = S.mf || {}, a1 = mf[cur + '.' + f.k + 'F'] != null ? mf[cur + '.' + f.k + 'F'] : '20.11.2026', b1 = mf[cur + '.' + f.k + 'T'] != null ? mf[cur + '.' + f.k + 'T'] : '20.11.2027'; return !dateOk(a1) || !dateOk(b1) || dateNum(b1) < dateNum(a1); }
-      var formMissing = !!(cfg && cfg.form && FORMS().some(function (f) { if (f.showIf && formVal(f.showIf) !== '1') return false; if (f.t === 'range') return rangeBad(f); if (f.mask === 'date') return !dateOk(formVal(f.k)); return f.req && !formVal(f.k); }));
+      function FORMS() { return S.dl === 'tag' ? tagForm(tgKind(sel && sel.id), cur, tagsOf(sel && sel.id)) : S.dl === 'gedit' ? (sel && RICHW[sel.id] ? wForm(sel, wTabs(sel)[cur], S.mf || {}, cur) : geditForm(sel, cur)) : (S.dl === 'dsus' || S.dl === 'dsei') ? docForm(S.dl) : MARK_FORMS[cur]; }
+      function formVal(k) { var f = FORMS().filter(function (x) { return x.k === k; })[0]; if (!f) return ''; var v = (S.mf || {})[cur + '.' + k]; if (f.t === 'award') { var tp = ((S.mf || {})['1.type'] || 'Медаль') === 'Медаль' ? 'medal' : 'ribbon'; var lst = AWC.filter(function (a) { return a.k === tp; }); return lst.some(function (a) { return a.id === v; }) ? v : lst[0].id; } if (f.t === 'toggle') return v === '1' ? '1' : '0'; return String(v != null ? v : (f.t === 'chips' && !f.nodef ? f.o[0] : (f.def || ''))).trim(); }
+      function rangeBad(f) { var mf = S.mf || {}, a1 = mf[cur + '.' + f.k + 'F'] != null ? mf[cur + '.' + f.k + 'F'] : todayRu(), b1 = mf[cur + '.' + f.k + 'T'] != null ? mf[cur + '.' + f.k + 'T'] : yearAheadRu(); return !dateOk(a1) || !dateOk(b1) || dateNum(b1) < dateNum(a1); }
+      var gLab = S.dl === 'gedit' && sel && !RICHW[sel.id] ? (GEDIT_F[tgKind(sel.id)] || GEDIT_F.p)[cur] : '', gFx = gLab ? gField(sel, gLab) : null;
+      var formMissing = !!(gFx && (formVal('val') === String(gFx.get() || '').trim() || !gFx.ok(formVal('val')))) || !!(cfg && cfg.form && FORMS().some(function (f) { if (f.showIf && formVal(f.showIf) !== '1') return false; if (f.t === 'range') return rangeBad(f); if (f.mask === 'date') return !dateOk(formVal(f.k)); return f.req && !formVal(f.k); }));
       return {
-        hasSearch: !!(cfg && cfg.finePick), sVal: S.ds || '', setS: function (ev) { self.setState({ ds: ev && ev.target ? ev.target.value : String(ev || ''), dc: 0, fa: '' }); },
+        hasSearch: !!(cfg && cfg.finePick), sVal: S.ds || '', setS: function (ev) { self.setState({ ds: ev && ev.target ? ev.target.value : String(ev || ''), dc: -1, fa: '' }); },
         emptyList: !!(cfg && cfg.finePick && fl && fl.length === 0),
         hasAmt: !!(cfg && cfg.finePick && frange), amtVal: famt ? '$' + String(famt).replace(/\D/g, '') : '', amtHint: frange ? frange[1] : '',
         amtRing: aerr ? '#FF99A4' : '#60CDFF', amtNote: aerr || 'В пределах кодекса: ' + (frange ? frange[1] : ''), amtNoteC: aerr ? '#FF99A4' : c.text2,
         setAmt: function (ev) { self.setState({ fa: String((ev && ev.target ? ev.target.value : String(ev || '')).replace(/\D/g, '').slice(0, 5)) }); },
         hasForm: !!(cfg && cfg.form),
-        formTypes: cfg && cfg.form ? (S.dl === 'tag' ? TAG_ACC : S.dl === 'gedit' ? (GEDIT_F[tgKind(sel && sel.id)] || GEDIT_F.p) : MARK_TYPES).map(function (t, i) { var on = i === cur; return { label: t, bg: on ? '#60CDFF' : '#3A3A3A', fg: on ? '#0B2B3A' : '#FFFFFF', pick: function () { self.setState({ dc: i, pq: '' }); } }; }) : [],
+        gNow: gFx ? String(gFx.get() || '') : (S.dl === 'gedit' && sel && RICHW[sel.id] ? wNow(sel, wTabs(sel)[cur]) : null), /* MDT: «Сейчас записано» in «Изменить данные» */
+        formTypes: cfg && cfg.form ? (S.dl === 'tag' ? TAG_ACC : S.dl === 'gedit' ? (sel && RICHW[sel.id] ? wTabs(sel) : (GEDIT_F[tgKind(sel && sel.id)] || GEDIT_F.p)) : (S.dl === 'dsus' || S.dl === 'dsei') ? [] : MARK_TYPES).map(function (t, i) { var on = i === cur; return { label: t, bg: on ? '#60CDFF' : '#3A3A3A', fg: on ? '#0B2B3A' : '#FFFFFF', pick: function () { self.setState({ dc: i, pq: '' }); } }; }) : [],
         formFields: cfg && cfg.form ? FORMS().filter(function (f) { return !f.showIf || formVal(f.showIf) === '1'; }).map(function (f) {
-          var key = cur + '.' + f.k, mf = S.mf || {}, v = mf[key] != null ? mf[key] : (f.t === 'chips' ? f.o[0] : (f.def || ''));
+          var key = cur + '.' + f.k, mf = S.mf || {}, v = mf[key] != null ? mf[key] : (f.t === 'chips' && !f.nodef ? f.o[0] : (f.def || ''));
           function setv(val) { var o = Object.assign({}, S.mf || {}); o[key] = val; self.setState({ mf: o }); }
           var out = { label: f.label + (f.req ? ' *' : ''), isChips: f.t === 'chips', isText: f.t === 'text', isArea: f.t === 'area', isPerson: f.t === 'person', isAward: f.t === 'award', isRange: f.t === 'range', isToggle: f.t === 'toggle', hint: f.hint || '', val: v,
             set: function (ev) { var rv = ev && ev.target ? ev.target.value : String(ev || ''); setv(f.mask === 'date' ? dateMask(rv) : rv); },
             chips: (f.o || []).map(function (op) { var on = op === v; return { label: op, bg: on ? '#60CDFF' : '#3A3A3A', fg: on ? '#0B2B3A' : '#FFFFFF', pick: function () { setv(op); } }; }) };
           if (f.t === 'person') {
             var q = String(S.pq || '').toLowerCase().trim();
+            if (f.pool === 'people') {
+              var qq = String(S.pq || '').toLowerCase().trim(), raw2 = String(S.pq || '').trim();
+              out.chosen = !!v; out.notChosen = !v; out.pName = wPerson(v)[0]; out.pNoMe = true; out.pPh = 'Имя, фамилия, номер записи (CIT-…) или телефон';
+              out.pHintText = 'Введите имя, чтобы выбрать человека из базы (появится ссылка на карточку), или запишите как есть, если его нет в MDC.';
+              out.pClear = function () { setv(''); self.setState({ pq: '' }); }; out.pQ = S.pq || ''; out.pSet = function (ev) { self.setState({ pq: ev && ev.target ? ev.target.value : String(ev || '') }); };
+              out.pList = !qq ? [] : DB.filter(function (x) { return x.type === 'person' && !x.nosearch && (x.title + ' ' + (x.code || '') + ' ' + (x.keys || '')).toLowerCase().indexOf(qq) >= 0; }).slice(0, 5).map(function (x) { return { name: x.title, sub: (x.code || '') + (x.sub ? ' · ' + x.sub : ''), pick: function () { setv(x.id); self.setState({ pq: '' }); } }; });
+              if (raw2) out.pList = out.pList.concat([{ name: 'Записать как есть: «' + raw2 + '»', sub: 'нет в MDC', pick: function () { setv('free:' + raw2); self.setState({ pq: '' }); } }]);
+              out.pEmpty = false; out.pHint = !qq; out.pMe = function () {};
+              return out;
+            }
             out.chosen = !!v; out.notChosen = !v; out.pName = v === 'me' ? 'Вы' : (String(v).indexOf('free:') === 0 ? String(v).slice(5) : (v ? EMPT[v] : '')); out.notMe = v !== 'me'; out.pMe = function () { setv('me'); self.setState({ pq: '' }); };
             out.pClear = function () { setv(''); self.setState({ pq: '' }); };
             out.pQ = S.pq || ''; out.pSet = function (ev) { self.setState({ pq: ev && ev.target ? ev.target.value : String(ev || '') }); };
@@ -685,7 +889,7 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
             var rawq = String(S.pq || '').trim(); if (rawq) out.pList = out.pList.concat([{ name: 'Записать как есть: «' + rawq + '»', sub: 'без ссылки', pick: function () { setv('free:' + rawq); self.setState({ pq: '' }); } }]); out.pEmpty = false; out.pHint = !q;
           }
           if (f.t === 'range') {
-            var fv = mf[cur + '.' + f.k + 'F'] != null ? mf[cur + '.' + f.k + 'F'] : '20.11.2026', tv = mf[cur + '.' + f.k + 'T'] != null ? mf[cur + '.' + f.k + 'T'] : '20.11.2027';
+            var fv = mf[cur + '.' + f.k + 'F'] != null ? mf[cur + '.' + f.k + 'F'] : todayRu(), tv = mf[cur + '.' + f.k + 'T'] != null ? mf[cur + '.' + f.k + 'T'] : yearAheadRu();
             function setr(sfx, val) { var o = Object.assign({}, S.mf || {}); o[cur + '.' + f.k + sfx] = dateMask(val); self.setState({ mf: o }); }
             out.fromVal = fv; out.toVal = tv; out.setFrom = function (ev) { setr('F', ev && ev.target ? ev.target.value : String(ev || '')); }; out.setTo = function (ev) { setr('T', ev && ev.target ? ev.target.value : String(ev || '')); };
             var rerr = (fv.length === 10 && !dateOk(fv)) || (tv.length === 10 && !dateOk(tv)) ? 'Неверная дата' : (dateOk(fv) && dateOk(tv) && dateNum(tv) < dateNum(fv) ? 'Дата окончания раньше начала' : '');
@@ -725,57 +929,76 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
         camMeta: (function () { if (!(cfg && cfg.cam && sel)) return ''; var L = camDayList(sel.id, S.cd || 0), rc = L[S.cr || 0]; return rc ? camDate(S.cd || 0) + ' · ' + camHM(rc.start) + ' – ' + camHM(rc.start + rc.dur) + ' · ' + rc.kind + ' · ' + rc.place : 'В этот день записей нет'; })(),
         camQ: S.cq || '', setCamQ: function (ev) { self.setState({ cq: ev && ev.target ? ev.target.value : String(ev || '') }); },
         camLines: (function () { if (!(cfg && cfg.cam && sel)) return []; var L = camDayList(sel.id, S.cd || 0), rc = L[S.cr || 0]; if (!rc) return []; var q = String(S.cq || '').toLowerCase().trim(); return camRecLines(sel.id, rc).filter(function (l) { return !q || l[2].toLowerCase().indexOf(q) >= 0; }).map(function (l) { return { time: '[' + l[0] + ']', text: (l[1] === 'me' ? '* ' : '') + l[2], color: l[1] === 'me' ? '#E58FC0' : l[1] === 'say' ? '#F2F2F2' : '#B5B5B5' }; }); })(),
-        open: !!cfg, title: cfg ? (S.dl === 'dsus' || S.dl === 'dsei' ? cfg.title + ': ' + (S.dki || '') : S.dl === 'tagacc' ? 'Тег «' + ((tagsOf(sel && sel.id)[S.tgi || 0] || {}).n || '') + '»' : cfg.title) : '', text: cfg ? (typeof cfg.text === 'function' ? cfg.text(PX) : cfg.text) : '',
-        hasChoices: ch.length > 0, choices: ch, hasHist: !!(cfg && cfg.hist), hist: cfg && cfg.hist ? ((S.hl || {})[sel && sel.id] || []).concat(PX.hist || cfg.hist).map(function (h) { return { when: h[0], what: h[1] }; }) : [],
+        wText: S.dl === 'gedit' && sel && RICHW[sel.id] ? 'Меняйте статус оружия, у кого оно найдено и где хранится — карточка обновится сразу, изменение попадёт в журнал. Владелец, постановка на учёт и лицензия меняются в игре: при покупке и продаже в Ammu-Nation.' : '',
+        open: !!cfg, title: cfg ? (S.dl === 'dsus' || S.dl === 'dsei' || S.dl === 'drest' ? cfg.title + ': ' + (S.dki || '') : S.dl === 'tagacc' ? 'Тег «' + ((tagsOf(sel && sel.id)[S.tgi || 0] || {}).n || '') + '»' : cfg.title) : '', text: cfg ? (cfg.hist && !histList.length ? 'По этой записи изменений пока нет.' : emptyPick ? (cfg.fines ? 'Неоплаченных штрафов нет, отменять нечего.' : cfg.crimes ? 'Действующих записей об аресте нет, аннулировать нечего.' : 'В личном деле нет записей.') : typeof cfg.text === 'function' ? cfg.text(PX) : cfg.text) : '',
+        hasChoices: ch.length > 0, choices: ch, hasHist: !!(cfg && cfg.hist), hist: histList.map(function (h) { return { when: h[0], what: h[1] }; }),
         hasInput: !!(cfg && cfg.input), inLabel: cfg && cfg.input && ch[cur] ? 'Новое значение · ' + ch[cur].label : '', inHint: cfg && cfg.input ? EDIT_FMT[cur] : '', inVal: S.dv || '',
         inErr: cfg && cfg.input ? (S.dv ? editCheck(cur, S.dv) : '') : '', inRing: cfg && cfg.input && S.dv ? (editCheck(cur, S.dv) && !(cur === 1 && String(S.dv).length < 10 || cur === 2 && String(S.dv).length < 8) ? '#FF99A4' : '#60CDFF') : c.stroke,
         inNote: cfg && cfg.input ? editNote(cur, S.dv, ch[cur] && ch[cur].note) : '',
         inNoteC: cfg && cfg.input ? (S.dv && editCheck(cur, S.dv) ? (cur === 1 && String(S.dv).length < 10 || cur === 2 && String(S.dv).length < 8 ? c.text2 : '#FF99A4') : S.dv && cur === 1 ? '#6CCB5F' : c.text2) : c.text2,
-        primOp: cfg && ((cfg.input && editCheck(cur, S.dv)) || (cfg.reason && !String(S.dr || '').trim()) || (cfg.finePick && aerr) || formMissing || (cfg.veh && cur === 0 && !S.vs)) ? '0.4' : '1',
+        primOp: cfg && (emptyPick || needPick || (cfg.input && editCheck(cur, S.dv)) || (cfg.reason && !String(S.dr || '').trim()) || (cfg.finePick && aerr) || formMissing || (cfg.veh && cur === 0 && !S.vs)) ? '0.4' : '1',
         setIn: function (ev) { self.setState({ dv: editMask(cur, ev && ev.target ? ev.target.value : String(ev || '')) }); },
-        askReason: !!(cfg && cfg.reason), reason: S.dr || '', setReason: function (ev) { self.setState({ dr: ev && ev.target ? ev.target.value : String(ev || '') }); },
+        askReason: !!(cfg && (cfg.reason || cfg.note)), reasonPh: cfg && cfg.note && !cfg.reason ? cfg.note : 'Причина (попадёт в журнал действий)', reasonLabel: cfg && cfg.note && !cfg.reason ? 'Комментарий' : 'Причина', reason: S.dr || '', setReason: function (ev) { self.setState({ dr: ev && ev.target ? ev.target.value : String(ev || '') }); },
         primary: cfg ? cfg.primary : '', cancelText: 'Отмена', hasCancel: !!(cfg && !cfg.noCancel),
         primBg: cfg && cfg.danger ? '#C42B1C' : '#60CDFF', primFg: cfg && cfg.danger ? '#FFFFFF' : '#0B2B3A',
         close: function () { self.setState({ dl: null, dc: 0, dr: '', dv: '', ds: '', fa: '', mf: {}, pq: '', vs: '', vq: '' }); },
-        confirm: function () { if (cfg.reason && !String(S.dr || '').trim()) return; if (cfg.input && editCheck(cur, S.dv)) return; if (cfg.finePick && aerr) return; if (formMissing) return; if (cfg.veh && cur === 0 && !S.vs) return; var lab = ch[cur] ? ch[cur].label : '', note = ch[cur] ? ch[cur].note : '', why = String(S.dr || '').trim(), nw = String(S.dv || '').trim(), line = null;
+        confirm: function () { var nowD0 = todayRu(); if (emptyPick || needPick) return; if (cfg.reason && !String(S.dr || '').trim()) return; if (cfg.input && editCheck(cur, S.dv)) return; if (cfg.finePick && aerr) return; if (formMissing) return; if (cfg.veh && cur === 0 && !S.vs) return; var lab = ch[cur] ? ch[cur].label : '', note = ch[cur] ? ch[cur].note : '', why = String(S.dr || '').trim(), nw = String(S.dv || '').trim(), line = null;
           if (S.dl === 'fine' || S.dl === 'vfine') { lab = lab + ' · $' + String(famt).replace(/\D/g, ''); line = 'Выписан штраф: ' + lab; }
+          /* MDT: issued / cancelled fines, annulled arrests and SAN GANG entries show up in the card itself */
+          if ((S.dl === 'fine' || S.dl === 'vfine') && sel) {
+            var fpick = FINE_LIST()[cur], fsum = parseInt(String(famt).replace(/\D/g, ''), 10) || 0;
+            if (fpick) {
+              var fcode = fpick[0].split(' ').slice(0, 2).join(' '), fname = fpick[0].split(' ').slice(2).join(' '), frc = 'TV' + String.fromCharCode(65 + Math.floor(Math.random() * 26)) + String(1000 + Math.floor(Math.random() * 9000));
+              var fnew = { date: nowD0, time: nowHM(), code: fcode, name: fname, receipt: frc, vehicle: 'без ТС', who: mockProfile.name, init: activeInitials(), color: mockProfile.color || '#3F7104', dept: mockProfile.agencyRu || 'Департамент полиции Лос-Сантоса', sum: fsum, st: 'unpaid' };
+              if (S.dl === 'fine' && RICH[sel.id]) RICH[sel.id].fines = [fnew].concat(RICH[sel.id].fines);
+              if (S.dl === 'vfine' && RICHV[sel.id]) {
+                RICHV[sel.id].fines = [{ date: nowD0, time: nowHM(), code: fcode, name: fname, receipt: frc, who: mockProfile.name, sum: fsum, st: 'unpaid' }].concat(RICHV[sel.id].fines);
+                var vown = RICH[RICHV[sel.id].owner]; if (vown) vown.fines = [Object.assign({}, fnew, { vehicle: sel.title + ' ' + (sel.plate || '') })].concat(vown.fines);
+              }
+            }
+          }
+          if (S.dl === 'cfine' && sel && RICH[sel.id]) { var fdue = RICH[sel.id].fines.filter(function (x) { return x.st !== 'paid'; })[cur]; if (fdue) { RICH[sel.id].fines = RICH[sel.id].fines.filter(function (x) { return x !== fdue; }); Object.keys(RICHV).forEach(function (vk) { RICHV[vk].fines = RICHV[vk].fines.filter(function (x) { return x.receipt !== fdue.receipt; }); }); } }
+          if (S.dl === 'void' && sel && RICH[sel.id]) { var cv0 = RICH[sel.id].crimes.filter(function (x) { return !x.voided; })[cur]; if (cv0) { if (cv0.tag === 'АРЕСТ' && RICH[sel.id].strikes > 0) RICH[sel.id].strikes -= 1; cv0.voided = true; cv0.active = false; cv0.pinned = false; cv0.status = 'Аннулировано · ' + why; } }
+          if (S.dl === 'gang' && sel && RICH[sel.id] && cur === 0) RICH[sel.id].gang = [lab, 'внесён ' + nowD0];
           if (S.dl === 'cfine') line = 'Отменён штраф: ' + lab + ' · причина: ' + why;
           if (S.dl === 'void') line = 'Аннулирована запись: ' + lab + ' · причина: ' + why;
           if (S.dl === 'edit') line = 'Заявка на изменение «' + lab + '»: ' + (note || '—') + ' → ' + nw + ' · причина: ' + why;
-          var jr2 = Object.assign({}, S.jr || {}), nowD = '20.11.2026';
+          var jr2 = Object.assign({}, S.jr || {}), nowD = todayRu();
           if (S.dl === 'mark') { var fk = formVal('kind'), K2 = MARK_KIND[cur], ttl = '', parts = [], dsc = formVal('desc'), whoN = formVal('who') === 'me' ? 'Вы' : (formVal('who').indexOf('free:') === 0 ? formVal('who').slice(5) : (EMPT[formVal('who')] || 'Вы')), dt = nowD, visF = (cur === 2 || cur === 4) && formVal('vis') === '1';
-            if (cur === 0) { ttl = fk + ' · ' + formVal('title'); parts.push(dsc); var mfx = S.mf || {}; parts.push('Действует: с ' + (mfx['0.untilF'] != null ? mfx['0.untilF'] : '20.11.2026') + ' по ' + (mfx['0.untilT'] != null ? mfx['0.untilT'] : '20.11.2027') + '.'); }
+            if (cur === 0) { ttl = fk + ' · ' + formVal('title'); parts.push(dsc); var mfx = S.mf || {}; parts.push('Действует: с ' + (mfx['0.untilF'] != null ? mfx['0.untilF'] : todayRu()) + ' по ' + (mfx['0.untilT'] != null ? mfx['0.untilT'] : yearAheadRu()) + '.'); }
             if (cur === 1) { var A = awById(formVal('aw')); ttl = A.n; parts.push(dsc); dt = formVal('date') || nowD; var aw2 = Object.assign({}, S.aw || {}); if (sel) aw2[sel.id] = [[A.id, dt, whoN, dsc]].concat(aw2[sel.id] || []); self.setState({ aw: aw2 }); }
             if (cur === 2) { ttl = 'Характеристика'; parts.push(dsc); if (formVal('period')) parts.push('Период: ' + formVal('period') + '.'); }
             if (cur === 3) { ttl = formVal('course') + ' · ' + fk.toLowerCase(); if (dsc) parts.push(dsc); dt = formVal('date') || nowD; }
-            if (cur === 4) { ttl = formVal('title'); parts.push(dsc); dt = formVal('date') || nowD; if (formVal('per') === '1') { var mfq = S.mf || {}; parts.push('Срок: с ' + (mfq['4.rngF'] != null ? mfq['4.rngF'] : '20.11.2026') + ' по ' + (mfq['4.rngT'] != null ? mfq['4.rngT'] : '20.11.2027') + '.'); } }
+            if (cur === 4) { ttl = formVal('title'); parts.push(dsc); dt = formVal('date') || nowD; if (formVal('per') === '1') { var mfq = S.mf || {}; parts.push('Срок: с ' + (mfq['4.rngF'] != null ? mfq['4.rngF'] : todayRu()) + ' по ' + (mfq['4.rngT'] != null ? mfq['4.rngT'] : yearAheadRu()) + '.'); } }
             line = 'Личное дело: ' + MARK_TYPES[cur] + ' · ' + ttl; if (sel) jr2[sel.id] = [[dt, K2, ttl, parts.join(' '), whoN, visF]].concat(jr2[sel.id] || []); self.setState({ mf: {}, pq: '' }); }
           if (S.dl === 'rank') { line = 'Ранг изменён на «' + lab + '» · причина: ' + why; if (sel) { jr2[sel.id] = [[nowD, 'train', 'Изменён ранг', 'Новый ранг: ' + lab + '. ' + why, 'Вы']].concat(jr2[sel.id] || []); } var rk = Object.assign({}, S.rk || {}); if (sel) rk[sel.id] = lab; self.setState({ rk: rk }); }
           if (S.dl === 'susp') { line = 'Отстранён от службы · причина: ' + why; if (sel) { jr2[sel.id] = [[nowD, 'warn', 'Отстранение от службы', why, 'Вы']].concat(jr2[sel.id] || []); var sp = Object.assign({}, S.sp || {}); sp[sel.id] = true; self.setState({ sp: sp }); } }
           if ((S.dl === 'sub' || S.dl === 'unsub') && sel) { var sb = Object.assign({}, S.sb || {}); sb[sel.id] = S.dl === 'sub'; line = S.dl === 'sub' ? 'Оформлена подписка на изменения в деле' : 'Подписка на изменения отменена'; self.setState({ sb: sb }); }
           if (S.dl === 'veh' && sel) { var vh = Object.assign({}, S.vh || {}); var nv = cur === 1 ? '' : (FLEET.filter(function (f) { return f.id === S.vs; }).map(vLbl)[0] || ''); lab = cur === 1 ? 'Без закрепления' : nv; vh[sel.id] = nv; line = cur === 1 ? 'Снято закрепление за служебным транспортом' : 'Закреплён служебный транспорт: ' + nv; self.setState({ vh: vh }); }
           if (S.dl === 'jdel' && sel) { var jt = jrOf(sel.id)[cur]; if (jt) { var jd = Object.assign({}, S.jd || {}); jd[sel.id] = (jd[sel.id] || []).concat([jKey(jt)]); self.setState({ jd: jd }); line = 'Удалена запись журнала: ' + jt[2] + ' · причина: ' + why; } }
-          if ((S.dl === 'dsus' || S.dl === 'dsei') && sel) { var dd2 = Object.assign({}, S.dd || {}); dd2[sel.id + '|' + S.dki] = S.dl === 'dsus' ? 'sus' : 'sei'; self.setState({ dd: dd2 }); line = (S.dl === 'dsus' ? 'Приостановлен документ: ' : 'Изъят документ: ') + S.dki + ' · причина: ' + why; }
-          if (S.dl === 'gedit' && sel) { var gf = (GEDIT_F[tgKind(sel.id)] || GEDIT_F.p)[cur]; line = 'Заявка на изменение «' + gf + '»: ' + formVal('val') + ' · причина: ' + formVal('desc'); self.setState({ mf: {} }); }
+          if ((S.dl === 'dsus' || S.dl === 'dsei') && sel) { var dd2 = Object.assign({}, S.dd || {}), du2 = Object.assign({}, S.du || {}), dk = sel.id + '|' + S.dki, until = formVal('until'); dd2[dk] = S.dl === 'dsus' ? 'sus' : 'sei'; du2[dk] = until; self.setState({ dd: dd2, du: du2, mf: {} }); line = (S.dl === 'dsus' ? 'Приостановлен документ: ' : 'Изъят документ: ') + S.dki + ' до ' + until + ' · причина: ' + formVal('desc'); }
+          if (S.dl === 'drest' && sel) { var dd3 = Object.assign({}, S.dd || {}), du3 = Object.assign({}, S.du || {}), dk3 = sel.id + '|' + S.dki, was = dd3[dk3]; delete dd3[dk3]; delete du3[dk3]; self.setState({ dd: dd3, du: du3 }); line = (was === 'sei' ? 'Отменено изъятие: ' : 'Документ возвращён: ') + S.dki + ' · причина: ' + why; }
+          if (S.dl === 'gedit' && sel && RICHW[sel.id]) { line = wApply(sel, wTabs(sel)[cur], formVal); self.setState({ mf: {} }); }
+          else if (S.dl === 'gedit' && sel) { var gf = (GEDIT_F[tgKind(sel.id)] || GEDIT_F.p)[cur], gx = gField(sel, gf), gOld = String(gx.get() || ''), gNew = formVal('val'); if (!gx.set(gNew)) return; line = 'Изменено «' + gf + '»: ' + (gOld || '—') + ' → ' + gNew + ' · причина: ' + formVal('desc'); self.setState({ mf: {} }); }
           if (S.dl === 'wanted') line = 'Создан черновик ориентировки: ' + lab.toLowerCase() + ' · ' + why;
-          if (S.dl === 'tocase') line = 'Добавлено в дело: ' + lab;
+          if (S.dl === 'tocase') line = 'Открыто в «Делах» для привязки: ' + lab;
           if (S.dl === 'warr') line = 'Запрошен ' + lab.toLowerCase() + ' · ' + why;
-          if (S.dl === 'seen') line = 'Отметка «Замечен»: ' + lab.toLowerCase() + ' · ' + why;
+          if (S.dl === 'seen') line = 'Отметка «Замечен»: ' + lab.toLowerCase() + (why ? ' · ' + why : '');
           if (S.dl === 'share') line = 'Карточкой поделились: ' + lab.toLowerCase();
           if (S.dl === 'gang') line = 'Внесён в SAN GANG: ' + lab + ' · ' + why;
-          if (S.dl === 'tag' && sel) { var tgn = formVal('tag'), mfT = S.mf || {}, per = mfT[cur + '.per'] === '1', gw = cur === 2 ? formVal('grp') : '', ent = { n: tgn, a: cur, by: 'Вы', d: nowD, note: formVal('desc'), until: per ? (mfT[cur + '.rngT'] != null ? mfT[cur + '.rngT'] : '20.11.2027') : '', g: gw === 'me' ? 'Вы' : (EMPT[gw] || '') }; var tg2 = Object.assign({}, S.tg || {}); tg2[sel.id] = [ent].concat(tagsOf(sel.id)); self.setState({ tg: tg2, mf: {}, pq: '' }); line = 'Повешен тег «' + tgn + '» · доступ: ' + TAG_ACC[cur].toLowerCase() + (per ? ' · до ' + ent.until : ''); }
+          if (S.dl === 'tag' && sel) { var tgn = formVal('tag'), mfT = S.mf || {}, per = mfT[cur + '.per'] === '1', gw = cur === 2 ? formVal('grp') : '', ent = { n: tgn, a: cur, by: 'Вы', d: nowD, note: formVal('desc'), until: per ? (mfT[cur + '.rngT'] != null ? mfT[cur + '.rngT'] : yearAheadRu()) : '', g: gw === 'me' ? 'Вы' : (EMPT[gw] || '') }; var tg2 = Object.assign({}, S.tg || {}); tg2[sel.id] = [ent].concat(tagsOf(sel.id)); self.setState({ tg: tg2, mf: {}, pq: '' }); line = 'Повешен тег «' + tgn + '» · доступ: ' + TAG_ACC[cur].toLowerCase() + (per ? ' · до ' + ent.until : ''); }
           if (S.dl === 'tagacc' && sel) { var tl = tagsOf(sel.id).slice(), t0 = tl[S.tgi || 0]; if (t0) { if (cur === 3) { tl.splice(S.tgi || 0, 1); line = 'Снят тег «' + t0.n + '» · причина: ' + why; } else { tl[S.tgi || 0] = Object.assign({}, t0, { a: cur }); line = 'Тег «' + t0.n + '»: доступ — ' + TAG_ACC[cur].toLowerCase() + ' · причина: ' + why; } var tg3 = Object.assign({}, S.tg || {}); tg3[sel.id] = tl; self.setState({ tg: tg3 }); } }
           self.setState({ jr: jr2 });
           var hl = Object.assign({}, S.hl || {});
-          if (line && sel) { var d = new Date(); hl[sel.id] = [['20.11, ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), line + ' · Вы']].concat(hl[sel.id] || []); }
+          if (line && sel) { var d = new Date(); hl[sel.id] = [[dayRu() + ', ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), line + ' · Вы']].concat(hl[sel.id] || []); }
           self.setState({ dl: null, dc: 0, dr: '', dv: '', ds: '', fa: '', vs: '', vq: '', hl: hl, tst: typeof cfg.done === 'function' ? cfg.done(lab) : (cfg.done || '') }); },
         hasToast: !!S.tst, toast: S.tst || '', closeToast: function () { self.setState({ tst: '' }); },
-        call: function () { self.setState({ dl: 'call', dc: 0, dr: '', tst: '' }); }, fine: function () { self.setState({ dl: 'fine', dc: 0, dr: '', tst: '', mn: false }); },
-        print: function () { self.setState({ dl: 'print', dc: 0, dr: '', tst: '', mn: false }); }, cfine: function () { self.setState({ dl: 'cfine', dc: 0, dr: '', tst: '', mn: false }); },
-        void: function () { self.setState({ dl: 'void', dc: 0, dr: '', tst: '', mn: false }); }, edit: function () { self.setState({ dl: 'edit', dc: 0, dr: '', tst: '', mn: false }); },
+        call: function () { self.setState({ dl: 'call', dc: 0, dr: '', tst: '' }); }, fine: function () { self.setState({ dl: 'fine', dc: -1, dr: '', tst: '', mn: false }); },
+        print: function () { self.setState({ dl: 'print', dc: 0, dr: '', tst: '', mn: false }); }, cfine: function () { self.setState({ dl: 'cfine', dc: -1, dr: '', tst: '', mn: false }); },
+        void: function () { self.setState({ dl: 'void', dc: -1, dr: '', tst: '', mn: false }); }, edit: function () { self.setState({ dl: 'edit', dc: 0, dr: '', tst: '', mn: false }); },
         jdel: function () { self.setState({ dl: 'jdel', dc: 0, dr: '', tst: '', mn: false }); }, mark: function () { self.setState({ dl: 'mark', dc: 0, dr: '', tst: '', mn: false, mf: {}, pq: '' }); }, rank: function () { self.setState({ dl: 'rank', dc: 0, dr: '', tst: '', mn: false }); }, susp: function () { self.setState({ dl: 'susp', dc: 0, dr: '', tst: '', mn: false }); },
         showHist: function () { self.setState({ dl: 'hist', dc: 0, dr: '', tst: '', mn: false }); },
-        wanted: function () { self.setState({ dl: 'wanted', dc: 0, dr: '', tst: '', mn: false }); }, tocase: function () { self.setState({ dl: 'tocase', dc: 0, dr: '', tst: '', mn: false }); }, warr: function () { self.setState({ dl: 'warr', dc: 0, dr: '', tst: '', mn: false }); }, seen: function () { self.setState({ dl: 'seen', dc: 0, dr: '', tst: '', mn: false }); }, share: function () { self.setState({ dl: 'share', dc: 0, dr: '', tst: '', mn: false }); }, vfine: function () { self.setState({ dl: 'vfine', dc: 0, dr: '', tst: '', mn: false }); }, gang: function () { self.setState({ dl: 'gang', dc: 0, dr: '', tst: '', mn: false }); }
+        wanted: function () { self.setState({ dl: 'wanted', dc: -1, dr: '', tst: '', mn: false }); }, tocase: function () { self.setState({ dl: 'tocase', dc: -1, dr: '', tst: '', mn: false }); }, warr: function () { self.setState({ dl: 'warr', dc: -1, dr: '', tst: '', mn: false }); }, seen: function () { self.setState({ dl: 'seen', dc: -1, dr: '', tst: '', mn: false }); }, share: function () { self.setState({ dl: 'share', dc: 0, dr: '', tst: '', mn: false }); }, vfine: function () { self.setState({ dl: 'vfine', dc: -1, dr: '', tst: '', mn: false }); }, gang: function () { self.setState({ dl: 'gang', dc: -1, dr: '', tst: '', mn: false }); }
       };
     }
     var groups = ['person', 'vehicle', 'weapon', 'org', 'place'].map(function (t) {
@@ -799,7 +1022,7 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
       : { has: true, full: true, restricted: false, no: BR.no, bg: TONES.red[0], fg: TONES.red[1], iconBg: '#C42B1C', icon: 'M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 100-13zM10 8a2 2 0 100 4 2 2 0 100-4z',
         title: BR.vid + ' · BOLO ' + BR.no + (BR.armed ? ' · вооружён и опасен' : ''), text: 'За ' + BR.why + '. ' + BR.instr };
     if (sel) {
-      rec = { agencyLinks: agencyOf(sel), hasAgency: agencyOf(sel).length > 0, isRich: !!RICH[sel.id] && !(AGENCY && EMPX[sel.id]), isEmp: AGENCY && !!EMPX[sel.id], empMark: !AGENCY && !!EMPX[sel.id], empAg: agencyOf(sel)[0] || { name: '', hasLogo: false, logo: '', go: function () {} }, isRichV: !!RICHV[sel.id], isRichW: !!RICHW[sel.id], isRichO: !!RICHO[sel.id], isRichP: !!RICHP[sel.id], isPlain: !RICH[sel.id] && !RICHV[sel.id] && !RICHW[sel.id] && !RICHO[sel.id] && !RICHP[sel.id], isPerson: sel.type === 'person', isVehicle: sel.type === 'vehicle', isWeapon: sel.type === 'weapon', isOrg: sel.type === 'org', isPlace: sel.type === 'place', isLaw: sel.type === 'law',
+      rec = { id: sel.id /* MDT: header photo */, carImg: sel.type === 'vehicle' ? vehiclePhoto(sel.title, sel.sub) : '' /* MDT: own silhouette */, agencyLinks: agencyOf(sel), hasAgency: agencyOf(sel).length > 0, isRich: !!RICH[sel.id] && !(AGENCY && EMPX[sel.id]), isEmp: AGENCY && !!EMPX[sel.id], empMark: false /* MDT: no «Сотрудник · … · Открыть в Агентстве» banner */, empAg: agencyOf(sel)[0] || { name: '', hasLogo: false, logo: '', go: function () {} }, isRichV: !!RICHV[sel.id], isRichW: !!RICHW[sel.id], isRichO: !!RICHO[sel.id], isRichP: !!RICHP[sel.id], isPlain: !RICH[sel.id] && !RICHV[sel.id] && !RICHW[sel.id] && !RICHO[sel.id] && !RICHP[sel.id], isPerson: sel.type === 'person', isVehicle: sel.type === 'vehicle', isWeapon: sel.type === 'weapon', isOrg: sel.type === 'org', isPlace: sel.type === 'place', isLaw: sel.type === 'law',
         kindLabel: ({ person: 'ЧЕЛОВЕК · ' + sel.code, vehicle: 'ТРАНСПОРТ · DMV', weapon: 'ОРУЖИЕ · РЕЕСТР', org: 'ОРГАНИЗАЦИЯ', place: 'АДРЕС', law: 'СТАТЬЯ КОДЕКСА' })[sel.type],
         title: sel.title, sub: sel.sub, code: (sel.code || ''), plate: sel.plate,
         hasAlert: !!sel.alert, alert: sel.alert, alertBg: sel.alert ? TONES[sel.alertTone][0] : 'transparent', alertFg: sel.alert ? TONES[sel.alertTone][1] : c.text,
@@ -862,7 +1085,7 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
         orgLine: X.orgs.map(function (o) { return o[0]; }).join(' · '),
         orgLinks: agencyOf(sel),
         gangGo: function () { open('o_fdb'); },
-        gangText: X.gang ? X.gang[0] + ', ' + X.gang[1] : 'Не внесён',
+        gangText: X.gang ? X.gang[0] + ', ' + X.gang[1] : 'Не внесён', noGangText: /^Женщина/.test(sel.sub || '') ? 'Не внесена' : 'Не внесён' /* MDT: by gender */,
         hasBanner: !!X.banner, bannerTitle: X.banner ? X.banner[0] : '', bannerText: X.banner ? X.banner[1] : '', bannerCount: X.banner ? X.banner[2] : '', bannerBg: X.banner ? X.banner[3] : '', frame: X.banner ? '0 0 0 2px ' + X.banner[3] : 'none',
         code: sel.code, caption: sel.id.indexOf('e_') === 0 ? 'Сотрудник' : 'Номер записи', phone: X.phone,
         orgs: X.orgs.map(function (o) { return { name: o[0], color: o[1] }; }),
@@ -878,23 +1101,23 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
           var tagText = { 'АРЕСТ': 'Арест', 'РОЗЫСК': 'Розыск', 'ОБВИНЕНИЕ': 'Обвинение' }[cr.tag] || cr.tag;
           var ct = cr.active ? TONES.red : TONES.grey;
           var wi = NAME2ID[cr.who], di = NAME2ID[cr.dept];
-          return { whoLink: !!wi, whoPlain: !wi, whoGo: function () { if (wi) open(wi); }, deptGo: function () { if (di) open(di); }, tagText: tagText, chipBg: ct[0], chipFg: ct[1], date: cr.date.slice(0, 5) + '.' + cr.date.slice(8), time: cr.time, tag: cr.tag, tagBg: tagBg, pinned: cr.pinned, who: cr.who, whoInit: cr.init, whoColor: cr.color, dept: cr.dept,
+          return { whoLink: !!wi, whoPlain: !wi, whoGo: function () { if (wi) open(wi); }, deptGo: function () { if (di) open(di); }, deptLink: !!di, tagText: tagText, chipBg: ct[0], chipFg: ct[1], date: cr.date.slice(0, 5) + '.' + cr.date.slice(8), time: cr.time, tag: cr.tag, tagBg: tagBg, pinned: cr.pinned, who: cr.who, whoInit: cr.init, whoColor: cr.color, dept: cr.dept,
             status: cr.status, stColor: cr.active ? '#FF99A4' : c.text2, bg: cr.active ? 'rgba(229,72,77,0.07)' : 'transparent', edge: cr.active ? '#E5484D' : 'transparent',
             sep: i === crimes.length - 1 ? 'transparent' : c.stroke,
             charges: cr.charges.map(function (g) { var fel = g[2] === 'ПРЕСТУПЛЕНИЕ'; return { go: function () { open(lawId(g[0])); }, code: g[0], name: g[1], kind: fel ? 'преступление' : 'проступок', kindColor: (fel ? TONES.red[1] : TONES.amber[1]), kindBg: '', kindFg: '' }; }) };
         }),
         fineCount: String(X.fines.length),
         fineChips: [chip('Все', 'all', S.fineF, X.fines.length, 'fineF'), chip('Не оплачены', 'unpaid', S.fineF, X.fines.filter(function (f) { return f.st === 'unpaid'; }).length, 'fineF'), chip('Просроченные', 'overdue', S.fineF, X.fines.filter(function (f) { return f.st === 'overdue'; }).length, 'fineF'), chip('Оплаченные', 'paid', S.fineF, X.fines.filter(function (f) { return f.st === 'paid'; }).length, 'fineF')],
-        fines: fines.map(function (f, i) { var st = FS[f.st]; var fw = NAME2ID[f.who], fv = NAME2ID[f.vehicle]; return { lawGo: function () { open(lawId(f.code)); }, whoLink: !!fw, whoPlain: !fw, whoGo: function () { if (fw) open(fw); }, vehLink: !!fv, vehPlain: !fv, vehGo: function () { if (fv) open(fv); }, date: f.date.slice(0, 5) + '.' + f.date.slice(8), code: f.code, name: f.name, receipt: f.receipt, vehicle: f.vehicle, who: f.who, whoInit: f.init, whoColor: f.color, dept: f.dept, sum: money(f.sum), status: st[0], chipBg: TONES[st[1]][0], chipFg: TONES[st[1]][1], sep: i === fines.length - 1 ? 'transparent' : c.stroke }; }),
+        fines: fines.map(function (f, i) { var st = FS[f.st]; var fw = NAME2ID[f.who], fv = NAME2ID[f.vehicle]; return { time: f.time || '', lawGo: function () { open(lawId(f.code)); }, whoLink: !!fw, whoPlain: !fw, whoGo: function () { if (fw) open(fw); }, vehLink: !!fv, vehPlain: !fv, vehGo: function () { if (fv) open(fv); }, date: f.date.slice(0, 5) + '.' + f.date.slice(8), code: f.code, name: f.name, receipt: f.receipt, vehicle: f.vehicle, who: f.who, whoInit: f.init, whoColor: f.color, dept: f.dept, sum: money(f.sum), status: st[0], chipBg: TONES[st[1]][0], chipFg: TONES[st[1]][1], sep: i === fines.length - 1 ? 'transparent' : c.stroke }; }),
         noFines: fines.length === 0,
-        propCount: String(X.property.length), property: X.property.map(function (pr, i, arr) { return { go: function () { if (NAME2ID[pr[0]]) open(NAME2ID[pr[0]]); }, addr: pr[0], role: pr[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
+        propCount: String(X.property.length), property: X.property.map(function (pr, i, arr) { return { isLink: !!NAME2ID[pr[0]], plain: !NAME2ID[pr[0]] /* MDT: no record → plain text */, go: function () { if (NAME2ID[pr[0]]) open(NAME2ID[pr[0]]); }, addr: pr[0], role: pr[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
         vehCount: String(X.vehicles.length), vehicles: X.vehicles.map(function (v, i, arr) { var tt = v[3] === 'РОЗЫСК' ? TONES.red : TONES.grey; return { plate: v[0], model: v[1], vin: v[2], hasTag: !!v[3], tag: v[3] ? v[3].charAt(0) + v[3].slice(1).toLowerCase() : '', chipBg: tt[0], chipFg: tt[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke, tagBg: v[4], go: function () { if (v[5]) open(v[5]); } }; }),
         weapons: X.weapons.map(function (w) { return { model: w[0], serial: w[1], hasTag: !!w[2], tag: w[2] ? w[2].charAt(0) + w[2].slice(1).toLowerCase() : '', chipBg: (w[2] === 'ЛИЦЕНЗИЯ ДЕЙСТВУЕТ' ? TONES.green : TONES.red)[0], chipFg: (w[2] === 'ЛИЦЕНЗИЯ ДЕЙСТВУЕТ' ? TONES.green : TONES.red)[1], go: function () { if (w[3]) open(w[3]); } }; }), noWeapons: X.weapons.length === 0,
         docs: X.docs.map(function (d, i, arr) {
-          var nm = d.kind === 'DRIVER LICENSE' ? 'Водительские права' : 'Удостоверение личности';
-          var num = d.fields[0][1], exp = d.fields.filter(function (f) { return f[0] === 'EXP'; })[0];
-          var dst = (S.dd || {})[(sel && sel.id) + '|' + nm], dtone = dst === 'sei' ? TONES.red : dst === 'sus' ? TONES.amber : TONES.green;
-          return Object.assign({}, d, { chipTxt: dst === 'sei' ? 'Изъят' : dst === 'sus' ? 'Приостановлен' : 'Действует', canSus: !!d.canSuspend && !dst, canSei: !dst, sus: function () { self.setState({ dl: 'dsus', dki: nm, dc: 0, dr: '', tst: '', mn: false }); }, sei: function () { self.setState({ dl: 'dsei', dki: nm, dc: 0, dr: '', tst: '', mn: false }); }, name: nm, meta: '№ ' + num + (exp ? ' · действуют до ' + exp[1] : ''),
+          var nm = ({ 'DRIVER LICENSE': 'Водительские права', 'IDENTIFICATION CARD': 'Удостоверение личности', 'PASSPORT': 'Паспорт', 'WORK VISA': 'Рабочая виза' })[d.kind] || 'Удостоверение личности'; /* MDT: passport and visa were both «Удостоверение личности» */
+          var numF = d.fields.filter(function (f) { return !/^(EXP|LN|FN|DOB|SEX|ENT)$/.test(f[0]); })[0], num = numF ? numF[1] : '', exp = d.fields.filter(function (f) { return f[0] === 'EXP'; })[0];
+          var dkey = (sel && sel.id) + '|' + nm, dst = (S.dd || {})[dkey], dun = (S.du || {})[dkey] || ''; if (dst && dun && ruNum(dun) < ruNum(todayRu())) dst = null; /* MDT: the term is over — valid again */ var dtone = dst === 'sei' ? TONES.red : dst === 'sus' ? TONES.amber : TONES.green;
+          return Object.assign({}, d, { chipTxt: dst === 'sei' ? 'Изъят' + (dun ? ' до ' + dun : '') : dst === 'sus' ? 'Приостановлен' + (dun ? ' до ' + dun : '') : 'Действует', canSus: !!d.canSuspend && !dst, canSei: !dst, canRest: !!dst, restLabel: dst === 'sei' ? 'Отменить изъятие' : 'Вернуть', rest: function () { self.setState({ dl: 'drest', dki: nm, dc: 0, dr: '', tst: '', mn: false }); }, sus: function () { self.setState({ dl: 'dsus', dki: nm, dc: 0, dr: '', tst: '', mn: false }); }, sei: function () { self.setState({ dl: 'dsei', dki: nm, dc: 0, dr: '', tst: '', mn: false }); }, name: nm, meta: (num ? '№ ' + num : 'Номер не указан') + (exp ? (d.kind === 'DRIVER LICENSE' ? ' · действуют до ' : ' · действует до ') + exp[1] : ''),
             iconBg: d.kind === 'DRIVER LICENSE' ? '#B26A00' : '#3E8EDE', chipBg: dtone[0], chipFg: dtone[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke });
         }), docCount: String(X.docs.length), docArchive: String(X.docArchive),
         fp: X.fp, fpNote: X.fpNote, dna: X.dna,
@@ -916,14 +1139,14 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
         wantedAction: Y.wanted.action || (Y.wanted.tone === 'red' ? 'Снять розыск' : 'Объявить в розыск'),
         hasWanted: !!Y.wanted, wantedTitle: Y.wanted.title, wantedText: Y.wanted.text, wantedBy: Y.wanted.by, wantedDept: Y.wanted.dept, wantedDate: Y.wanted.date,
         wantedBg: TONES[Y.wanted.tone][0], wantedIcon: Y.wanted.tone === 'red' ? '#C42B1C' : Y.wanted.tone === 'blue' ? '#0078D4' : '#B26A00',
-        wantedByGo: function () { open(NAME2ID[Y.wanted.by]); }, wantedDeptGo: function () { open(NAME2ID[Y.wanted.dept]); },
+        wantedByGo: function () { open(NAME2ID[Y.wanted.by]); }, wantedDeptGo: function () { open(NAME2ID[Y.wanted.dept]); }, wantedDeptLink: !!NAME2ID[Y.wanted.dept],
         talon: Y.talon, dmv: Y.dmv.map(function (d, i, arr) { return { k: d[0], v: d[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
         ownersCount: String(Y.owners.length),
         owners: Y.owners.map(function (o, i, arr) { var oi = NAME2ID[o[0]]; return { n: String(arr.length - i), name: o[0], isLink: !!oi, plain: !oi, go: function () { if (oi) open(oi); }, from: o[1], to: o[2], toColor: o[2] === 'сейчас' ? c.text : c.text2, basis: o[3], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
         inspCount: String(Y.insp.length),
         insp: Y.insp.map(function (r, i, arr) { return { date: r[0].slice(0, 6) + r[0].slice(8), miles: r[1], color: r[2], sw: r[3], by: 'DMV', go: function () { open('o_dmv'); }, sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
         fineCount: String(Y.fines.length), debt: m2(vdebt), noFines: Y.fines.length === 0,
-        fines: Y.fines.map(function (f, i, arr) { var st = FS2[f.st]; var fw = NAME2ID[f.who]; return { date: f.date.slice(0, 5) + '.' + f.date.slice(8), code: f.code, name: f.name, receipt: f.receipt, who: f.who, whoLink: !!fw, whoPlain: !fw, whoGo: function () { if (fw) open(fw); }, lawGo: function () { open(lawId(f.code)); }, sum: m2(f.sum), status: st[0], chipBg: TONES[st[1]][0], chipFg: TONES[st[1]][1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
+        fines: Y.fines.map(function (f, i, arr) { var st = FS2[f.st]; var fw = NAME2ID[f.who]; return { time: f.time || '', date: f.date.slice(0, 5) + '.' + f.date.slice(8), code: f.code, name: f.name, receipt: f.receipt, who: f.who, whoLink: !!fw, whoPlain: !fw, whoGo: function () { if (fw) open(fw); }, lawGo: function () { open(lawId(f.code)); }, sum: m2(f.sum), status: st[0], chipBg: TONES[st[1]][0], chipFg: TONES[st[1]][1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
         comCount: String(Y.comments.length),
         comments: Y.comments.map(function (cm) { var pp = DB.filter(function (x) { return x.id === NAME2ID[cm[0]]; })[0]; return { who: pp ? pp.title : cm[0], init: pp ? pp.initials : '?', color: pp ? pp.color : '#5C6B70', when: cm[1], text: cm[2], go: function () { if (pp) open(pp.id); } }; }),
         info: info.map(function (f, i, arr) { var isM = f[2] === 'model'; return { k: f[0], v: f[1], isLink: isM, plain: !isM, hasSw: !!f[3], sw: f[3] || 'transparent', go: function () { if (isM) self.setState({ q: Y.make + ' ' + Y.model, type: 'vehicle', sel: null, open: false }); }, sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
@@ -939,10 +1162,10 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
       var WD = RICHW[sel.id], WOW = WD.owner ? DB.filter(function (x) { return x.id === WD.owner; })[0] : null;
       wv = {
         status: WD.status.map(function (s) { return { text: s[0], bg: TONES[s[1]][0], fg: TONES[s[1]][1] }; }),
-        hasAlert: !!WD.alert, alertTitle: WD.alert[0], alertText: WD.alert[1], alertBg: TONES[WD.alert[2]][0], alertIcon: WD.alert[2] === 'red' ? '#C42B1C' : '#B26A00',
+        hasAlert: !!WD.alert, alertTitle: WD.alert ? WD.alert[0] : '', alertText: WD.alert ? WD.alert[1] : '', alertBg: WD.alert ? TONES[WD.alert[2]][0] : 'transparent', alertIcon: WD.alert && WD.alert[2] === 'red' ? '#C42B1C' : WD.alert && WD.alert[2] === 'grey' ? '#6B6B6B' : '#B26A00',
         wantedAction: WD.wanted, serial: sel.serial, make: WD.make, model: WD.model, kindLine: WD.type + ' · ' + WD.cal,
         grid: [['Тип', WD.type], ['Калибр', WD.cal], ['Магазин', WD.mag], ['Год выпуска', WD.year]].map(function (g, i, arr) { return { k: g[0], v: g[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
-        info: [['Производитель', WD.make], ['Модель', WD.model], ['Серийный номер', sel.serial], ['Постановка на учёт', WD.reg], ['Лицензия владельца', WD.lic]].map(function (f, i, arr) { return { k: f[0], v: f[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
+        info: [['Производитель', WD.make], ['Модель', WD.model], ['Серийный номер', sel.serial], ['Постановка на учёт', WD.reg], ['Лицензия владельца', WD.lic]].concat(WD.found ? [['Найдено у', WD.found[0] + (WD.found[2] ? ' · ' + WD.found[2] : '') + ', ' + WD.found[3]]] : []).map(function (f, i, arr) { return { k: f[0], v: f[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
         ownersCount: String(WD.owners.length),
         owners: WD.owners.map(function (o, i, arr) { var oi = NAME2ID[o[0]]; return { n: String(arr.length - i), name: o[0], isLink: !!oi, plain: !oi, go: function () { if (oi) open(oi); }, from: o[1], to: o[2], toColor: o[2] === 'сейчас' ? c.text : c.text2, basis: o[3], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }).reverse(),
         ballCount: String(WD.ball.length),
@@ -981,7 +1204,7 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
         status: PD.status.map(function (s) { return { text: s[0], bg: TONES[s[1]][0], fg: TONES[s[1]][1] }; }),
         logoColor: PD.color, kindLine: PD.kind + ' · ' + PD.district, regLine: 'НЕДВИЖИМОСТЬ · КАДАСТР. № ' + PD.cad,
         hasAlert: !!PD.alert, alertTitle: PD.alert ? PD.alert[0] : '', alertText: PD.alert ? PD.alert[1] : '', alertBg: PD.alert ? TONES[PD.alert[2]][0] : 'transparent', alertIcon: '#B26A00',
-        grid: [['Тип', PD.kind], ['Площадь', PD.area], ['Комнат', PD.rooms], ['Год постройки', PD.year]].map(function (g, i, arr) { return { k: g[0], v: g[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
+        grid: [['Тип', PD.kind], ['Площадь', PD.area], [PD.kind === 'Гараж' ? 'Машиномест' : 'Комнат', PD.rooms]] /* MDT: no «Год постройки» */.map(function (g, i, arr) { return { k: g[0], v: g[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
         info: [['Адрес', PD.addr], ['Район', PD.district], ['Кадастровый номер', PD.cad], ['Оценочная стоимость', PD.cost], ['Налог на имущество', PD.tax], ['Последний осмотр', PD.insp]].map(function (f, i, arr) { return { k: f[0], v: f[1], sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
         own: pp2(PD.own), hasLinks: PD.links.length > 0, links: pp2(PD.links.map(function (l) { return [l[0], l[1], l[2]]; })),
         ev: PD.ev.map(function (j, i, arr) { return { date: j[0], text: j[1], dot: j[2] === 'amber' ? '#FCE100' : '#8A8A8A', sep: i === arr.length - 1 ? 'transparent' : c.stroke }; }),
@@ -991,7 +1214,7 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
 
     var tgl = sel ? tagsOf(sel.id).map(function (t, i) { var cl = TAG_COL[TAG_TONE[t.n] || 'grey']; return { name: t.n, bg: cl[0], fg: cl[1], lock: t.a > 0, title: t.n + ' · доступ: ' + TAG_ACC[t.a].toLowerCase() + (t.a === 2 && t.g ? ' · куратор ' + t.g : '') + (t.note ? ' · ' + t.note : '') + (t.until ? ' · до ' + t.until : ''), open: function () { self.setState({ dl: 'tagacc', tgi: i, dc: t.a, dr: '', tst: '', mn: false }); } }; }) : [];
     tgl = tgl.map(function (x, i) { x.i = i; x.rk = TAG_RANK[TAG_TONE[x.name] || 'grey']; return x; }).sort(function (a, b) { return a.rk - b.rk || a.i - b.i; });
-    var tgv = { canEdit: !!sel && tgKind(sel.id) !== 'p', edit: function () { self.setState({ dl: 'gedit', dc: 0, dr: '', tst: '', mn: false, mf: {}, pq: '' }); }, items: tgl, addLabel: tgl.length ? '+ Тег' : 'Повесить тег', add: function () { self.setState({ dl: 'tag', dc: 0, dr: '', tst: '', mn: false, mf: {}, pq: '' }); } };
+    var tgv = { canEdit: !!sel && tgKind(sel.id) !== 'p' && (GEDIT_F[tgKind(sel.id)] || []).length > 0, edit: function () { self.setState({ dl: 'gedit', dc: 0, dr: '', tst: '', mn: false, mf: {}, pq: '' }); }, items: tgl, addLabel: tgl.length ? '+ Тег' : 'Повесить тег', add: function () { self.setState({ dl: 'tag', dc: 0, dr: '', tst: '', mn: false, mf: {}, pq: '' }); } };
     var ucv = { has: false };
     if (sel && UC[sel.id] && S.vw === 'cur') {
       var UD = UC[sel.id];
@@ -1004,7 +1227,7 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
         audit: 'Открытие отметки пишется в журнал доступа · ' + UC_OP.views + ' просмотра за 30 дней' };
     }
     var vwNote = (sel && UC[sel.id] && S.vw) ? (S.vw === 'cur' ? 'Макет · так запись видит участник группы доступа к операции' : 'Макет · так запись видят остальные сотрудники, включая администраторов и лидеров') : '';
-    var RECENT = ['Tate', '87PLN903', 'HL-882107', 'Grove Street'];
+    var RECENT = RECENT_Q; /* MDT: real recent queries (rememberQuery) */
     return {
       bolo: bolo,
       c: c, accent: accent, onAccent: onAccent, q: S.q,
@@ -1015,15 +1238,15 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
         var on = S.type === t[0];
         var cnt = q ? found.filter(function (r) { return t[0] === 'all' || r.type === t[0]; }).length : '';
         var o = { name: t[1], count: String(cnt), bg: on ? c.sel : 'transparent', fw: on ? 600 : 400, op: on ? 1 : 0, iAll: false, iPerson: false, iVehicle: false, iWeapon: false, iOrg: false, iPlace: false, iLaw: false,
-          pick: function () { self.setState({ type: t[0], sel: null, open: false, fm: false, fv: {} }); } };
+          pick: function () { if (S.open && S.sel) self.setState({ type: t[0], q: '', sel: null, open: false, fm: false, fv: {} }); /* MDT: from a card — back to that category's own screen (form + «Недавно в базе») */ else self.setState({ type: t[0], sel: null, open: false, fm: false, fv: {} }); } };
         o[t[2]] = true; return o;
       }),
       recent: RECENT.map(function (t) { return { text: t, pick: function () { self.setState({ q: t, sel: null, type: 'all' }); } }; }),
       
-      showPicker: S.type === 'person' && !S.fm && !S.q, showTiles: S.type !== 'person', showBar: !(S.type === 'person' && !S.fm && !S.q), ph: 'Имя, номер машины, серийный номер, телефон…',
-      pmOpts: [['res', 'Резидент'], ['mig', 'Мигрант']].map(function (e) { var on = S.pm === e[0]; return { name: e[1], bg: on ? accent : 'transparent', fg: on ? '#FFFFFF' : c.text, fw: on ? 600 : 400, pick: function () { self.setState({ pm: e[0], fv: {} }); } }; }),
-      pmHint: S.pm === 'mig' ? 'Иностранный гражданин: данные визы, разрешения и миграционной карты.' : 'Гражданин Сан-Андреаса: данные ID-карты и регистрации.',
-      fields: (S.pm === 'mig' ? MIG_ROWS : RES_ROWS).map(function (e) { var v = (S.fv || {})[e[0]] || ''; return { name: e[1], hint: e[2], val: v, ring: v ? accent : c.stroke, set: function (ev) { var nv = Object.assign({}, S.fv || {}); nv[e[0]] = ev.target.value; self.setState({ fv: nv }); } }; }),
+      showPicker: isForm, showForm: isForm, showSeg: S.type === 'person' || !!SEGS[S.type], isPersonForm: isForm && S.type === 'person', isOtherForm: isForm && S.type !== 'person', showTiles: S.type === 'all', showBar: !isForm, formTitle: S.type === 'person' ? 'Поиск личности' : FC.title, formSub: S.type === 'person' ? 'Реестр жителей и иностранных граждан штата Сан-Андреас' : FC.sub, hi: { color: FC.color, iPerson: S.type === 'person', iVehicle: S.type === 'vehicle', iWeapon: S.type === 'weapon', iOrg: S.type === 'org', iPlace: S.type === 'place', iLaw: false }, showBrowse: isForm, browseTitle: 'Недавно в базе', browseHint: 'Нажмите, чтобы открыть карточку', browse: browseList, ph: 'Имя, номер машины, серийный номер, телефон…',
+      pmOpts: (S.type === 'person' ? [['res', 'Резидент'], ['mig', 'Мигрант']] : (SEGS[S.type] || []).map(function (e) { return [e[0], e[1]]; })).map(function (e) { var on = S.type === 'person' ? S.pm === e[0] : (S.sg || 'all') === e[0]; return { name: e[1], bg: on ? accent : 'transparent', fg: on ? '#FFFFFF' : c.text, fw: on ? 600 : 400, pick: function () { if (S.type === 'person') self.setState({ pm: e[0], fv: {} }); else { var keep = {}, rows = S.type === 'place' ? (PLACE_ROWS[e[0]] || []) : []; Object.keys(S.fv || {}).forEach(function (k) { if (!rows.length || rows.some(function (rw) { return rw[0] === k; })) keep[k] = S.fv[k]; }); self.setState({ sg: e[0], fv: keep }); } } }; }),
+      pmHint: S.type !== 'person' ? FC.hint : S.pm === 'mig' ? 'Иностранный гражданин: данные визы, разрешения и миграционной карты.' : 'Гражданин Сан-Андреаса: данные ID-карты и регистрации.',
+      fields: (S.type !== 'person' ? FC.rows : S.pm === 'mig' ? MIG_ROWS : RES_ROWS).map(function (e) { var v = (S.fv || {})[e[0]] || ''; var kinds = e[3] === 'sel' ? [''].concat(Array.from(new Set(DB.filter(function (r) { return r.type === 'org' && !r.nosearch; }).map(function (r) { return String(r.sub).split(' · ')[0]; })))) : null; return { isSel: !!kinds, isInp: !kinds, opts: (kinds || []).map(function (k) { return { v: k, t: k || 'Любой', on: k === v }; }), name: e[1], hint: e[2], val: v, ring: v ? accent : c.stroke, set: function (ev) { var nv = Object.assign({}, S.fv || {}); nv[e[0]] = ev.target.value; self.setState({ fv: nv }); } }; }),
       filledText: (function () { var k = Object.keys(S.fv || {}).filter(function (x) { return String(S.fv[x]).trim(); }).length; return k ? 'Заполнено полей: ' + k : 'Пока ничего не заполнено'; })(),
       clearForm: function () { self.setState({ fv: {} }); },
       doFind: function () { var fv = S.fv || {}; var ks = Object.keys(fv).filter(function (x) { return String(fv[x]).trim(); }); if (!ks.length) return; self.setState({ fm: true, resF: 'all', q: ks.map(function (x) { return String(fv[x]).trim(); }).join(' · '), sel: null, open: false }); },
@@ -1038,7 +1261,7 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
         return list.map(function (x, i) { var last = i === list.length - 1; return { text: x.text, go: x.go, sep: i > 0, fw: last ? 600 : 400, fg: last ? c.text : c.text2 }; });
       })(),
       tiles: [['person','Люди','Досье, судимости, лицензии','#A4262C','iPerson','Tate или CIT-55120'],['vehicle','Транспорт','Владелец, страховка, статус','#3E8EDE','iVehicle','87PLN903 или VIN'],['weapon','Оружие','Серийный номер и владелец','#6B4E2E','iWeapon','HL-882107'],['org','Организации','Бизнесы','#8A3B5C','iOrg','Fleeca Bank'],['place','Недвижимость','Дома, квартиры, гаражи','#2F6F73','iPlace','Grove Street']].map(function (e) {
-        var o = { title: e[1], hint: e[2], color: e[3], sample: 'Например: ' + e[5], count: String(DB.filter(function (r) { return r.type === e[0] && !r.nosearch; }).length) + ' записей', iPerson: false, iVehicle: false, iWeapon: false, iOrg: false, iPlace: false, iLaw: false, pick: function () { self.setState({ type: e[0], sel: null, open: false, fm: false, fv: {} }); } };
+        var o = { title: e[1], hint: e[2], color: e[3], sample: 'Например: ' + e[5], count: n(DB.filter(function (r) { return r.type === e[0] && !r.nosearch; }).length) /* MDT: «4 записи», not «4 записей» */, iPerson: false, iVehicle: false, iWeapon: false, iOrg: false, iPlace: false, iLaw: false, pick: function () { self.setState({ type: e[0], sel: null, open: false, fm: false, fv: {} }); } };
         o[e[4]] = true; return o;
       }),
       dl: dlgVals(Object.assign({}, RICH[sel && sel.id] || {}, { name: sel ? sel.title : '' }, sel && EMPX[sel.id] ? { hist: EMPX[sel.id].hist, phone: EMPX[sel.id].phone } : {})), dlg: dlgVals(Object.assign({}, RICH[sel && sel.id] || {}, { name: sel ? sel.title : '' }, sel && EMPX[sel.id] ? { hist: EMPX[sel.id].hist, phone: EMPX[sel.id].phone } : {})),
@@ -1048,9 +1271,9 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
       qlToggle: function () { self.setState({ qa: !S.qa, qn: '', qm: '' }); },
       qlSetName: function (ev) { self.setState({ qn: ev && ev.target ? ev.target.value : String(ev || '') }); },
       qlSetNote: function (ev) { self.setState({ qm: ev && ev.target ? ev.target.value : String(ev || '') }); },
-      qlSave: function () { var t = String(S.qn || '').trim(); if (!t || !sel) return; var ql = Object.assign({}, S.ql || {}); ql[sel.id] = [[t, String(S.qm || '').trim() || 'добавлена', 'blue', 'Вы', '20.11.2026']].concat(ql[sel.id] || []); self.setState({ ql: ql, qa: false, qn: '', qm: '' }); },
+      qlSave: function () { var t = String(S.qn || '').trim(); if (!t || !sel) return; var ql = Object.assign({}, S.ql || {}); ql[sel.id] = [[t, String(S.qm || '').trim() || 'добавлена', 'blue', 'Вы', todayRu()]].concat(ql[sel.id] || []); self.setState({ ql: ql, qa: false, qn: '', qm: '' }); },
       noteSet: function (ev) { self.setState({ nd: ev && ev.target ? ev.target.value : String(ev || '') }); },
-      noteSave: function () { var t = String(S.nd || '').trim(); if (!t || !sel) return; var nm = Object.assign({}, S.nm || {}); nm[sel.id] = [['Вы', 'Я', '#3A5F8F', '20.11', t]].concat(nm[sel.id] || []); self.setState({ nm: nm, na: false, nd: '' }); },
+      noteSave: function () { var t = String(S.nd || '').trim(); if (!t || !sel) return; var nm = Object.assign({}, S.nm || {}); nm[sel.id] = [['Вы', 'Я', '#3A5F8F', dayRu(), t]].concat(nm[sel.id] || []); self.setState({ nm: nm, na: false, nd: '' }); },
       menuOpen: !!S.mn, menuToggle: function () { self.setState({ mn: !S.mn }); },
       resOpts: [['all', 'Все'], ['res', 'Резиденты'], ['mig', 'Мигранты']].map(function (e) { var on = S.resF === e[0]; return { name: e[1], bg: on ? c.sel : 'transparent', fw: on ? 600 : 400, pick: function () { self.setState({ resF: e[0] }); } }; }),
       showRes: (S.type === 'all' || S.type === 'person') && !S.fm,
@@ -1068,4 +1291,4 @@ function hit(r) { if (r.nosearch) return q === String(r.plate || r.serial || r.t
   }
 }
 
-export { Component as SearchLogic, DB as SEARCH_DB, RICHV as SEARCH_RICHV, RICH as SEARCH_RICH, BOLOREF as SEARCH_BOLOREF, EMPX as SEARCH_EMPX, TAG_SEED as SEARCH_TAG_SEED, TAG_TONE as SEARCH_TAG_TONE }
+export { UC_OP as SEARCH_UC_OP, UC as SEARCH_UC, rememberQuery as rememberSearchQuery, Component as SearchLogic, DB as SEARCH_DB, RICHV as SEARCH_RICHV, RICHW as SEARCH_RICHW, RICH as SEARCH_RICH, BOLOREF as SEARCH_BOLOREF, EMPX as SEARCH_EMPX, TAG_SEED as SEARCH_TAG_SEED, TAG_TONE as SEARCH_TAG_TONE }

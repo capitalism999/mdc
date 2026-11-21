@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { CaseLogRow } from '../../../types'
 import { CASE_PEOPLE } from '../../../lib/mockData/caseFiles'
+import { timeKey } from './casePlaces'
 
 /** Record provenance in the inspector: who added it and when, who changed it
  * last, and its recent journal entries (from the case journal). */
@@ -17,9 +18,11 @@ function Avatar({ name }: { name: string }) {
   )
 }
 
-export function ItemHistory({ history, fallbackBy, fallbackDate }: { history: CaseLogRow[]; fallbackBy?: string; fallbackDate?: string }) {
+export function ItemHistory({ history: rows, fallbackBy, fallbackDate }: { history: CaseLogRow[]; fallbackBy?: string; fallbackDate?: string }) {
   const [all, setAll] = useState(false)
-  // newest first: the oldest «Добавление» is the creation, the newest row the last change
+  // newest first by time (rows of the same minute keep the journal order, which is newest first):
+  // the oldest «Добавление» is the creation, the newest row the last change
+  const history = [...rows].sort((a, b) => timeKey(b.when) - timeKey(a.when))
   const created = [...history].reverse().find((r) => r.action === 'Добавление') ?? history[history.length - 1]
   const changed = history.find((r) => r !== created)
   const addedBy = created?.who ?? fallbackBy

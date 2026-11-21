@@ -1,6 +1,7 @@
 import { ChangelogButton } from '../components/chrome/ChangelogButton'
 import { FullscreenHintToast } from '../components/chrome/FullscreenHintToast'
 import { HeaderNav } from '../components/chrome/HeaderNav'
+import { SessionEndedScreen } from '../components/chrome/SessionEndedScreen'
 import { TaskBar } from '../components/chrome/TaskBar'
 import { UserProfile } from '../components/chrome/UserProfile'
 import { WindowBar } from '../components/chrome/WindowBar'
@@ -36,6 +37,7 @@ export function HomePage() {
           </div>
           <TaskBar />
           <FullscreenHintToast />
+          <SessionEndedScreen />
         </div>
     </WindowManagerProvider>
   )

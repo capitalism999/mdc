@@ -22,6 +22,9 @@ export interface WindowInstance {
   isMinimized: boolean
   isMaximized: boolean
   restoreBounds: { x: number; y: number; width: number; height: number } | null
+  /** Bumped by `reloadWindow` («ОБНОВИТЬ»): used as the content's React key,
+   * so the module re-mounts and loads its data again. */
+  reloadKey?: number
   /** Set by the module to make the window chrome's back arrow navigate one
    * step up its internal view stack (e.g. results → search); `undefined`
    * when there's nowhere to go back to (hides/disables the arrow). */

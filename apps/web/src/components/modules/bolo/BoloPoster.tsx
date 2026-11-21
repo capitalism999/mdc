@@ -1,308 +1,452 @@
-import type { Bolo } from '../../../types'
-import { ACCENT, C, ON_ACCENT, type BoloUIState } from './BoloApp'
-import { PathIcon } from './icons'
+/* Generated 1:1 from the design reference (project/BOLO.dc.html) — markup, styles and copy are a literal port. */
+import { Fragment } from 'react'
+import { __a, __h, __s, type BoloVals } from './boloRuntime'
 
-interface PosterProps {
-  bolo: Bolo
-  state: BoloUIState
-  patch: (p: Partial<BoloUIState>) => void
-  toast: (key: string) => void
-}
-
-type Tpl = 'wanted' | 'special' | 'poi' | 'alert' | 'identify' | 'missing' | 'stolen'
-
-const T2: Record<Tpl, [string, string, string, string]> = {
-  wanted: ['РАЗЫСКИВАЕТСЯ', 'WANTED', '#B3121D', 'Вы видели этого человека?'],
-  special: ['ОСОБЫЙ РОЗЫСК', 'MOST WANTED', '#B3121D', 'Вы видели этого человека?'],
-  poi: ['ЛИЦО, ПРЕДСТАВЛЯЮЩЕЕ ИНТЕРЕС', 'PERSON OF INTEREST', '#8A1C1C', 'Знаете, где этот человек?'],
-  alert: ['ОПОВЕЩЕНИЕ НАСЕЛЕНИЯ', 'COMMUNITY ALERT', '#B36B00', 'Есть информация?'],
-  identify: ['ПОМОГИТЕ ОПОЗНАТЬ', 'ATTEMPT TO IDENTIFY', '#B3121D', 'Узнаёте этого человека?'],
-  missing: ['ПРОПАЛ ЧЕЛОВЕК', 'MISSING PERSON', '#1F4E9C', 'Вы видели этого человека?'],
-  stolen: ['УГНАН АВТОМОБИЛЬ', 'STOLEN VEHICLE', '#B36B00', 'Вы видели эту машину?'],
-}
-const TPL_LABELS: [Tpl, string][] = [
-  ['wanted', 'Розыск'], ['special', 'Особый розыск'], ['poi', 'Лицо интереса'], ['identify', 'Опознать'], ['missing', 'Пропал'], ['stolen', 'Угон'], ['alert', 'Оповещение'],
-]
-const AGENCY: Record<string, [string, string, string]> = {
-  lspd: ['LOS SANTOS POLICE DEPARTMENT', '#14233F', '#C9A54B'],
-  lssd: ['LOS SANTOS COUNTY SHERIFF', '#2F3A23', '#D2A64A'],
-  sahp: ['SAN ANDREAS HIGHWAY PATROL', '#3A3A3A', '#E0B23C'],
-  fib: ['FEDERAL INVESTIGATION BUREAU', '#1C1C1C', '#BFBFBF'],
-}
-
-function autoTpl(b: Bolo): Tpl {
-  if (b.vid === 'missing') return 'missing'
-  if (b.vid === 'alert') return 'alert'
-  if (b.vid === 'special') return 'special'
-  if (b.vid === 'poi') return b.kind === 'unknown' ? 'identify' : 'poi'
-  if (b.kind === 'veh') return /угон/i.test(b.reason) ? 'stolen' : 'wanted'
-  return 'wanted'
-}
-
-export function BoloPoster({ bolo: b, state, patch, toast }: PosterProps) {
-  const P = state.poster
-  const tpl = (P.tpl as Tpl) || autoTpl(b)
-  const title = P.title || T2[tpl][0]
-  const ink = P.bw ? '#141414' : T2[tpl][2]
-  const AG = AGENCY[b.src]
-  const closed = state.closedMap[b.id] || b.status !== 'open'
-  const internal = P.aud === 'internal'
-  const EX = b.poster ?? {}
-  const facts = (EX.facts ?? b.facts.filter((f) => !/Зона|Действует|Создана|Закрыта/.test(f.label)).map((f) => [f.label, f.value] as [string, string])).slice(0, 8)
-  const incident = EX.incident ?? [
-    ['ДАТА', b.created.split(',')[0] + '.2026'],
-    ['ВРЕМЯ', b.created.split(', ')[1] || '—'],
-    ['МЕСТО', b.sightings[0]?.place ?? '—'],
-  ]
-
-  function patchPoster(p: Partial<typeof P>) {
-    patch({ poster: { ...P, ...p } })
-  }
-
+export function BoloPoster({ $v }: { $v: BoloVals }) {
+  if (!$v.isPoster) return null
   return (
-    <div className="flex min-h-0 flex-1">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-2.5 px-6 pb-3 pt-4">
-          <button type="button" onClick={() => patch({ view: 'feed' })} aria-label="Назад" className="flex h-8 w-8 items-center justify-center rounded-[6px] hover:bg-white/10">
-            <PathIcon d="M12.5 4.5L7 10l5.5 5.5" className="h-3.5 w-3.5" />
-          </button>
-          <span className="text-[20px] font-semibold leading-7">Листовка</span>
-          <span className="text-[13px]" style={{ color: C.text2 }}>
-            {b.no} · {b.title} · A4, предпросмотр
-          </span>
-        </div>
-        <div className="scroll flex flex-1 justify-center overflow-y-auto px-6 pb-6 pt-1" style={{ background: C.rail }}>
-          <div className="relative flex shrink-0 flex-col overflow-hidden" style={{ width: 520, height: 735, background: '#FAF9F5', color: '#141414', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', fontFamily: 'Inter, "Segoe UI", sans-serif' }}>
-            <div className="flex items-center gap-3 px-5 py-3.5" style={{ background: P.bw ? '#1A1A1A' : AG[1], color: '#fff' }}>
-              <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full" style={{ background: P.bw ? '#000' : '#0E1A30', border: `2px solid ${P.bw ? '#fff' : AG[2]}`, color: P.bw ? '#fff' : AG[2] }}>
-                <PathIcon d="M10 1.8l6.5 2.6v5.2c0 4.2-2.8 7.2-6.5 8.6-3.7-1.4-6.5-4.4-6.5-8.6V4.4z" className="h-6 w-6" />
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col leading-[14px]">
-                <span className="text-[13px] font-extrabold tracking-[1.4px]">{AG[0]}</span>
-                <span className="pt-[3px] text-[9.5px] tracking-[0.4px] opacity-85">{EX.unit || 'Mission Row Station · отдел расследований'}</span>
-              </span>
-              <span className="flex flex-col items-end gap-0.5 text-right text-[9px] leading-3">
-                <span className="font-bold tracking-[0.6px]" style={{ color: P.bw ? '#fff' : AG[2] }}>
-                  {internal ? 'ТОЛЬКО ДЛЯ СОТРУДНИКОВ' : 'ДЛЯ РАСПРОСТРАНЕНИЯ'}
+    <>
+      <div style={{ flex: "1", minHeight: "0", display: "flex", marginTop: "-40px" }}>
+        <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "16px 24px 12px 24px" }}>
+            <button className="btn hv" onClick={$v.goFeed} aria-label="Назад" style={{ width: "32px", height: "32px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12.5 4.5L7 10l5.5 5.5"></path>
+              </svg>
+            </button>
+            <span style={{ fontSize: "20px", lineHeight: "28px", fontWeight: "600" }}>
+              {"Листовка"}
+            </span>
+            <span style={{ fontSize: "13px", color: $v.c?.text2 }}>
+              {__h($v.b?.id)}{" · "}{__h($v.b?.title)}{" · A4, предпросмотр"}
+            </span>
+          </div>
+          <div className="scroll" style={{ flex: "1", minHeight: "0", display: "flex", justifyContent: "center", padding: "4px 24px 24px 24px", background: $v.c?.rail }}>
+            <div data-bolo-sheet="" style={{ position: "relative", width: "520px", height: "735px", flexShrink: "0", boxSizing: "border-box", display: "flex", flexDirection: "column", background: "#FAF9F5", color: "#141414", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", fontFamily: "Inter, 'Segoe UI', sans-serif", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "16px 26px 10px 26px" }}>
+                {$v.pp?.hasLogo ? (
+                  <img src={$v.pp?.logo} alt={$v.pp?.agency} width="56" height="56" style={{ display: "block", flexShrink: "0", objectFit: "contain", filter: $v.pp?.logoF, width: "56px", height: "56px" }} />
+                ) : null}
+                {$v.pp?.noLogo ? (
+                  <span style={{ width: "56px", height: "56px", flexShrink: "0", display: "flex", alignItems: "center", justifyContent: "center", color: "#141414" }}>
+                    <svg width="40" height="40" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path d={$v.pp?.seal}></path>
+                    </svg>
+                  </span>
+                ) : null}
+                <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "3px" }}>
+                  <span style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "15px", lineHeight: "18px", fontWeight: "700", letterSpacing: "1.2px" }}>
+                    {__h($v.pp?.agency)}
+                  </span>
+                  <span style={{ fontSize: "9.5px", letterSpacing: ".3px", color: "#444444" }}>
+                    {__h($v.pp?.unit)}
+                  </span>
                 </span>
-                <span className="opacity-85">
-                  {b.no} · {b.created.split(',')[0]}.2026
-                </span>
-                <span className="opacity-85">{EX.caseNo || `Дело ${b.no}`}</span>
-              </span>
-            </div>
-            <div className="h-1" style={{ background: P.bw ? '#fff' : AG[2] }} />
-
-            <div className="flex min-h-0 flex-1 flex-col gap-2.5 px-5 pt-3">
-              <div className="flex flex-col items-center gap-px text-center">
-                <span className="font-black leading-none tracking-[1px]" style={{ fontSize: title.length > 16 ? 32 : 46, color: ink }}>
-                  {title}
-                </span>
-                <span className="text-[10px] font-extrabold tracking-[3px]" style={{ color: ink }}>
-                  {T2[tpl][1]}
-                  {b.armed && tpl !== 'missing' ? ' · ARMED AND DANGEROUS' : ''}
-                </span>
-                <span className="pt-[5px] text-[11.5px] font-bold">{EX.wantedFor || `${b.reason.charAt(0)}${b.reason.slice(1).toLowerCase()}${b.penalCodes.length ? ` (${b.penalCodes.map((n) => `PC ${n}`).join(', ')})` : ''}`}</span>
+                {$v.pp?.hasCiv ? (
+                  <img src={$v.pp?.civSeal} alt={$v.pp?.civName} width="56" height="56" style={{ display: "block", flexShrink: "0", objectFit: "contain", filter: $v.pp?.logoF, width: "56px", height: "56px" }} />
+                ) : null}
+                {$v.pp?.noCiv ? (
+                  <span style={{ width: "56px", flexShrink: "0" }}></span>
+                ) : null}
               </div>
-
-              <div className="flex gap-3.5">
-                <div className="flex shrink-0 flex-col gap-1">
-                  <span className="relative block border-[1.5px] border-[#141414]" style={{ width: b.kind === 'veh' ? 210 : 150, height: b.kind === 'veh' ? 132 : 170, background: '#D3D0C8' }}>
-                    {b.kind === 'unknown' && <span className="absolute left-0 right-0 top-[30%] text-center text-[54px] font-black" style={{ color: '#8A877F' }}>?</span>}
-                    <span className="absolute inset-x-0 bottom-0 px-1.5 text-[8.5px] text-white" style={{ background: 'rgba(20,20,20,0.75)' }}>
-                      {EX.mainCap || b.photos[0]?.caption || 'Фото'}
-                    </span>
+              <div style={{ margin: "0 26px", borderTop: "1px solid #000000" }}></div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 26px 0 26px", fontSize: "8.5px", letterSpacing: ".5px", color: "#444444" }}>
+                <span style={{ fontWeight: "700" }}>
+                  {__h($v.pp?.kindTag)}
+                </span>
+                <span>
+                  {__h($v.pp?.date)}
+                </span>
+              </div>
+              <div data-bolo-body="" style={{ flex: "1", minHeight: "0", display: "flex", flexDirection: "column", gap: "8px", padding: "6px 26px 0 26px" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "2px" }}>
+                  <span style={{ fontFamily: "'PosterHead', 'Arial Narrow', Impact, sans-serif", fontSize: $v.pp?.titleSize, lineHeight: "1.1", fontWeight: "700", letterSpacing: ".5px", whiteSpace: $v.pp?.titleWs, maxWidth: "100%", color: $v.pp?.ink }}>
+                    {__h($v.pp?.title)}
+                  </span>
+                  <span style={{ paddingTop: "4px", fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "12px", fontStyle: "italic" }}>
+                    {__h($v.pp?.wantedFor)}
                   </span>
                 </div>
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  {b.plate && (
-                    <span className="flex h-[50px] w-[100px] items-center justify-center text-[27px] font-bold" style={{ background: '#F2F2EE', color: '#2C307E' }}>
-                      {b.plate}
-                    </span>
-                  )}
-                  <span className="text-[21px] font-extrabold uppercase leading-6">{EX.name || b.title}</span>
-                  <span className="flex flex-col pt-0.5">
-                    {facts.map(([k, v]) => (
-                      <span key={k} className="flex gap-1.5 border-b border-[#DAD6CC] py-[2.5px] text-[10.5px] leading-[14px]">
-                        <span className="w-[78px] shrink-0 pt-px text-[8.5px] font-bold uppercase tracking-[0.5px] text-[#555]">{k}</span>
-                        <span className="font-semibold">{v}</span>
+                {$v.pp?.notBulletin ? (
+                  <>
+                  <div style={{ display: "flex", gap: "16px", paddingTop: "2px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", flexShrink: "0" }}>
+                      <span style={{ position: "relative", width: $v.pp?.photoW, height: $v.pp?.photoH, display: "block", background: "#DCDAD4", border: "1px solid #141414" }}>
+                        {" "}
+                        {$v.b?.isVeh ? (
+                          <img src={$v.b?.carImg} alt="Фото" width="88%" height="70%" style={{ position: "absolute", left: "6%", top: "15%", objectFit: "contain", display: "block", filter: $v.pp?.logoF, width: "88%", height: "70%" }} />
+                        ) : null}
+                        {" "}
+                        {$v.b?.isPerson ? (
+                          <img src={$v.b?.mainImg || $v.sil} alt="Фото" style={{ position: "absolute", left: "0", top: "0", width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 12%", display: "block", filter: $v.pp?.photoF }} />
+                        ) : null}
+                        {" "}
+                        {$v.b?.unknown ? (
+                          <span style={{ position: "absolute", left: "0", right: "0", top: "30%", textAlign: "center", fontSize: "54px", fontWeight: "900", color: "#8A877F" }}>
+                            {"?"}
+                          </span>
+                        ) : null}
+                        {" "}
+                        {$v.b?.isEvent ? (
+                          <svg width="70%" height="70%" viewBox="0 0 20 20" fill="none" stroke="#6F6C65" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ position: "absolute", left: "15%", top: "15%" }}>
+                            <path d="M3 9.5L10 4l7 5.5M5 8v5M15 8v5"></path>
+                            <path d="M2 14.5c1.3 0 1.3 1 2.7 1s1.3-1 2.6-1 1.3 1 2.7 1 1.3-1 2.6-1 1.3 1 2.7 1 1.4-1 2.7-1M2 17.5c1.3 0 1.3 1 2.7 1s1.3-1 2.6-1 1.3 1 2.7 1 1.3-1 2.6-1 1.3 1 2.7 1 1.4-1 2.7-1"></path>
+                          </svg>
+                        ) : null}
+                        {" "}
                       </span>
+                      <span style={{ fontSize: "8px", fontStyle: "italic", color: "#555555", width: $v.pp?.photoW }}>
+                        {__h($v.pp?.mainCap)}
+                      </span>
+                      {$v.pp?.showPhotos ? (
+                        <span style={{ display: "flex", gap: "6px", width: $v.pp?.photoW, paddingTop: "2px" }}>
+                          {__a($v.pp?.extra).map((ex: any, $i0: number) => (
+                            <Fragment key={$i0}>
+                              <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
+                                <span style={{ position: "relative", overflow: "hidden", height: "40px", background: "#DCDAD4", border: "1px solid #141414", display: "flex", alignItems: "center", justifyContent: "center", color: "#6F6C65" }}>
+                                  {ex?.hasImg ? (
+                                    <img src={ex?.img} alt={ex?.cap} style={{ position: "absolute", left: "0", top: "0", width: "100%", height: "100%", objectFit: "cover", display: "block", filter: $v.pp?.photoF }} />
+                                  ) : null}
+                                  {ex?.noImg ? (
+                                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                      <path d={ex?.icon}></path>
+                                    </svg>
+                                  ) : null}
+                                </span>
+                                <span className="ell" style={{ fontSize: "7.5px", fontStyle: "italic", color: "#555555" }}>
+                                  {__h(ex?.cap)}
+                                </span>
+                              </span>
+                            </Fragment>
+                          ))}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "6px" }}>
+                      {$v.b?.hasPlate ? (
+                        <span className="lp" role="img" aria-label={`Номер ${__s($v.b?.plate)}`} style={{ width: "100px", height: "50px" }}>
+                          <span style={{ fontSize: "27px" }}>
+                            {__h($v.b?.plate)}
+                          </span>
+                        </span>
+                      ) : null}
+                      <span style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "21px", lineHeight: "24px", fontWeight: "700", letterSpacing: ".5px", textTransform: "uppercase" }}>
+                        {__h($v.pp?.name)}
+                      </span>
+                      <span style={{ display: "flex", flexDirection: "column", borderTop: "1px solid #141414" }}>
+                        {__a($v.pp?.facts).map((f: any, $i0: number) => (
+                          <Fragment key={$i0}>
+                            <span style={{ display: "flex", gap: "8px", fontSize: "10.5px", lineHeight: "14px", padding: "3px 0", borderBottom: "1px dotted #9A968C" }}>
+                              <span style={{ width: "76px", flexShrink: "0", color: "#555555" }}>
+                                {__h(f?.k)}
+                              </span>
+                              <span style={{ fontWeight: "600" }}>
+                                {__a(f?.vP).map((qp: any, $i1: number) => (
+                                  <Fragment key={$i1}>
+                                    {qp?.a ? (
+                                      <>
+                                      {__h(qp?.t)}
+                                      </>
+                                    ) : null}
+                                    {qp?.b ? (
+                                      <span className="lpi">
+                                        {__h(qp?.t)}
+                                      </span>
+                                    ) : null}
+                                  </Fragment>
+                                ))}
+                              </span>
+                            </span>
+                          </Fragment>
+                        ))}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", borderTop: "1px solid #141414", borderBottom: "1px solid #141414" }}>
+                    {__a($v.pp?.incident).map((iv: any, $i0: number) => (
+                      <Fragment key={$i0}>
+                        <span style={{ display: "flex", flexDirection: "column", gap: "1px", padding: "4px 8px", borderLeft: iv?.sep }}>
+                          <span style={{ fontSize: "8px", letterSpacing: ".6px", color: "#555555" }}>
+                            {__h(iv?.k)}
+                          </span>
+                          <span className="ell" style={{ fontSize: "10.5px", fontWeight: "700" }}>
+                            {__a(iv?.vP).map((qp: any, $i1: number) => (
+                              <Fragment key={$i1}>
+                                {qp?.a ? (
+                                  <>
+                                  {__h(qp?.t)}
+                                  </>
+                                ) : null}
+                                {qp?.b ? (
+                                  <span className="lpi">
+                                    {__h(qp?.t)}
+                                  </span>
+                                ) : null}
+                              </Fragment>
+                            ))}
+                          </span>
+                        </span>
+                      </Fragment>
+                    ))}
+                  </div>
+                  </>
+                ) : null}
+                {$v.pp?.isBulletin ? (
+                  <>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "7px", fontSize: "11px", lineHeight: "16px" }}>
+                    {__a($v.pp?.paras).map((pa: any, $i0: number) => (
+                      <Fragment key={$i0}>
+                        <span>
+                          {__h(pa?.t)}
+                        </span>
+                      </Fragment>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px" }}>
+                    <span style={{ fontFamily: "'PosterHead', 'Arial Narrow', Impact, sans-serif", fontSize: "17px", lineHeight: "20px", fontWeight: "700", letterSpacing: ".5px", color: $v.pp?.ink, textTransform: "uppercase" }}>
+                      {__h($v.pp?.listTitle)}
+                    </span>
+                    {__a($v.pp?.recs).map((rc: any, $i0: number) => (
+                      <Fragment key={$i0}>
+                        <span style={{ display: "flex", gap: "10px", alignItems: "flex-start", fontSize: "11px", lineHeight: "15px" }}>
+                          <span style={{ width: "18px", flexShrink: "0", marginTop: "-1px", fontFamily: "'PosterHead', 'Arial Narrow', Impact, sans-serif", fontSize: "15px", lineHeight: "15px", fontWeight: "700", color: $v.pp?.ink }}>
+                            {__h(rc?.n)}
+                          </span>
+                          <span>
+                            {__h(rc?.t)}
+                          </span>
+                        </span>
+                      </Fragment>
+                    ))}
+                  </div>
+                  </>
+                ) : null}
+                {$v.pp?.isEvent ? (
+                  <span style={{ padding: "8px 12px", border: `2px solid ${__s($v.pp?.ink)}`, fontSize: "10.5px", lineHeight: "15px" }}>
+                    <b style={{ display: "block", letterSpacing: "1px", color: $v.pp?.ink, paddingBottom: "2px" }}>
+                      {"ЧТО ДЕЛАТЬ"}
+                    </b>
+                    {__h($v.pp?.narr)}
+                  </span>
+                ) : null}
+                {$v.pp?.notEventDesc ? (
+                  <span data-bolo-narr="" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "10.5px", lineHeight: "14.5px" }}>
+                    {__a($v.pp?.narrP).map((qp: any, $i0: number) => (
+                      <Fragment key={$i0}>
+                        {qp?.a ? (
+                          <>
+                          {__h(qp?.t)}
+                          </>
+                        ) : null}
+                        {qp?.b ? (
+                          <span className="lpi">
+                            {__h(qp?.t)}
+                          </span>
+                        ) : null}
+                      </Fragment>
                     ))}
                   </span>
-                </div>
+                ) : null}
+                {$v.pp?.armed ? (
+                  <span style={{ padding: "5px 10px", border: `2px solid ${__s($v.pp?.ink)}`, color: $v.pp?.ink, textAlign: "center", fontSize: "10.5px", lineHeight: "14px" }}>
+                    <b style={{ letterSpacing: ".6px" }}>
+                      {"ВООРУЖЁН И ОПАСЕН"}
+                    </b>
+                    {" · не задерживайте сами, звоните 911"}
+                  </span>
+                ) : null}
+                {$v.pp?.internal ? (
+                  <span style={{ padding: "6px 10px", border: "1px dashed #141414", fontSize: "10.5px", lineHeight: "14px" }}>
+                    <b>
+                      {"ДЛЯ СОТРУДНИКОВ:"}
+                    </b>
+                    {" "}{__h($v.b?.instr)}
+                  </span>
+                ) : null}
+                <span style={{ flex: "1" }}></span>
               </div>
-
-              <div className="grid grid-cols-3 border border-[#141414]">
-                {incident.map(([k, v], i) => (
-                  <span key={k} className="flex flex-col px-2 py-1" style={{ borderLeft: i ? '1px solid #141414' : '0' }}>
-                    <span className="text-[8px] font-bold tracking-[0.6px] text-[#555]">{k}</span>
-                    <span className="truncate text-[10.5px] font-bold">{v}</span>
+              <div style={{ display: "flex", gap: "16px", alignItems: "flex-end", margin: "14px 26px 0 26px", padding: "10px 0 8px 0", borderTop: "1px solid #000000" }}>
+                <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
+                  <span style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "13px", fontWeight: "700" }}>
+                    {__h($v.pp?.ask)}
                   </span>
-                ))}
-              </div>
-
-              {P.desc && (
-                <span className="text-[10.5px] leading-[15px]">
-                  <span className="text-[8.5px] font-extrabold tracking-[0.8px]">ОБСТОЯТЕЛЬСТВА. </span>
-                  {EX.narr || b.description}
-                </span>
-              )}
-
-              {b.armed && tpl !== 'missing' && (
-                <span className="flex items-center gap-2 px-2.5 py-1.5 text-[10.5px] leading-[14px] text-white" style={{ background: '#B3121D' }}>
-                  <PathIcon d="M10 3l8 14H2z M10 8.5v3.5M10 14.5h.01" className="h-[18px] w-[18px] shrink-0" />
-                  <span>
-                    <b>ВНИМАНИЕ: СЧИТАЕТСЯ ВООРУЖЁННЫМ И ОПАСНЫМ.</b> Не пытайтесь задержать самостоятельно. Если увидели — сразу звоните 911.
+                  <span style={{ fontSize: "10px", lineHeight: "14px" }}>
+                    {__h($v.pp?.contact)}
                   </span>
+                  {$v.pp?.showTips ? (
+                    <span style={{ fontSize: "10px", lineHeight: "14px" }}>
+                      {"Анонимно: "}
+                      <b>
+                        {"Crime Stoppers · 555-TIPS (8477)"}
+                      </b>
+                    </span>
+                  ) : null}
                 </span>
-              )}
-              {internal && (
-                <span className="border-[1.5px] border-dashed border-[#141414] px-2.5 py-1.5 text-[10.5px] leading-[14px]">
-                  <b>ДЛЯ СОТРУДНИКОВ:</b> {b.instruction}
-                </span>
-              )}
-              <span className="flex-1" />
-            </div>
-
-            <div className="mx-5 flex items-stretch gap-3 border-t-2 border-[#141414] py-2.5">
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="text-[12.5px] font-extrabold">{closed ? 'Спасибо всем, кто помог.' : T2[tpl][3]}</span>
-                <span className="text-[10px] leading-[14px]">{P.contact ? (EX.contact || `Звоните 911 или ${b.contact.name} (${b.contact.role}): ${b.contact.phone}.`) : 'Позвоните 911.'}</span>
-                {P.contact && !internal && (
-                  <span className="text-[10px] leading-[14px]">
-                    Анонимно: <b>Crime Stoppers · 555-TIPS (8477)</b>
-                  </span>
-                )}
-              </span>
-              {P.reward && !internal && !closed && (
-                <span className="flex w-[118px] shrink-0 flex-col items-center justify-center gap-px px-2 text-center text-white" style={{ background: P.bw ? '#1A1A1A' : AG[1] }}>
-                  <span className="text-[8px] font-bold tracking-[1px]" style={{ color: P.bw ? '#fff' : AG[2] }}>
-                    НАГРАДА ДО
-                  </span>
-                  <span className="text-[19px] font-black leading-[22px]">{P.rewardSum}</span>
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 px-5 py-1 text-[7.5px] tracking-[0.3px] text-[#555]" style={{ background: '#EDEBE4' }}>
-              <span className="flex-1">{internal ? 'Служебный бюллетень · не для публичного распространения' : `Выпущено: ${b.src === 'lssd' ? 'LSSD · пресс-служба' : b.src === 'fib' ? 'FIB · полевой офис Лос-Сантос' : 'LSPD · пресс-служба'}`}</span>
-              <span>Действует до {b.facts.find((f) => /Действует/.test(f.label))?.value ?? '—'}</span>
-            </div>
-
-            {closed && (
-              <span className="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 -rotate-[14deg] whitespace-nowrap rounded-[6px] border-[5px] px-5 py-1.5 text-[46px] font-black tracking-[3px]" style={{ borderColor: '#B3121D', color: '#B3121D', background: 'rgba(250,249,245,0.6)' }}>
-                {b.kind === 'missing' ? 'НАЙДЕНА' : b.kind === 'veh' ? 'НАЙДЕН' : 'ЗАДЕРЖАН'}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex w-[320px] shrink-0 flex-col" style={{ borderLeft: `1px solid ${C.stroke}`, background: C.content }}>
-        <div className="scroll flex flex-1 flex-col gap-3.5 overflow-y-auto p-4.5">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-semibold" style={{ color: C.text2 }}>
-              Шаблон
-            </span>
-            <div className="grid grid-cols-2 gap-1.5">
-              {TPL_LABELS.map(([k, label]) => {
-                const on = tpl === k
-                return (
-                  <button key={k} type="button" onClick={() => patchPoster({ tpl: k, title: '' })} className="h-[34px] truncate rounded-[6px] px-1.5 text-center text-[13px] hover:brightness-110" style={{ background: on ? C.sel : C.card, boxShadow: on ? `inset 0 0 0 2px ${ACCENT}` : 'none', fontWeight: on ? 600 : 400 }}>
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-semibold" style={{ color: C.text2 }}>
-              Для кого
-            </span>
-            <div className="flex gap-0.5 rounded-[8px] p-0.5" style={{ background: C.card }}>
-              {(['public', 'internal'] as const).map((a) => (
-                <button key={a} type="button" onClick={() => patchPoster({ aud: a })} className="h-7 flex-1 rounded-[6px] text-center text-[13px] hover:shadow-[inset_0_0_0_999px_rgba(255,255,255,0.08)]" style={{ background: P.aud === a ? C.btn : 'transparent', fontWeight: P.aud === a ? 600 : 400 }}>
-                  {a === 'public' ? 'Для жителей' : 'Служебная'}
-                </button>
-              ))}
-            </div>
-            <span className="text-[12px] leading-4" style={{ color: C.text2 }}>
-              {internal ? 'Для стенда в участке: без награды и анонимной линии, с инструкцией «При обнаружении».' : 'Для расклейки: награда, анонимная линия, без служебных инструкций.'}
-            </span>
-          </div>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-semibold" style={{ color: C.text2 }}>
-              Заголовок
-            </span>
-            <input value={title} onChange={(e) => patchPoster({ title: e.target.value })} className="h-[34px] rounded-[6px] px-2.5 text-[14px] font-bold" style={{ background: C.field, borderBottom: `1px solid ${C.stroke2}`, color: C.text }} />
-          </label>
-          <div className="flex flex-col gap-0.5">
-            <span className="pb-1 text-[12px] font-semibold" style={{ color: C.text2 }}>
-              Что показать
-            </span>
-            {([
-              ['photos', 'Дополнительные фото', 'до двух под главным'],
-              ['desc', 'Приметы текстом', 'описание из ориентировки'],
-              ['reward', 'Награда', 'сумма крупно внизу'],
-              ['contact', 'Контакты', 'следователь, участок, анонимная линия'],
-            ] as const).map(([key, t, sub]) => {
-              const on = !!P[key]
-              return (
-                <button key={key} type="button" onClick={() => patchPoster({ [key]: !on } as Partial<typeof P>)} className="-mx-1.5 flex items-center gap-2.5 rounded-[6px] px-1.5 py-1.5 text-left hover:bg-white/5">
-                  <span className="flex flex-1 flex-col leading-[17px]">
-                    <span>{t}</span>
-                    <span className="text-[12px]" style={{ color: C.text2 }}>
-                      {sub}
+                {$v.pp?.showReward ? (
+                  <span style={{ flexShrink: "0", display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right", maxWidth: "150px" }}>
+                    <span style={{ fontSize: "8.5px", fontWeight: "700", letterSpacing: "1.5px" }}>
+                      {"НАГРАДА ДО"}
+                    </span>
+                    <span style={{ fontFamily: "'PosterHead', 'Arial Narrow', Impact, sans-serif", fontSize: "32px", lineHeight: "36px", fontWeight: "700" }}>
+                      {__h($v.pp?.reward)}
+                    </span>
+                    <span style={{ fontSize: "7.5px", lineHeight: "10px", color: "#444444" }}>
+                      {__h($v.pp?.rewardFor)}
                     </span>
                   </span>
-                  <span className="relative h-5 w-10 shrink-0 rounded-[10px] box-border" style={{ background: on ? ACCENT : 'transparent', border: `1px solid ${on ? ACCENT : C.stroke2}` }}>
-                    <span className="absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full transition-transform" style={{ background: on ? ON_ACCENT : C.text2, transform: on ? 'translateX(20px)' : 'translateX(0)' }} />
+                ) : null}
+              </div>
+              <div style={{ display: "flex", gap: "8px", padding: "5px 26px 8px 26px", borderTop: "1px solid #C9C5BB", fontSize: "7.5px", letterSpacing: ".3px", color: "#555555" }}>
+                {$v.pp?.hasCiv ? (
+                  <>
+                  <span style={{ fontWeight: "700", color: "#333333" }}>
+                    {__h($v.pp?.civName)}
                   </span>
-                </button>
-              )
-            })}
-          </div>
-          {P.reward && (
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[12px] font-semibold" style={{ color: C.text2 }}>
-                Сумма награды
-              </span>
-              <input value={P.rewardSum} onChange={(e) => patchPoster({ rewardSum: e.target.value })} className="h-[34px] rounded-[6px] px-2.5 text-[14px]" style={{ background: C.field, borderBottom: `1px solid ${C.stroke2}`, color: C.text }} />
-            </label>
-          )}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-semibold" style={{ color: C.text2 }}>
-              Печать
-            </span>
-            <div className="flex gap-0.5 rounded-[8px] p-0.5" style={{ background: C.card }}>
-              {[
-                ['Цветная', false],
-                ['Чёрно-белая', true],
-              ].map(([t, bw]) => (
-                <button key={t as string} type="button" onClick={() => patchPoster({ bw: bw as boolean })} className="h-7 flex-1 rounded-[6px] text-center text-[13px] hover:shadow-[inset_0_0_0_999px_rgba(255,255,255,0.08)]" style={{ background: P.bw === bw ? C.btn : 'transparent', fontWeight: P.bw === bw ? 600 : 400 }}>
-                  {t as string}
-                </button>
-              ))}
+                  <span>
+                    {"·"}
+                  </span>
+                  </>
+                ) : null}
+                <span style={{ flex: "1" }}>
+                  {__h($v.pp?.footL)}
+                </span>
+                {$v.pp?.hasApproved ? (
+                  <span>
+                    {__h($v.pp?.approved)}
+                  </span>
+                ) : null}
+                {$v.pp?.notBulletin ? (
+                  <span>
+                    {__h($v.pp?.footR)}
+                  </span>
+                ) : null}
+              </div>
+              {$v.pp?.stamp ? (
+                <span style={{ position: "absolute", left: "50%", top: "42%", transform: "translate(-50%, -50%) rotate(-14deg)", padding: "6px 22px", border: "5px solid #B3121D", borderRadius: "6px", color: "#B3121D", fontSize: "46px", fontWeight: "900", letterSpacing: "3px", background: "rgba(250,249,245,0.6)", whiteSpace: "nowrap" }}>
+                  {__h($v.pp?.stampText)}
+                </span>
+              ) : null}
             </div>
           </div>
-          <span className="text-[12px] leading-[17px]" style={{ color: C.text2 }}>
-            Листовка собирается из ориентировки: фото, приметы и данные обновятся сами, если ориентировку изменят.
-          </span>
         </div>
-        <div className="flex flex-col gap-2 p-4.5" style={{ borderTop: `1px solid ${C.stroke}` }}>
-          <button type="button" onClick={() => toast('pdf')} className="flex h-9 items-center justify-center gap-2 rounded-[6px] font-semibold hover:brightness-110" style={{ background: ACCENT, color: ON_ACCENT }}>
-            <PathIcon d="M10 3v10M6 9l4 4 4-4M4 16.5h12" className="h-[15px] w-[15px]" />
-            Скачать PDF
-          </button>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => toast('pdf')} className="h-[34px] flex-1 rounded-[6px] text-center hover:brightness-110" style={{ background: C.btn }}>
-              Распечатать
+        <div style={{ width: "320px", flexShrink: "0", borderLeft: `1px solid ${__s($v.c?.stroke)}`, background: $v.c?.content, display: "flex", flexDirection: "column" }}>
+          <div className="scroll" style={{ flex: "1", minHeight: "0", padding: "58px 18px 16px 18px", display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
+                {"Шаблон"}
+              </span>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+                {__a($v.ppTpls).map((o: any, $i0: number) => (
+                  <Fragment key={$i0}>
+                    <button className="btn hv" onClick={o?.pick} style={{ height: "34px", padding: "0 6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderRadius: "6px", background: o?.bg, boxShadow: o?.ring, fontSize: "13px", fontWeight: o?.fw, textAlign: "center" }}>
+                      {__h(o?.t)}
+                    </button>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
+                {"Для кого"}
+              </span>
+              <div style={{ display: "flex", gap: "2px", padding: "3px", borderRadius: "8px", background: $v.c?.card }}>
+                {__a($v.ppAud).map((o: any, $i0: number) => (
+                  <Fragment key={$i0}>
+                    <button className="btn" onClick={o?.pick} style={{ flex: "1", height: "28px", borderRadius: "6px", background: o?.bg, color: o?.fg, fontSize: "13px", fontWeight: o?.fw, textAlign: "center" }}>
+                      {__h(o?.t)}
+                    </button>
+                  </Fragment>
+                ))}
+              </div>
+              <span style={{ fontSize: "12px", lineHeight: "16px", color: $v.c?.text2 }}>
+                {__h($v.ppAudText)}
+              </span>
+            </div>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
+                {"Заголовок"}
+              </span>
+              <input type="text" value={__s($v.pp?.title)} onChange={$v.onPpTitle} style={{ height: "34px", boxSizing: "border-box", padding: "0 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "14px", fontWeight: "700", color: $v.c?.text }} />
+            </label>
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2, paddingBottom: "4px" }}>
+                {"Что показать"}
+              </span>
+              {__a($v.ppToggles).map((o: any, $i0: number) => (
+                <Fragment key={$i0}>
+                  <button className="btn" onClick={o?.pick} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px 0" }}>
+                    <span style={{ flex: "1", display: "flex", flexDirection: "column", lineHeight: "17px" }}>
+                      <span>
+                        {__h(o?.t)}
+                      </span>
+                      <span style={{ fontSize: "12px", color: $v.c?.text2 }}>
+                        {__a(o?.subP).map((qp: any, $i1: number) => (
+                          <Fragment key={$i1}>
+                            {qp?.a ? (
+                              <>
+                              {__h(qp?.t)}
+                              </>
+                            ) : null}
+                            {qp?.b ? (
+                              <span className="lpi">
+                                {__h(qp?.t)}
+                              </span>
+                            ) : null}
+                          </Fragment>
+                        ))}
+                      </span>
+                    </span>
+                    <span style={{ position: "relative", width: "40px", height: "20px", boxSizing: "border-box", flexShrink: "0", borderRadius: "10px", background: o?.bg, border: `1px solid ${__s(o?.border)}` }}>
+                      <span style={{ position: "absolute", top: "2px", left: "2px", width: "14px", height: "14px", borderRadius: "50%", background: o?.knob, transform: `translateX(${__s(o?.x)})` }}></span>
+                    </span>
+                  </button>
+                </Fragment>
+              ))}
+            </div>
+            {$v.pp?.showReward ? (
+              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
+                  {"Сумма награды"}
+                </span>
+                <input type="text" value={__s($v.pp?.reward)} onChange={$v.onPpReward} style={{ height: "34px", boxSizing: "border-box", padding: "0 10px", borderRadius: "6px", border: "0", borderBottom: `1px solid ${__s($v.c?.stroke2)}`, background: $v.c?.field, fontSize: "14px", color: $v.c?.text }} />
+              </label>
+            ) : null}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: $v.c?.text2 }}>
+                {"Печать"}
+              </span>
+              <div style={{ display: "flex", gap: "2px", padding: "3px", borderRadius: "8px", background: $v.c?.card }}>
+                {__a($v.ppColor).map((o: any, $i0: number) => (
+                  <Fragment key={$i0}>
+                    <button className="btn" onClick={o?.pick} style={{ flex: "1", height: "28px", borderRadius: "6px", background: o?.bg, color: o?.fg, fontSize: "13px", fontWeight: o?.fw, textAlign: "center" }}>
+                      {__h(o?.t)}
+                    </button>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+            <span style={{ fontSize: "12px", lineHeight: "17px", color: $v.c?.text2 }}>
+              {"Листовка собирается из ориентировки: фото, приметы и данные обновятся сами, если ориентировку изменят."}
+            </span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 18px 16px 18px", borderTop: `1px solid ${__s($v.c?.stroke)}` }}>
+            <button className="btn acc" onClick={$v.ppPdf} style={{ height: "36px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: $v.accent, color: $v.onAccent, fontWeight: "600" }}>
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10 3v10M6 9l4 4 4-4M4 16.5h12"></path>
+              </svg>
+              {"Скачать PDF"}
             </button>
-            <button type="button" onClick={() => toast('mail')} className="h-[34px] flex-1 rounded-[6px] text-center hover:brightness-110" style={{ background: C.btn }}>
-              В Почту участку
-            </button>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button className="btn hv" onClick={$v.ppPrint} style={{ flex: "1", height: "34px", borderRadius: "6px", background: $v.c?.btn, textAlign: "center" }}>
+                {"Распечатать"}
+              </button>
+              <button className="btn hv" onClick={$v.ppMail} style={{ flex: "1", height: "34px", borderRadius: "6px", background: $v.c?.btn, textAlign: "center" }}>
+                {"В Почту участку"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

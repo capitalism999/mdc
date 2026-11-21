@@ -1,4 +1,4 @@
-import type { PointerEvent } from 'react'
+import { useEffect, useRef, type PointerEvent } from 'react'
 import { allAppTiles } from '../../data/apps'
 import type { WindowInstance } from '../../windows/types'
 import { useWindowDrag } from '../../windows/useWindowDrag'
@@ -8,14 +8,14 @@ import { moduleContent } from '../modules/registry'
 import { StubApp } from './StubApp'
 
 const RESIZE_HANDLES: { direction: ResizeDirection; className: string }[] = [
-  { direction: 'n', className: 'left-0 right-0 top-0 h-[4px] cursor-ns-resize' },
-  { direction: 's', className: 'bottom-0 left-0 right-0 h-[4px] cursor-ns-resize' },
-  { direction: 'e', className: 'right-0 top-0 bottom-0 w-[4px] cursor-ew-resize' },
-  { direction: 'w', className: 'left-0 top-0 bottom-0 w-[4px] cursor-ew-resize' },
-  { direction: 'ne', className: 'right-0 top-0 h-[10px] w-[10px] cursor-nesw-resize' },
-  { direction: 'nw', className: 'left-0 top-0 h-[10px] w-[10px] cursor-nwse-resize' },
-  { direction: 'se', className: 'right-0 bottom-0 h-[10px] w-[10px] cursor-nwse-resize' },
-  { direction: 'sw', className: 'left-0 bottom-0 h-[10px] w-[10px] cursor-nesw-resize' },
+  { direction: 'n', className: 'left-0 right-0 top-0 h-[5px] cursor-ns-resize' },
+  { direction: 's', className: 'bottom-0 left-0 right-0 h-[5px] cursor-ns-resize' },
+  { direction: 'e', className: 'right-0 top-0 bottom-0 w-[5px] cursor-ew-resize' },
+  { direction: 'w', className: 'left-0 top-0 bottom-0 w-[5px] cursor-ew-resize' },
+  { direction: 'ne', className: 'right-0 top-0 h-[12px] w-[12px] cursor-nesw-resize' },
+  { direction: 'nw', className: 'left-0 top-0 h-[12px] w-[12px] cursor-nwse-resize' },
+  { direction: 'se', className: 'right-0 bottom-0 h-[12px] w-[12px] cursor-nwse-resize' },
+  { direction: 'sw', className: 'left-0 bottom-0 h-[12px] w-[12px] cursor-nesw-resize' },
 ]
 
 function ResizeHandle({ win, direction, className }: { win: WindowInstance; direction: ResizeDirection; className: string }) {
@@ -70,6 +70,16 @@ function MaximizeIcon() {
   )
 }
 
+/** Two overlapping squares — the Windows «Восстановить» caption glyph. */
+function RestoreIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <rect x="3.5" y="6.5" width="10" height="10" rx="1.5" />
+      <path d="M6.5 6.5V5a1.5 1.5 0 011.5-1.5h7A1.5 1.5 0 0116.5 5v7a1.5 1.5 0 01-1.5 1.5h-1.5" />
+    </svg>
+  )
+}
+
 function CloseGlyph() {
   return (
     <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
@@ -107,6 +117,7 @@ function BareTitleBar({
           type="button"
           aria-label="Свернуть"
           onPointerDown={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
           onClick={onMinimize}
           className="flex h-full w-[46px] items-center justify-center hover:bg-white/10"
         >
@@ -116,15 +127,17 @@ function BareTitleBar({
           type="button"
           aria-label={win.isMaximized ? 'Восстановить' : 'Развернуть'}
           onPointerDown={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
           onClick={onToggleMaximize}
           className="flex h-full w-[46px] items-center justify-center hover:bg-white/10"
         >
-          <MaximizeIcon />
+          {win.isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
         </button>
         <button
           type="button"
           aria-label="Закрыть"
           onPointerDown={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
           onClick={onClose}
           className="flex h-full w-[46px] items-center justify-center rounded-tr-[7px] hover:bg-[#C42B1C]"
         >
@@ -150,8 +163,13 @@ export function AppWindow({ win }: { win: WindowInstance }) {
   const appDef = allAppTiles.find((a) => a.id === win.appId)
   const ModuleContent = appDef?.stub ? StubApp : moduleContent[win.appId]
   const isBare = appDef?.chrome === 'bare'
+  const rootRef = useRef<HTMLDivElement>(null)
 
-  if (win.isMinimized) return null
+  // minimised: drop keyboard focus, so typing doesn't land in a hidden field
+  useEffect(() => {
+    const el = rootRef.current
+    if (win.isMinimized && el && el.contains(document.activeElement)) (document.activeElement as HTMLElement).blur()
+  }, [win.isMinimized])
 
   // Maximized bounds are derived live from the measured desktop surface
   // size (not a snapshot), so a maximized window keeps filling the screen
@@ -162,12 +180,21 @@ export function AppWindow({ win }: { win: WindowInstance }) {
 
   return (
     <div
+      ref={rootRef}
       className={`absolute flex flex-col overflow-clip ${
         isBare
           ? 'border border-[#3B3B3B] bg-[#272727] shadow-[0_24px_60px_rgba(0,0,0,0.55),0_0_0_1px_rgba(0,0,0,0.35)]'
           : 'bg-bg-chrome shadow-[0_8px_32px_rgba(0,0,0,0.5)]'
       } ${win.isMaximized ? '' : isBare ? 'rounded-[8px]' : 'rounded-[12px]'}`}
-      style={{ ...bounds, zIndex: win.zIndex }}
+      // A minimised window stays mounted (hidden), so restoring it from the
+      // task bar brings back exactly what was there — an unmounted module
+      // would lose its open record, half-typed form or letter.
+      style={{ ...bounds, zIndex: win.zIndex, ...(win.isMinimized ? { visibility: 'hidden', pointerEvents: 'none' } : null) }}
+      aria-hidden={win.isMinimized || undefined}
+      data-minimized={win.isMinimized || undefined}
+      data-window-id={win.id}
+      data-app-id={win.appId}
+      data-instance-key={win.instanceKey}
       onPointerDown={() => focusWindow(win.id)}
     >
       {isBare ? (
@@ -194,6 +221,7 @@ export function AppWindow({ win }: { win: WindowInstance }) {
                 type="button"
                 className="icon-font flex h-full w-[42px] items-center justify-center text-[10px] text-ink/90 hover:bg-ink/10"
                 onPointerDown={(event) => event.stopPropagation()}
+                onDoubleClick={(event) => event.stopPropagation()}
                 onClick={() => minimizeWindow(win.id)}
                 aria-label="Свернуть"
               >
@@ -203,6 +231,7 @@ export function AppWindow({ win }: { win: WindowInstance }) {
                 type="button"
                 className="icon-font flex h-full w-[42px] items-center justify-center text-[10px] text-ink/90 hover:bg-ink/10"
                 onPointerDown={(event) => event.stopPropagation()}
+                onDoubleClick={(event) => event.stopPropagation()}
                 onClick={() => toggleMaximize(win.id)}
                 aria-label={win.isMaximized ? 'Восстановить' : 'Развернуть'}
               >
@@ -212,6 +241,7 @@ export function AppWindow({ win }: { win: WindowInstance }) {
                 type="button"
                 className="icon-font flex h-full w-[42px] items-center justify-center rounded-tr-[12px] text-[10px] text-ink/90 hover:bg-[#e81123]"
                 onPointerDown={(event) => event.stopPropagation()}
+                onDoubleClick={(event) => event.stopPropagation()}
                 onClick={() => closeWindow(win.id)}
                 aria-label="Закрыть"
               >
@@ -262,7 +292,7 @@ export function AppWindow({ win }: { win: WindowInstance }) {
       )}
 
       <div className={`min-h-0 flex-1 ${ModuleContent ? 'overflow-clip' : 'overflow-auto'} ${isBare ? '' : 'bg-bg-app'}`}>
-        {ModuleContent && <ModuleContent windowId={win.id} initialParams={win.initialParams} />}
+        {ModuleContent && <ModuleContent key={win.reloadKey ?? 0} windowId={win.id} initialParams={win.initialParams} />}
       </div>
 
       {!win.isMaximized && RESIZE_HANDLES.map((handle) => (

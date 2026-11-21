@@ -1091,7 +1091,7 @@ const ACCESS_C1: CaseAccessState = {
   grif: 'conf',
   members: [
     { name: 'Raul Moreno', role: 'lead', sub: 'Detective Sergeant · Investigations' },
-    { name: 'Thorne Watts', role: 'member', sub: 'Deputy Sheriff (Bonus I) · Patrol, Mission Row · 12D3' },
+    { name: 'Thorne Watts', role: 'member', sub: "Deputy Sheriff (Bonus I) · LSSD, Davis Sheriff's Station · 12D3 · доступ выдан" },
     { name: 'Andrew Koval', role: 'member', sub: 'Officer II · Patrol, Mission Row · badge 2741' },
     { name: 'Miguel Ortiz', role: 'manager', sub: 'Detective · Investigations' },
     { name: 'Tyler Green', role: 'observer', sub: 'Forensic Examiner · LSPD Crime Lab' },
@@ -1106,8 +1106,10 @@ const ACCESS_C2: CaseAccessState = {
   grif: 'secret',
   members: [
     { name: 'Raul Moreno', role: 'lead', sub: 'Detective Sergeant · Investigations' },
-    { name: 'Thorne Watts', role: 'member', sub: 'Deputy Sheriff (Bonus I) · Patrol, Mission Row · 12D3' },
+    { name: 'Thorne Watts', role: 'member', sub: "Deputy Sheriff (Bonus I) · LSSD, Davis Sheriff's Station · 12D3 · доступ выдан" },
     { name: 'Devin Lanier', role: 'manager', sub: 'Officer III · Patrol, unit 2-A-09' },
+    { name: 'Carlos Mendez', role: 'member', sub: 'Police Officer III · Patrol, Mission Row · 2-A-03' },
+    { name: 'Eleanor Harper', role: 'viewer', sub: 'Judge · Superior Court, Dept. 3 · доступ выдан: ордер SW-2611' },
     { name: 'Andrew Koval', role: 'viewer', sub: 'Officer II · Patrol, Mission Row · badge 2741' },
   ],
   sections: { ppl: 'lead', srv: 'members', doc: 'managers' },
@@ -1118,7 +1120,8 @@ const ACCESS_C3: CaseAccessState = {
   members: [
     { name: 'David Kim', role: 'lead', sub: 'Detective II · Investigations' },
     { name: 'Miguel Ortiz', role: 'member', sub: 'Detective · Investigations' },
-    { name: 'Thorne Watts', role: 'member', sub: 'Deputy Sheriff (Bonus I) · Patrol, Mission Row · 12D3' },
+    { name: 'Carlos Mendez', role: 'member', sub: 'Police Officer III · Patrol, Mission Row · 2-A-03' },
+    { name: 'Thorne Watts', role: 'member', sub: "Deputy Sheriff (Bonus I) · LSSD, Davis Sheriff's Station · 12D3 · доступ выдан" },
     { name: 'Raul Moreno', role: 'observer', sub: 'Detective Sergeant · lead on LS-2026-0893' },
     { name: '@Отдел расследований LSPD', role: 'viewer', sub: 'Группа · 14 сотрудников' },
   ],

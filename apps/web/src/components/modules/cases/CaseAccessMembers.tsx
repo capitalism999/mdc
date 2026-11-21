@@ -3,6 +3,7 @@ import type { CaseAccessMember, CaseAccessRole } from '../../../types'
 import { CASE_PEOPLE } from '../../../lib/mockData/caseFiles'
 import { GroupIcon } from './icons'
 import { findStaff, type StaffEntry } from './staffDirectory'
+import { useDismiss } from './CaseDropdown'
 
 export const ROLES: { id: CaseAccessRole; label: string; desc: string }[] = [
   { id: 'manager', label: 'Администратор', desc: 'Всё, что участник, плюс выдаёт и меняет права других, гриф и ограничения разделов' },
@@ -40,6 +41,14 @@ export function AccessMembers({
 }) {
   // Invite autocomplete against the MDC staff directory.
   const [inviteFocus, setInviteFocus] = useState(false)
+  /** «Убрать доступ» asks once more before taking the access away */
+  const [confirmRemove, setConfirmRemove] = useState<number | null>(null)
+  const closeRoleMenu = () => {
+    onToggleRoleMenu(null)
+    setConfirmRemove(null)
+  }
+  // the open role menu closes on an outside press / Escape (not the dialog)
+  const roleMenuRef = useDismiss(openRoleMenuIndex !== null, closeRoleMenu)
   const [hi, setHi] = useState(0)
   const query = inviteName.trim()
   const inCase = (s: StaffEntry) => members.some((m) => m.name === s.key || CASE_PEOPLE[m.name]?.name === s.name)
@@ -148,7 +157,7 @@ export function AccessMembers({
                 const isLead = m.role === 'lead'
                 const initials = pp ? pp.initials : m.name.replace(/[^А-ЯA-Z]/g, '').slice(0, 2) || '?'
                 return (
-                  <div key={m.name} className="relative flex items-center gap-3 px-3">
+                  <div key={m.name} ref={openRoleMenuIndex === i ? roleMenuRef : undefined} className="relative flex items-center gap-3 px-3">
                     {isGroup ? (
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#3A4E72] text-white">
                         <GroupIcon />
@@ -165,7 +174,11 @@ export function AccessMembers({
                       </span>
                       <button
                         type="button"
-                        onClick={() => !isLead && onToggleRoleMenu(openRoleMenuIndex === i ? null : i)}
+                        onClick={() => {
+                          if (isLead) return
+                          setConfirmRemove(null)
+                          onToggleRoleMenu(openRoleMenuIndex === i ? null : i)
+                        }}
                         style={{ color: isLead ? '#C2C2C2' : '#FFFFFF', background: isLead ? 'transparent' : '#3A3A3A' }}
                         className={`flex h-7 items-center gap-1.5 rounded-[6px] px-2.5 text-[12px] ${isLead ? 'cursor-default' : 'hover:brightness-125'}`}
                       >
@@ -198,9 +211,31 @@ export function AccessMembers({
                           )
                         })}
                         <div className="my-1 h-px bg-[#3A3A3A]" />
-                        <button type="button" onClick={() => onRemoveMember(i)} className="flex h-8 w-full items-center justify-center rounded-[4px] text-[13px] text-[#FF99A4] hover:bg-[rgba(232,17,35,0.14)]">
-                          Убрать доступ
-                        </button>
+                        {confirmRemove === i ? (
+                          <div className="flex flex-col gap-1.5 px-2.5 py-1.5">
+                            <span className="text-[12px] leading-[16px] text-[#C2C2C2]">Убрать доступ у {isGroup ? m.name.slice(1) : (pp?.name ?? m.name)}? Дело пропадёт из его списка.</span>
+                            <span className="flex justify-end gap-1.5">
+                              <button type="button" onClick={() => setConfirmRemove(null)} className="h-7 rounded-[6px] bg-[#3A3A3A] px-2.5 text-[12px] hover:brightness-125">
+                                Отмена
+                              </button>
+                              <button
+                                type="button"
+                                autoFocus
+                                onClick={() => {
+                                  setConfirmRemove(null)
+                                  onRemoveMember(i)
+                                }}
+                                className="h-7 rounded-[6px] bg-[#C42B1C] px-2.5 text-[12px] font-semibold text-white hover:brightness-110"
+                              >
+                                Убрать
+                              </button>
+                            </span>
+                          </div>
+                        ) : (
+                          <button type="button" onClick={() => setConfirmRemove(i)} className="flex h-8 w-full items-center justify-center rounded-[4px] text-[13px] text-[#FF99A4] hover:bg-[rgba(232,17,35,0.14)]">
+                            Убрать доступ
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

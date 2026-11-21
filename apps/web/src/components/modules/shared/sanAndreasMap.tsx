@@ -114,3 +114,28 @@ export function MapTiles({ left, top, w, h, viewW, viewH }: { left: number; top:
 /** Overlay place-name style: dark text with a white halo, like the map's
  * own labels, so it stays legible on the light map. */
 export const MAP_LABEL_STYLE = { color: '#3C4043', textShadow: '0 0 3px #fff, 0 0 2px #fff, 0 0 1px #fff' } as const
+
+/** Named places, in % of the map image — read
+ * off the map's own street/district labels. */
+export const GEO: [string, number, number][] = [
+  ['Grove Street, Davis', 46.5, 76.5], ['Forum Dr, Strawberry', 44.5, 73.5], ['Davis Ave', 42, 75.5], ['Rockford Hills', 30, 61.5],
+  ['Vespucci Beach', 27, 73], ['Del Perro', 25, 65.5], ['Mission Row', 48.5, 67.5], ['Downtown Los Santos', 45, 64],
+  ['La Mesa', 55.5, 71.5], ['LSIA, аэропорт', 31, 84.5], ['Sandy Shores', 63, 35], ['Paleto Bay', 46, 14], ['Paleto Blvd', 43.5, 16.5],
+  ['Grapeseed', 68, 26], ['Route 68, Harmony', 54, 42], ['Great Ocean Hwy', 12.5, 43], ['Mount Chiliad', 49, 20],
+  ['Grand Senora Desert', 58, 39], ['Alamo Sea', 57, 31],
+]
+
+/** Nearest named place to a map-percent coordinate — the reference's
+ * `nearest()` helper, used to label a dropped pin. */
+export function nearestPlace(x: number, y: number) {
+  let best = ''
+  let bd = Infinity
+  for (const [name, gx, gy] of GEO) {
+    const d = (gx - x) ** 2 + (gy - y) ** 2
+    if (d < bd) {
+      bd = d
+      best = name
+    }
+  }
+  return best
+}
